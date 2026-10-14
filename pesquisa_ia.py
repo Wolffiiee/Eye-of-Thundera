@@ -2159,12 +2159,18 @@ class BotaoLateral(tk.Frame):
         self.configure(bg=COR_BARRA)
         for widget in self._filhos:
             widget.configure(bg=COR_BARRA, fg=COR_TEXTO)
+        # o icone so pode ser pintado se for um Label (desenhos em Canvas
+        # nao aceitam a opcao fg)
+        if self._icone is not None and self._icone.winfo_class() == "Label":
+            self._icone.configure(fg=COR_TEXTO)
 
     def _sair(self, _e=None):
         self.configure(bg=COR_PAINEL)
         for widget in self._filhos:
             widget.configure(bg=COR_PAINEL, fg=COR_TEXTO_2)
-        if self._icone is not None:
+        # o icone so pode ser pintado se for um Label (desenhos em Canvas
+        # nao aceitam a opcao fg)
+        if self._icone is not None and self._icone.winfo_class() == "Label":
             self._icone.configure(fg=COR_TEXTO_3)
 
     def _clicar(self, _e=None):
