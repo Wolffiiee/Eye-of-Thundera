@@ -2332,6 +2332,7 @@ class Aplicativo:
         self.lateral = tk.Frame(self.raiz, bg=COR_PAINEL, width=232)
         self.lateral.pack(side="left", fill="y")
         self.lateral.pack_propagate(False)
+        self._largura_lateral = 232
 
         marca = tk.Frame(self.lateral, bg=COR_PAINEL)
         marca.pack(fill="x", padx=18, pady=(20, 16))
@@ -2380,6 +2381,46 @@ class Aplicativo:
             lambda pai: _engrenagem(pai),
         )
         self._botao_config.pack(fill="x", padx=8, pady=2)
+
+        # A borda direita da lateral é arrastável: puxa para alargar ou
+        # afinar, e os titulos das conversas se ajustam na hora.
+        alca = tk.Frame(self.lateral, bg=COR_BORDA, cursor="sb_h_double_arrow")
+        alca.pack(side="right", fill="y")
+        alca.bind("<Button-1>", lambda _e: setattr(self, "_arrastando", True))
+        alca.bind("<B1-Motion>", self._arrastar_lateral)
+        alca.bind("<ButtonRelease-1>",
+                  lambda _e: setattr(self, "_arrastando", False))
+
+    def _arrastar_lateral(self, evento):
+        """Alarga ou afina a lateral arrastando a borda direita dela."""
+        x = evento.x_root - self.raiz.winfo_rootx()
+        nova = max(170, min(430, x))
+        if nova == self._largura_lateral:
+            return
+        self._largura_lateral = nova
+        self.lateral.configure(width=nova)
+        self._reajustar_titulos_conversas()
+
+    def _reajustar_titulos_conversas(self):
+        """Reajusta a quebra de linha dos titulos conforme a largura."""
+        if not self.lista_conversas.winfo_ismapped():
+            return
+        # espaco ocupado pelo item: paddings + os tres pontinhos + folga
+        largura_texto = max(60, self._largura_lateral - 78)
+        for item in self.lista_conversas.winfo_children():
+            for filho in self._todos(item):
+                if getattr(filho, "_titulo", False):
+                    try:
+                        filho.configure(wraplength=largura_texto)
+                    except Exception:
+                        pass
+
+    def _todos(self, widget):
+        """Todos os widgets abaixo de um widget."""
+        achados = [widget]
+        for filho in widget.winfo_children():
+            achados.extend(self._todos(filho))
+        return achados
 
     def _montar_chat(self):
         area = tk.Frame(self.principal, bg=COR_FUNDO)
@@ -4045,13 +4086,15 @@ class Aplicativo:
             filho.destroy()
         conversas = list(reversed(carregar_conversas()))
         if not conversas:
-            tk.Label(
+            vazio = tk.Label(
                 self.lista_conversas,
                 text="Nenhuma conversa ainda.\nFaça uma pergunta e ela\n"
                      "aparece aqui.",
                 bg=COR_PAINEL, fg=COR_TEXTO_3, font=(FONTE, 8),
                 justify="center", pady=10,
-            ).pack(fill="x")
+            )
+            vazio._titulo = True
+            vazio.pack(fill="x")
             return
 
         for conversa in conversas:
@@ -4068,6 +4111,7 @@ class Aplicativo:
                 bg=COR_BARRA, fg=COR_TEXTO, font=(FONTE, 9),
                 anchor="w", justify="left", wraplength=120,
             )
+            titulo._titulo = True
             titulo.pack(anchor="w")
             tk.Label(
                 textos, text=conversa.get("quando", ""), bg=COR_BARRA,
@@ -4088,28 +4132,13 @@ class Aplicativo:
             def pontos(_e=None, c=conversa, botao=mais):
                 self._menu_da_conversa(c, botao)
 
-            botoes_do_item = (item, textos, titulo, mais)
-
-            def _pinta(alvo, fundo, cor_destaque):
-                for botao in alvo:
-                    if botao.winfo_class() in ("Frame", "Canvas"):
-                        botao.configure(bg=fundo)
-                    else:
-                        botao.configure(bg=fundo, fg=cor_destaque)
-
-            def entered(_e=None, alvo=botoes_do_item):
-                _pinta(alvo, COR_ACCENT, "#ffffff")
-
-            def saiu(_e=None, alvo=botoes_do_item):
-                _pinta(alvo, COR_BARRA, COR_TEXTO)
-                mais.configure(fg=COR_TEXTO_3)
-
+            # o cursor de "maozinha" mostra que o titulo abre a conversa
             for botao in (item, textos, titulo):
+                botao.configure(cursor="hand2")
                 botao.bind("<Button-1>", abrir)
+            mais.configure(cursor="hand2")
             mais.bind("<Button-1>", pontos)
-            for botao in botoes_do_item:
-                botao.bind("<Enter>", entered)
-                botao.bind("<Leave>", saiu)
+            # sem destaque colorido: o titulo abre, e pronto
 
     def _menu_da_conversa(self, conversa, ancora):
         """Caixinha 'Excluir' que abre do lado dos tres pontinhos clicados.
@@ -4144,6 +4173,21 @@ class Aplicativo:
             "<Leave>", lambda _e: item.configure(bg=COR_BARRA, fg=COR_TEXTO)
         )
         pop.bind("<Escape>", fechar)
+        # clicar fora da caixinha fecha ela
+        def fora(_e=None):
+            if self._popup_conversa is None:
+                return
+            alvo = _e.widget if _e is not None else None
+            if alvo is not None:
+                atual = alvo
+                while atual is not None:
+                    if atual is pop:
+                        return          # o clique foi dentro: deixa
+                    atual = getattr(atual, "master", None)
+            self._fechar_popup_conversa()
+
+        self.raiz.bind_all("<Button-1>", fora, add="+")
+        self._fechar_popup = fechar
         pop.update_idletasks()
         largura = pop.winfo_reqwidth()
         # a borda direita da caixa alinha com os tres pontinhos
@@ -4157,6 +4201,7 @@ class Aplicativo:
         return pop
 
     def _fechar_popup_conversa(self):
+        self.raiz.unbind_all("<Button-1>")
         pop = getattr(self, "_popup_conversa", None)
         if pop is not None:
             try:

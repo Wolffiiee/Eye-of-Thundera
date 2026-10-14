@@ -126,7 +126,11 @@ no "⋯" de cada uma.
 
 Na barra da esquerda ficam os botões do programa. Ela pode ser escondida
 e mostrada de novo de duas formas: clicando no botão "Menu" (no alto) ou
-apertando Ctrl+B. Assim a conversa ocupa a tela toda quando você quiser.
+apertando Ctrl+B.
+
+A borda direita da lateral é arrastável: puxe para o lado para alargar a
+lateral (aí os títulos das conversas cabem inteiros) ou para o lado de
+dentro para afinar. Os títulos se ajustam sozinhos ao novo tamanho. Assim a conversa ocupa a tela toda quando você quiser.
 
 A resposta aparece letra a letra, com um cursor piscando no fim,
 igual aos aplicativos de conversa modernos.
