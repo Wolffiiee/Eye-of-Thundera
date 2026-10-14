@@ -2486,7 +2486,16 @@ class Aplicativo:
             bg=COR_BARRA, fg=COR_TEXTO, insertbackground=COR_ACCENT,
             relief="flat", borderwidth=0, padx=14, pady=11,
         )
+        self.botao_enviar = tk.Canvas(
+            caixa, width=36, height=36, bg=COR_BARRA,
+            highlightthickness=0, bd=0, cursor="hand2",
+        )
+        self._desenhar_enviar(COR_ENVIAR)
+        # pacote botao ANTES da entrada, assim o Tk reserva espaço para ele
+        # e não o encolhe quando a janela encurta ao mínimo
+        self.botao_enviar.pack(side="right", padx=8, pady=7)
         self.entrada.pack(side="left", fill="both", expand=True)
+
         self.entrada.bind("<Return>", self._ao_enter)
         self.entrada.bind("<KeyRelease>", self._ao_digitar)
         self.entrada.bind("<Button-3>", self._menu_ortografia)
@@ -2501,12 +2510,6 @@ class Aplicativo:
             # sublinha sem cor (o texto continua na cor normal).
             self.entrada.tag_configure("ortografia", underline=True)
 
-        self.botao_enviar = tk.Canvas(
-            caixa, width=36, height=36, bg=COR_BARRA,
-            highlightthickness=0, bd=0, cursor="hand2",
-        )
-        self._desenhar_enviar(COR_ENVIAR)
-        self.botao_enviar.pack(side="right", padx=8, pady=7)
         self.botao_enviar.bind("<Enter>", lambda e: self._desenhar_enviar(COR_ENVIAR_HOVER))
         self.botao_enviar.bind("<Leave>", lambda e: self._desenhar_enviar(COR_ENVIAR))
         self.botao_enviar.bind("<Button-1>", lambda e: self._enviar())
@@ -3957,16 +3960,19 @@ class Aplicativo:
         )
         tela.bind(
             "<Configure>",
-            lambda _e: tela.itemconfigure(lista_id, width=tela.winfo_width()),
+            lambda _e: (
+                tela.itemconfigure(lista_id, width=tela.winfo_width()),
+                tela.coords("empty", tela.winfo_width() // 2, tela.winfo_height() // 2),
+            ),
         )
         def _ajustar_barra_memoria(_evento=None):
             try:
                 lista.update_idletasks()
                 if lista.winfo_reqheight() <= tela.winfo_height():
-                    barra.configure(state="disabled")
+                    barra.state(["disabled"])
                     tela.yview_moveto(0.0)
                 else:
-                    barra.configure(state="normal")
+                    barra.state(["!disabled"])
             except Exception:
                 pass
         lista.bind("<Configure>", lambda _e: _ajustar_barra_memoria())
@@ -3977,21 +3983,27 @@ class Aplicativo:
         )
 
         def desenhar():
+            tela.delete("empty")
             for filho in lista.winfo_children():
                 filho.destroy()
             fatos = carregar_memoria()
             env["mostrado"] = list(fatos)
             if not fatos:
-                tk.Label(
-                    lista,
+                tela.delete("empty")
+                x = max(1, tela.winfo_width()) // 2
+                y = max(1, tela.winfo_height()) // 2
+                tela.create_text(
+                    x, y,
                     text=(
                         "Nada guardado ainda.\n\n"
                         "Conforme você conversa, a IA vai guardando o que "
                         "acha importante sobre você."
                     ),
-                    bg=COR_FUNDO, fg=COR_TEXTO_3, font=(FONTE, 10),
-                    justify="center",
-                ).pack(expand=True)
+                    fill=COR_TEXTO_3, font=(FONTE, 10), justify="center",
+                    tags=("empty",), anchor="center",
+                )
+                barra.state(["disabled"])
+                tela.yview_moveto(0.0)
                 return
             for fato in fatos:
                 linha = tk.Frame(lista, bg=COR_BARRA)
@@ -4321,6 +4333,42 @@ class Aplicativo:
                 pass
             self._popup_conversa = None
 
+    def _confirmar(self, titulo, texto):
+        """Diálogo de confirmação no tema escuro (sem branco do Windows)."""
+        resultado = {"ok": False}
+        pop = tk.Toplevel(self.raiz)
+        pop.overrideredirect(True)
+        pop.configure(bg=COR_PAINEL)
+        janela = tk.Frame(pop, bg=COR_PAINEL)
+        janela.pack(padx=1, pady=1)
+        caixa = tk.Frame(janela, bg=COR_BARRA, highlightthickness=1,
+                        highlightbackground=COR_BORDA)
+        caixa.pack(fill="both")
+
+        tk.Label(
+            caixa, text=titulo, bg=COR_BARRA, fg=COR_TEXTO,
+            font=(FONTE, 11, "bold"), anchor="w",
+        ).pack(fill="x", padx=16, pady=(14, 4))
+        tk.Label(
+            caixa, text=texto, bg=COR_BARRA, fg=COR_TEXTO_2,
+            font=(FONTE, 9), wraplength=300, justify="left",
+        ).pack(fill="x", padx=16, pady=(0, 12), anchor="w")
+
+        botoes = tk.Frame(caixa, bg=COR_BARRA)
+        botoes.pack(fill="x", padx=16, pady=(0, 12))
+        def sim():
+            resultado["ok"] = True
+            pop.destroy()
+        def cancelar():
+            resultado["ok"] = False
+            pop.destroy()
+        Botao(botoes, "Excluir", sim, destaque=True).pack(side="left")
+        Botao(botoes, "Cancelar", cancelar).pack(side="left", padx=(8, 0))
+        pop.bind("<Escape>", lambda _e: cancelar())
+        pop.grab_set()
+        self.raiz.wait_window(pop)
+        return resultado["ok"]
+
     def _abrir_conversa_da_lista(self, conversa):
         """Abre a conversa escolhida (quando se clica no titulo)."""
         self._carregar_conversa(conversa)
@@ -4329,12 +4377,11 @@ class Aplicativo:
     def _excluir_conversa_da_lista(self, conversa):
         """Apaga a conversa. O que a IA aprendeu continua guardado."""
         titulo = (conversa.get("titulo") or "Conversa")[:44]
-        confirmar = messagebox.askyesno(
+        confirmar = self._confirmar(
             "Excluir conversa",
             'Excluir a conversa "%s"?\n\n'
             "O que a IA aprendeu sobre você continua guardado "
             "(só a conversa é apagada)." % titulo,
-            parent=self.raiz,
         )
         if not confirmar:
             return
