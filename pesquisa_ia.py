@@ -2263,7 +2263,7 @@ class Aplicativo:
         self._corretor = None
         self._corretor_en = None
         self._checagem_id = None
-        self._menu_ortografia = None
+        self._menu_ortografia_atual = None
 
         raiz.title("Pesquisa IA")
         self._definir_icone(raiz)
@@ -2757,31 +2757,97 @@ class Aplicativo:
             return
         sugestoes = sorted(sugestoes)[:6]
 
-        if self._menu_ortografia is not None:
+        if self._menu_ortografia_atual is not None:
             try:
-                self._menu_ortografia.destroy()
+                self._menu_ortografia_atual.destroy()
             except Exception:
                 pass
-        menu = tk.Menu(
-            self.raiz, tearoff=0, bg=COR_BARRA, fg=COR_TEXTO,
-            activebackground=COR_ACCENT, activeforeground="#ffffff",
-            bd=0, font=(FONTE, 10),
-        )
-        self._menu_ortografia = menu
-        menu.add_command(label="Sugestões para \"%s\":" % palavra, state="disabled")
-        for sugestao in sugestoes:
-            menu.add_command(
-                label="   " + sugestao,
-                command=lambda s=sugestao: self._trocar_palavra(inicio, fim, s),
+        if self._menu_ortografia_atual is not None:
+            try:
+                self._menu_ortografia_atual.destroy()
+            except Exception:
+                pass
+            self._menu_ortografia_atual = None
+
+        pop = tk.Toplevel(self.raiz)
+        pop.overrideredirect(True)
+        pop.configure(bg=COR_PAINEL)
+        pop._itens = []
+        caixa = tk.Frame(pop, bg=COR_BARRA, highlightthickness=1,
+                         highlightbackground=COR_BORDA)
+        caixa.pack(padx=2, pady=2)
+
+        def item(rotulo, comando=None, negrito=False):
+            etiqueta = tk.Label(
+                caixa, text=rotulo, bg=COR_BARRA, fg=COR_TEXTO,
+                font=(FONTE, 9, "bold" if negrito else "normal"), cursor="hand2",
+                anchor="w", padx=16, pady=6,
             )
-        menu.add_separator()
-        menu.add_command(
-            label="   Ignorar", command=lambda: None
-        )
+            etiqueta.pack(fill="x")
+            etiqueta.bind("<Enter>", lambda _e: etiqueta.configure(
+                bg=COR_BARRA_MAIS))
+            etiqueta.bind("<Leave>", lambda _e: etiqueta.configure(
+                bg=COR_BARRA, fg=COR_TEXTO))
+            etiqueta.bind("<Button-1>", lambda _e: comando())
+            pop._itens.append(etiqueta)
+            return etiqueta
+
+        for sugestao in sugestoes:
+            item(
+                "   " + sugestao,
+                lambda s=sugestao: (
+                    self._trocar_palavra(inicio, fim, s),
+                    self._fechar_menu_ortografia(),
+                ),
+            )
+        # separador
+        tk.Frame(caixa, bg=COR_BORDA, height=1).pack(fill="x", padx=8, pady=2)
+        item("   Ignorar", lambda: self._fechar_menu_ortografia())
+
+        self._menu_ortografia_atual = pop
+        pop.update_idletasks()
+        largura = pop.winfo_reqwidth()
+        altura = pop.winfo_reqheight()
+        x = evento.x_root
+        y = evento.y_root + 4
+        # evita cair fora da tela
+        if x + largura > self.raiz.winfo_screenwidth():
+            x = self.raiz.winfo_screenwidth() - largura - 8
+        if y + altura > self.raiz.winfo_screenheight():
+            y = evento.y_root - altura - 4
+        pop.geometry("+%d+%d" % (x, y))
+
+        def fora(_e=None):
+            if self._menu_ortografia_atual is not pop:
+                return
+            try:
+                alvo = _e.widget if _e is not None else None
+                atual = alvo
+                while atual is not None:
+                    if atual is pop:
+                        return
+                    atual = getattr(atual, "master", None)
+            except Exception:
+                pass
+            self._fechar_menu_ortografia()
+
+        pop._fora = fora
+        pop.bind("<Escape>", lambda _e: self._fechar_menu_ortografia())
+        self.raiz.bind_all("<Button-1>", fora, add="+")
+        pop.after(6000, self._fechar_menu_ortografia)
+
+    def _fechar_menu_ortografia(self):
+        pop = getattr(self, "_menu_ortografia_atual", None)
         try:
-            menu.tk_popup(evento.x_root, evento.y_root)
-        finally:
-            menu.grab_release()
+            self.raiz.unbind_all("<Button-1>")
+        except Exception:
+            pass
+        if pop is not None and isinstance(pop, tk.Toplevel):
+            try:
+                pop.destroy()
+            except Exception:
+                pass
+        self._menu_ortografia_atual = None
 
     def _trocar_palavra(self, inicio, fim, nova):
         self.entrada.delete(inicio, fim)
