@@ -1,0 +1,100 @@
+========================================================
+  PLANO B do Pesquisa IA  (opcional)
+========================================================
+
+O que é?
+--------
+É uma reserva para quando o Google Gemini não responde — por exemplo
+quando você já fez muitas perguntas no dia e bateu no limite gratuito,
+ou quando o serviço do Google está fora do ar.
+
+Com o plano B ligado, o programa tenta sozinho outros dois serviços de
+IA, também gratuitos e sem cartão de crédito, e a resposta sai igual.
+
+    Groq         cerca de 1.000 pedidos por dia
+    OpenRouter   cerca de 50 pedidos por dia
+
+Você pode usar só um dos dois, ou os dois (aí um socorre o outro).
+
+Como saber se ele foi usado?
+---------------------------
+Quando a resposta vier do plano B, aparece um aviso discreto na linha
+de baixo da janela:
+
+    Resposta gerada pelo plano B: Groq.
+
+Se não aparecer nada, a resposta veio do Gemini (o caminho normal).
+
+
+========================================================
+  COMO PEGAR A CHAVE DO GROQ  (2 minutos)
+========================================================
+
+1. No programa, clique em "Configurações" (barra da esquerda).
+2. Role a tela até "Plano B (opcional)".
+3. Clique no botão "Como conseguir a chave" ao lado de "Groq".
+   (abre o site console.groq.com/keys)
+4. Entre com a sua conta Google ou GitHub.
+5. Clique em "Create API Key" (criar chave).
+6. Dê um nome qualquer, por exemplo "pesquisa", e crie.
+7. Copie o código que aparecer. Ele começa com   gsk_
+8. Cole esse código no campo do Groq, dentro do programa.
+9. Clique em "Testar". Deve aparecer "Tudo certo".
+10. Clique em "Salvar".
+
+Pronto: se o Gemini falhar, o Groq assume sozinho.
+
+
+========================================================
+  COMO PEGAR A CHAVE DO OPENROUTER  (2 minutos)
+========================================================
+
+1. No programa, clique em "Configurações".
+2. Role até "Plano B (opcional)".
+3. Clique em "Como conseguir a chave" ao lado de "OpenRouter".
+   (abre o site openrouter.ai/keys)
+4. Entre com a sua conta Google ou GitHub.
+5. Clique em "Create API Key".
+6. Copie o código. Ele começa com   sk-or-
+7. Cole no campo do OpenRouter, dentro do programa.
+8. Clique em "Testar". Deve aparecer "Tudo certo".
+9. Clique em "Salvar".
+
+Observação: o OpenRouter gratuito permite cerca de 50 pedidos por dia
+(o suficiente para emergências). Se um dia você contratar US$ 10 de
+crédito vitalício, esse limite sobe para 1.000 pedidos por dia — mas
+para uso pessoal os 50 já resolvem.
+
+
+========================================================
+  SE QUISER DESLIGAR
+========================================================
+
+Em Configurações, desmarque "Usar o plano B quando o Gemini não
+responder" e clique em Salvar. As chaves continuam guardadas, mas o
+programa para de usá-las.
+
+
+========================================================
+  DETALHES TÉCNICOS (para quem quiser saber)
+========================================================
+
+- Os dois serviços falam o "padrão OpenAI" de API. Por isso o programa
+  usa a mesma função para os dois, mudando apenas o endereço, a chave e
+  o nome do modelo.
+- Não foi preciso instalar nenhuma biblioteca nova: a chamada usa o
+  módulo urllib, que já vem com o Python.
+- Modelo usado no Groq: openai/gpt-oss-120b
+  (os modelos Llama saíram do plano gratuito do Groq em 16/08/2026)
+- Modelo usado no OpenRouter: openrouter/free
+  (é um "escolhedor": a OpenRouter seleciona sozinha um dos modelos
+  gratuitos disponíveis naquele momento — bom justamente para reserva,
+  porque a lista de modelos gratuitos muda toda semana)
+- As instruções do programa (responder em português do Brasil, sem
+  asteriscos nem cerquilhas, com linha em branco entre os tópicos) são
+  mandadas também para os serviços de reserva. A resposta sai no mesmo
+  formato de sempre.
+- Se os dois serviços falharem, o programa avisa exatamente o que
+  aconteceu com cada um, em português.
+- As chaves ficam salvas apenas no seu usuário do Windows, no arquivo:
+    %LOCALAPPDATA%\PesquisaIA\config.json

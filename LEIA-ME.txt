@@ -1,0 +1,270 @@
+﻿========================================================
+  PESQUISA IA - seu assistente pessoal de pesquisa na web
+========================================================
+
+O que é isto?
+-------------
+É um programinha simples para o seu computador. Você abre uma janelinha,
+digita uma pergunta e ele:
+  1) pesquisa na web de verdade (inclusive sites estrangeiros), e
+  2) usa uma inteligência artificial (o Gemini, do Google) para ler tudo,
+     traduzir para o português do Brasil e escrever UMA única resposta
+     pronta para você, já organizada e atualizada.
+
+É de graça para uso pessoal e não precisa de cartão de crédito.
+
+Atalho pronto na Área de Trabalho:
+----------------------------------
+Se já existir o atalho "Pesquisa IA" (com um ícone azul moderno) na sua
+Área de Trabalho, é só dar duplo clique nele para abrir o programa.
+Nesse caso você NÃO precisa seguir o PASSO 2 abaixo.
+
+
+========================================================
+ PASSO 1 - Pegar a chave da API (gratuita)
+========================================================
+
+A "chave da API" é como uma senha que deixa o programa usar a
+inteligência do Google. É de graça e leva uns 3 minutos.
+
+ 1. Abra o navegador (Chrome, Edge, etc.).
+
+ 2. Vá para este endereço:
+      https://aistudio.google.com/apikey
+
+ 3. Entre com a sua conta Google (a mesma do Gmail).
+
+ 4. Aceite os termos, se aparecer.
+
+ 5. Clique no botão "Create API key" (ou "Criar chave de API").
+
+ 6. Vai aparecer um código comprido. Pode começar com "AIza" ou
+    com "AQ.". Clique no ícone de copiar (ou selecione tudo e
+    aperte Ctrl+C).
+
+ 7. Guarde esse código. Ele é a sua chave.
+
+ IMPORTANTE: não mande essa chave para ninguém. Quem tiver a chave
+ pode usar a sua cota do Google.
+
+
+========================================================
+ PASSO 2 - Abrir o programa
+========================================================
+
+ 1. Na pasta onde está este arquivo, ache o arquivo:
+
+      1 - Instalar.bat
+
+    Dê um duplo clique nele. Vai abrir uma janelinha preta.
+    Espere terminar (ele vai baixar o que o programa precisa).
+    Quando aparecer "Tudo pronto!", aperte qualquer tecla para fechar.
+
+    (Isso só precisa ser feito UMA vez.)
+
+ 2. Agora, duplo clique no arquivo:
+
+      2 - Abrir Pesquisa IA.bat
+
+    A janelinha do programa vai abrir.
+
+
+========================================================
+ PASSO 3 - Usar
+========================================================
+
+ 1. Na primeira vez, clique no botão "Configurações" (no alto, à
+    direita). Cole a sua chave no campo (aperte Ctrl+V) e clique em
+    "Salvar".
+
+ 2. Clique em "Testar chave" para confirmar que a chave está certa.
+    Se aparecer "Tudo certo", está tudo funcionando.
+
+ 3. Digite a sua pergunta na caixa de baixo e aperte a tecla Enter
+    (ou clique no botão azul de enviar).
+
+ 4. A resposta aparece na tela, já reunida em um texto único em
+    português, com base nas informações mais atuais da web.
+
+ 5. Para ver imagens, escreva o que quer ver. Por exemplo:
+
+      imagens de god of war
+
+    O programa mostra várias imagens na conversa. Clique em uma delas
+    para ela ampliar na própria conversa (não abre outra janela). Se
+    quiser, clique em "Salvar como..." para guardar no computador.
+
+Botões do programa (na barra da esquerda):
+
+  - "Nova conversa"    -> limpa a tela para começar do zero.
+  - "Conversas"        -> mostra as conversas que você já fez. Clicando em
+                          "Abrir" você volta para uma conversa antiga
+                          (com o botão "Nova conversa" ela volta ao normal).
+  - "Configurações"    -> janela com três abas:
+                          "Chave" (a chave do Google, o plano B e as opções),
+                          "Memória" (o que a IA aprendeu sobre você) e
+                          "Ajuda" (como usar).
+
+Para copiar uma resposta, passe o mouse no iconezinho que fica no canto de
+fora do balão da resposta (embaixo dele). Depois de um tempinho em cima,
+aparece a explicação "Copiar resposta"; um clique copia tudo.
+
+Palavras escritas errado aparecem só com um sublinhado vermelho (a palavra
+continua na cor normal, para o texto ficar fácil de ler). Para ver as
+sugestões, clique com o botão direito na palavra sublinhada.
+
+Na barra da esquerda ficam os botões do programa. Ela pode ser escondida
+e mostrada de novo de duas formas: clicando no botão "Menu" (no alto) ou
+apertando Ctrl+B. Assim a conversa ocupa a tela toda quando você quiser.
+
+A resposta aparece letra a letra, com um cursor piscando no fim,
+igual aos aplicativos de conversa modernos.
+
+Atalhos de teclado:
+
+  - Enter          -> envia a pergunta.
+  - Shift + Enter  -> quebra a linha sem enviar.
+  - F5             -> começa uma conversa nova.
+  - Ctrl + B       -> mostra/esconde a barra da esquerda.
+
+
+========================================================
+ PERGUNTAS COMUNS
+========================================================
+
+"É grátis mesmo?"
+  Sim. Duas partes são gratuitas:
+    - a chave do Google (Gemini), que tem um plano grátis generoso; e
+    - a busca na web, que o próprio programa faz de graça, sem chave
+      extra e sem cartão.
+  Não é preciso cadastrar cartão de crédito.
+
+"Por que não usa a busca do Google?"
+  O Google parou de oferecer a "busca do Google" de graça para
+  programas. Agora isso é um recurso pago. Para continuar 100% grátis,
+  este programa pesquisa na web por conta própria (usando o
+  DuckDuckGo) e manda os trechos para o Gemini escrever a resposta.
+  O resultado é bem parecido, com informação atualizada.
+
+"Posso fazer pergunta de acompanhamento?"
+  Sim. Se a opção "Lembrar o assunto da conversa" estiver marcada em
+  Configurações, você pode perguntar por exemplo:
+     "Quem ganhou?"  e depois  "E quem foi o vice?"
+
+"O que são as palavras sublinhadas?"
+  Enquanto você digita, o programa confere a ortografia do português e
+  sublinha as palavras escritas errado (por exemplo, sem acento). Para
+  ver sugestões de correção, clique com o botão direito na palavra
+  sublinhada. Se não quiser, dá para desligar em Configurações.
+
+"A IA lembra de mim? Como funciona?"
+  Sim, e funciona sozinho, sem você preencher nada. Depois de cada
+  resposta, a IA relê a conversa em segundo plano e guarda o que parece
+  duradouro sobre você (seu nome, onde mora, o que gosta, como gosta de
+  receber as respostas). Isso entra automaticamente em todas as respostas
+  seguintes.
+
+  Exemplo: se você falar uma vez que mora em Recife e gosta de God of War,
+  depois basta perguntar "qual o melhor jogo da saga que eu gosto?" que ela
+  já sabe de qual saga você está falando.
+
+  Detalhes que combinam com o jeito "cérebro de verdade":
+    - a IA nunca pergunta nada e nunca avisa que guardou (nem na conversa,
+      nem em mensagem escondida);
+    - ela também usa os assuntos de conversas anteriores como contexto,
+      também sem comentar nada;
+    - ela não guarda dados sensíveis (endereço, telefone, documentos,
+      senha, saúde, finanças);
+    - você pode conferir e apagar o que quiser na aba "Memória", dentro de
+      Configurações (botão "X" apaga um item, "Apagar tudo" apaga todos).
+
+"Apagar uma conversa apaga o que a IA sabe de mim?"
+  Não. São duas coisas separadas de propósito:
+    - a CONVERSA é o histórico do que foi perguntado (aparece em "Conversas");
+    - a MEMÓRIA é o que a IA aprendeu sobre você.
+  Ao excluir uma conversa, o programa até avisa isso. Dá para limpar todo
+  o histórico de perguntas e continuar com a IA conhecendo você. E se
+  quiser zerar a memória também, é só usar a aba "Memória" > "Apagar tudo".
+
+"Onde ficam essas coisas?"
+  Só no seu usuário do Windows, em:
+    %LOCALAPPDATA%\PesquisaIA\historico.json   (as conversas)
+    %LOCALAPPDATA%\PesquisaIA\memoria.json     (o que ela sabe de você)
+  Nada é enviado para lugar nenhum além dos serviços de IA (para a IA
+  responder, como sempre).
+
+"Como faço para ver imagens?"
+  Escreva o pedido começando por "imagens de..." ou "fotos de...". Por
+  exemplo:  imagens de god of war   ou   fotos de lobos.
+  Aparecem várias imagens na conversa. Clique em uma para ela ampliar
+  na própria conversa e use "Salvar como..." para guardar no
+  computador. A busca de imagens também é gratuita e não precisa da
+  chave.
+
+"E se o Gemini não responder?"
+  Existe um "plano B" opcional. Se o Gemini estiver fora do ar ou você
+  tiver batido no limite do dia, o programa tenta automaticamente outros
+  dois serviços de IA, também gratuitos e sem cartão:
+
+     - Groq        (cerca de 1.000 pedidos por dia)
+     - OpenRouter  (cerca de 50 pedidos por dia)
+
+  Para ligar: abra Configurações, role até "Plano B (opcional)", cole a
+  chave de um dos dois (ou dos dois) e clique em Salvar. O botão
+  "Testar" confirma na hora se a chave está boa. Se você não colocar
+  nenhuma chave aí, o programa continua funcionando exatamente igual.
+
+  Quando a resposta vier do plano B, aparece um aviso discretinho
+  embaixo: "Resposta gerada pelo plano B: Groq".
+
+  Para pegar a chave: clique em "Como conseguir a chave" ao lado de cada
+  serviço (abre a página oficial). É de graça, feito com login do Google
+  ou do GitHub, e o código começa com "gsk_" (Groq) ou "sk-or-"
+  (OpenRouter).
+
+"Apareceu erro falando da chave"
+  Confira se copiou a chave inteira (começa com "AIza" ou "AQ.") e
+  clique em Salvar de novo.
+
+"Apareceu erro de limite"
+  Você fez muitas perguntas em pouco tempo. Espere alguns minutos
+  (ou volte amanhã) que o limite grátis se renova.
+
+"Apareceu erro de internet"
+  Confira se está conectado à internet.
+
+"Às vezes demora um pouco"
+  É normal: o programa procura na web, abre algumas páginas e só
+  depois pede a resposta para a IA. Costuma levar de 10 a 30 segundos.
+
+"A chave fica salva onde?"
+  Fica salva apenas no seu usuário do Windows, no arquivo:
+    %LOCALAPPDATA%\PesquisaIA\config.json
+  Ninguém mais no computador vê essa pasta.
+
+
+========================================================
+ O QUE SÃO ESTES ARQUIVOS (para curiosidade)
+========================================================
+
+  Pesquisa IA.exe     -> versão pronta (o arquivo que fica na Área de
+                         Trabalho). Não precisa do Python instalado.
+  icone.ico           -> o ícone do programa (o mesmo "rosto" que a IA
+                         mostra na conversa).
+  avatar_usuario.png  -> o seu avatar, que aparece ao lado das suas
+                         perguntas no lugar do "Você". Para trocar, é só
+                         substituir este arquivo por outra imagem (png,
+                         jpg ou webp) com o mesmo nome.
+  PLANO-B.txt         -> guia do "plano B" (a reserva para quando o
+                         Gemini não responde). Opcional.
+  pesquisa_ia.py      -> o programa em si (código-fonte).
+  requirements.txt    -> a lista do que ele precisa baixar.
+  1 - Instalar.bat    -> instala o que falta (rodar uma vez).
+  2 - Abrir Pesquisa IA.bat -> abre o programa pelo código-fonte.
+  LEIA-ME.txt         -> este texto.
+  .venv               -> pasta com as bibliotecas baixadas (não apague).
+  erro.log            -> só aparece se o programa falhar ao abrir.
+
+Se algo der errado, mande o conteúdo do arquivo erro.log (se existir)
+para quem te ajudou.
+

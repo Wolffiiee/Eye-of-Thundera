@@ -1,0 +1,21 @@
+# O que NAO entra no historico do Git
+# (sao pastas grandes ou coisas que o programa recria sozinho)
+
+# as bibliotecas baixadas (centenas de MB) - so e preciso no seu computador
+.venv/
+
+# resultado das compilacoes (o .exe que vai para a Area de Trabalho)
+build/
+dist/
+*.spec
+
+# cache do Python
+__pycache__/
+*.pyc
+
+# arquivos de erro do programa
+erro.log
+*.log
+
+# configuracao pessoal (tem as chaves de API - NUNCA versionar)
+config.json
