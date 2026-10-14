@@ -97,9 +97,13 @@ inteligência do Google. É de graça e leva uns 3 minutos.
 Botões do programa (na barra da esquerda):
 
   - "Nova conversa"    -> limpa a tela para começar do zero.
-  - "Conversas"        -> mostra as conversas que você já fez. Clicando em
-                          "Abrir" você volta para uma conversa antiga
-                          (com o botão "Nova conversa" ela volta ao normal).
+  - "Conversas"        -> abre uma lista para baixo, logo abaixo do botão,
+                          com as conversas que você já fez (da mais nova para
+                          a mais antiga). Clica no TÍTULO para abrir a conversa.
+                          No "⋯" do canto direito de cada uma fica a opção de
+                          EXCLUIR. A lista abre e fecha sozinha, e o que a IA
+                          aprendeu sobre você continua guardado mesmo quando
+                          você apaga uma conversa.
   - "Configurações"    -> janela com três abas:
                           "Chave" (a chave do Google, o plano B e as opções),
                           "Memória" (o que a IA aprendeu sobre você) e
@@ -112,6 +116,13 @@ aparece a explicação "Copiar resposta"; um clique copia tudo.
 Palavras escritas errado aparecem só com um sublinhado vermelho (a palavra
 continua na cor normal, para o texto ficar fácil de ler). Para ver as
 sugestões, clique com o botão direito na palavra sublinhada.
+
+As conversas ficam salvas sozinhas no seu computador, na pasta:
+  %LOCALAPPDATA%\PesquisaIA\historico.json
+O que a IA aprende sobre você fica em:
+  %LOCALAPPDATA%\PesquisaIA\memoria.json
+Nada é apagado sozinho: as conversas ficam guardadas até você escolher excluir
+no "⋯" de cada uma.
 
 Na barra da esquerda ficam os botões do programa. Ela pode ser escondida
 e mostrada de novo de duas formas: clicando no botão "Menu" (no alto) ou

@@ -32,11 +32,12 @@ from tkinter import filedialog, messagebox
 # Pillow é usado para mostrar as imagens na conversa. Se ele não estiver
 # instalado, o programa funciona normalmente (só não mostra imagens).
 try:
-    from PIL import Image, ImageDraw, ImageTk
+    from PIL import Image, ImageColor, ImageDraw, ImageTk
 
     TEM_PIL = True
 except Exception:
     Image = None
+    ImageColor = None
     ImageDraw = None
     ImageTk = None
     TEM_PIL = False
@@ -234,7 +235,6 @@ ARQUIVO_HISTORICO = PASTA_CONFIG / "historico.json"
 ARQUIVO_MEMORIA = PASTA_CONFIG / "memoria.json"
 
 MAX_MEMORIAS = 80
-MAX_CONVERSAS = 80
 MAX_CARACTERES_CONTEXTO = 5000
 MODELO_MEMORIA = "gemini-3.5-flash-lite"
 ESPACO_ENTRE_APRENDIZADOS = 90  # segundos
@@ -336,7 +336,9 @@ def carregar_conversas():
 
 
 def salvar_conversas(lista):
-    _gravar_json(ARQUIVO_HISTORICO, list(lista)[-MAX_CONVERSAS:])
+    """Grava as conversas. Nao apaga nada sozinho: cada uma fica guardada
+    ate o usuario escolher excluir."""
+    _gravar_json(ARQUIVO_HISTORICO, list(lista))
 
 
 def _titulo_da_conversa(mensagens):
@@ -1752,6 +1754,19 @@ class Dica:
             self.janela = None
 
 
+def _desenhar_copiar(pincel, s, cor, fundo_dentro, espessura=1):
+    """Duas folhas sobrepostas (o icone de copiar resposta)."""
+    dentro = fundo_dentro or (0, 0, 0, 0)
+    pincel.rectangle(
+        [5.5 * s, 3.5 * s, 16.5 * s, 14.5 * s], outline=cor,
+        width=espessura,
+    )
+    pincel.rectangle(
+        [9.5 * s, 7.5 * s, 20 * s, 18.5 * s], fill=dentro, outline=cor,
+        width=espessura,
+    )
+
+
 def _icone_copiar(pai, comando, tamanho=19, cor=COR_TEXTO_3,
                   cor_vivo=COR_TEXTO, fundo_ativo=COR_BARRA):
     """Ícone discreto de 'copiar' (duas folhas) usado nas respostas.
@@ -1765,27 +1780,40 @@ def _icone_copiar(pai, comando, tamanho=19, cor=COR_TEXTO_3,
         pai, width=n, height=n, bg=COR_FUNDO, highlightthickness=0, bd=0,
         cursor="hand2",
     )
+    repouso = _foto_de_simbolo(
+        "copiar", n, cor, _desenhar_copiar, fundo_dentro=COR_FUNDO,
+    )
+    ativo = _foto_de_simbolo(
+        "copiar", n, cor_vivo, _desenhar_copiar, fundo=fundo_ativo,
+        cantos=6, fundo_dentro=fundo_ativo,
+    )
 
-    def pintar(mouse_por_cima):
-        desenho.delete("tudo")
-        if mouse_por_cima:
-            # quadradinho de fundo com cantos arredondados, igual aos
-            # outros botoes escuros do programa
-            arredondado(
-                desenho, 0, 0, n, n, 6, fill=fundo_ativo, outline=""
+    if repouso is None or ativo is None:
+        # sem Pillow: desenho antigo no Canvas (fica serrilhado, mas funciona)
+        def pintar(mouse_por_cima):
+            desenho.delete("tudo")
+            cor_atual = cor_vivo if mouse_por_cima else cor
+            if mouse_por_cima:
+                arredondado(
+                    desenho, 0, 0, n, n, 6, fill=fundo_ativo, outline=""
+                )
+            s = n / 22.0
+            desenho.create_rectangle(
+                5.5 * s, 3.5 * s, 16.5 * s, 14.5 * s, outline=cor_atual, width=1
             )
-        s = n / 22.0
-        cor_atual = cor_vivo if mouse_por_cima else cor
-        # folha de trás
-        desenho.create_rectangle(
-            5.5 * s, 3.5 * s, 16.5 * s, 14.5 * s, outline=cor_atual,
-            width=1, tags="desenho",
+            desenho.create_rectangle(
+                9.5 * s, 7.5 * s, 20 * s, 18.5 * s, fill=COR_FUNDO,
+                outline=cor_atual, width=1,
+            )
+    else:
+        item = desenho.create_image(
+            n / 2.0, n / 2.0, image=repouso, anchor="center",
         )
-        # folha da frente
-        desenho.create_rectangle(
-            9.5 * s, 7.5 * s, 20 * s, 18.5 * s, fill=COR_FUNDO,
-            outline=cor_atual, width=1, tags="desenho",
-        )
+
+        def pintar(mouse_por_cima):
+            desenho.itemconfigure(
+                item, image=ativo if mouse_por_cima else repouso
+            )
 
     def entrou(_evento=None):
         pintar(True)
@@ -1804,52 +1832,166 @@ def _icone_copiar(pai, comando, tamanho=19, cor=COR_TEXTO_3,
     return desenho
 
 
-def _engrenagem(pai, tamanho=18, cor=COR_TEXTO_3, cor_vivo=COR_TEXTO_2):
-    """Ícone de Configurações: engrenagem de linha fina, bem desenhada.
-
-    O caractere "⚙" do Windows sai cheio e grosso demais. Aqui a
-    engrenagem é desenhada como silhueta (dentes ligados num corpo só, com
-    o furo do meio), com traço de 1 pixel.
-    """
+def _desenhar_engrenagem(pincel, s, cor, fundo_dentro, espessura=1):
+    """Engrenagem de linha fina: dentes ligados num corpo só, com o furo."""
     import math
 
+    centro = 11.0 * s
+    dentes = 8
+    passo = 2 * math.pi / dentes
+    ponta = 22.0 * 0.46 * s
+    raiz = 22.0 * 0.33 * s
+    furo = 22.0 * 0.13 * s
+    pontos = []
+    for i in range(dentes):
+        base = i * passo
+        for fracao, raio in (
+            (0.00, raiz), (0.16, raiz), (0.26, ponta), (0.74, ponta),
+            (0.84, raiz), (1.00, raiz),
+        ):
+            ang = base + passo * fracao
+            pontos.append(centro + math.cos(ang) * raio)
+            pontos.append(centro + math.sin(ang) * raio)
+    # fecha o desenho repeating o primeiro ponto (a linha fica fechada)
+    pincel.line(pontos + [pontos[0], pontos[1]], fill=cor, width=espessura,
+                joint="curve")
+    pincel.ellipse(
+        [centro - furo, centro - furo, centro + furo, centro + furo],
+        outline=cor, width=espessura,
+    )
+
+
+def _engrenagem(pai, tamanho=18, cor=COR_TEXTO_2, cor_vivo=COR_TEXTO):
+    """Ícone de Configurações: engrenagem desenhada com Pillow (bem lisa)."""
     n = int(tamanho)
     desenho = tk.Canvas(
         pai, width=n, height=n, bg=COR_PAINEL, highlightthickness=0, bd=0,
     )
-    cx = cy = n / 2.0
-    dentes = 8
-    passo = 2 * math.pi / dentes
-    ponta = n * 0.46
-    raiz = n * 0.33
-    furo = n * 0.13
+    repouso = _foto_de_simbolo("engrenagem", n, cor, _desenhar_engrenagem)
+    ativo = _foto_de_simbolo("engrenagem", n, cor_vivo, _desenhar_engrenagem)
+    if repouso is None or ativo is None:
+        # sem Pillow: mantem o desenho antigo no Canvas
+        import math
 
-    def pintar(cor_atual):
-        desenho.delete("tudo")
-        pontos = []
-        for i in range(dentes):
-            base = i * passo
-            # corpo da volta, sobe ate a ponta, atravessa e desce de novo
-            for fracao, raio in (
-                (0.00, raiz), (0.16, raiz), (0.26, ponta), (0.74, ponta),
-                (0.84, raiz), (1.00, raiz),
-            ):
-                ang = base + passo * fracao
-                pontos.extend(
-                    (cx + math.cos(ang) * raio, cy + math.sin(ang) * raio)
-                )
-        desenho.create_polygon(
-            pontos, outline=cor_atual, width=1, fill="", smooth=False,
-        )
-        desenho.create_oval(
-            cx - furo, cy - furo, cx + furo, cy + furo,
-            outline=cor_atual, width=1,
+        def pintar(mouse_por_cima):
+            cor_atual = cor_vivo if mouse_por_cima else cor
+            desenho.delete("tudo")
+            cx = cy = n / 2.0
+            dentes = 8
+            passo = 2 * math.pi / dentes
+            pont = n * 0.46
+            raz = n * 0.33
+            furo = n * 0.13
+            pontos = []
+            for i in range(dentes):
+                base = i * passo
+                for fracao, raio in (
+                    (0.00, raz), (0.16, raz), (0.26, pont), (0.74, pont),
+                    (0.84, raz), (1.00, raz),
+                ):
+                    ang = base + passo * fracao
+                    pontos.extend(
+                        (cx + math.cos(ang) * raio, cy + math.sin(ang) * raio)
+                    )
+            desenho.create_polygon(
+                pontos, outline=cor_atual, width=1, fill="", smooth=False
+            )
+            desenho.create_oval(
+                cx - furo, cy - furo, cx + furo, cy + furo,
+                outline=cor_atual, width=1,
+            )
+    else:
+        item = desenho.create_image(
+            n / 2.0, n / 2.0, image=repouso, anchor="center",
         )
 
-    pintar(cor)
-    desenho.bind("<Enter>", lambda _e: pintar(cor_vivo))
-    desenho.bind("<Leave>", lambda _e: pintar(cor))
+        def pintar(mouse_por_cima):
+            desenho.itemconfigure(
+                item, image=ativo if mouse_por_cima else repouso
+            )
+
+    pintar(False)
+    desenho.bind("<Enter>", lambda _e: pintar(True))
+    desenho.bind("<Leave>", lambda _e: pintar(False))
     return desenho
+
+
+_FOTOS_PONTOS = {}
+_FOTOS_SIMBOLOS = {}
+
+# Tamanho dos tres pontinhos de "pensando". Pequenos e lisinhos.
+TAMANHO_PONTO = 6
+
+# Todos os icones do programa sao desenhados com o Pillow (e nao com o
+# Canvas do Tk), porque o Tk nao suaviza as bordas e os desenhos ficavam
+# serrilhados. Aqui cada icone e desenhado 4x maior e depois reduzido com
+# LANCZOS, o que deixa tudo com borda lisa.
+
+
+def _rgba(cor, alpha=255):
+    """As cores do programa sao textos como '#6f6f7c'; o Pillow quer RGB."""
+    if cor is None:
+        return (255, 255, 255, alpha)
+    if isinstance(cor, str):
+        try:
+            vermelho, verde, azul = ImageColor.getrgb(cor)
+            return (vermelho, verde, azul, alpha)
+        except Exception:
+            return (255, 255, 255, alpha)
+    partes = tuple(cor)
+    if len(partes) >= 4:
+        return partes
+    return (partes[0], partes[1], partes[2], alpha)
+
+
+def _foto_de_simbolo(nome, tamanho, cor, desenhar, fundo=None, cantos=0,
+                     fundo_dentro=None):
+    """Desenha um icone com o Pillow e devolve a foto pronta (ou None)."""
+    chave = (nome, int(tamanho), cor, fundo, cantos, fundo_dentro)
+    if chave in _FOTOS_SIMBOLOS:
+        return _FOTOS_SIMBOLOS[chave]
+    if not TEM_PIL or ImageTk is None:
+        return None
+    try:
+        n = int(tamanho)
+        ss = n * 4
+        imagem = Image.new("RGBA", (ss, ss), (0, 0, 0, 0))
+        pincel = ImageDraw.Draw(imagem)
+        escala = ss / 22.0            # os desenhos usam uma grade de 22
+        # O trace e desenhado no tamanho grande e reduzido depois: 1 pixel
+        # no desenho 4x daria menos de meio pixel na tela (ficava apagado).
+        espessura = max(1, int(round(escala * 1.15)))
+        if fundo is not None and cantos > 0:
+            pincel.rounded_rectangle(
+                [0, 0, ss - 1, ss - 1], radius=cantos * escala,
+                fill=_rgba(fundo),
+            )
+        desenhar(pincel, escala, _rgba(cor), _rgba(fundo_dentro), espessura)
+        foto = ImageTk.PhotoImage(imagem.resize((n, n), Image.LANCZOS))
+    except Exception:
+        return None
+    _FOTOS_SIMBOLOS[chave] = foto
+    return foto
+
+
+def _foto_ponto(tamanho, cor, forte):
+    """Um pontinho redondo e liso (o Canvas do Tk deixa serrilhado)."""
+    chave = (int(tamanho), cor, bool(forte))
+    if chave in _FOTOS_PONTOS:
+        return _FOTOS_PONTOS[chave]
+    if not TEM_PIL or ImageTk is None:
+        return None
+    try:
+        n = int(tamanho)
+        ss = n * 4                      # desenha grande e reduz: fica liso
+        imagem = Image.new("RGBA", (ss, ss), (0, 0, 0, 0))
+        ImageDraw.Draw(imagem).ellipse([0, 0, ss - 1, ss - 1], fill=_rgba(cor))
+        foto = ImageTk.PhotoImage(imagem.resize((n, n), Image.LANCZOS))
+    except Exception:
+        return None
+    _FOTOS_PONTOS[chave] = foto
+    return foto
+
 
 
 def _preparar_scrollbar_escuro(raiz):
@@ -2093,6 +2235,7 @@ class Aplicativo:
         self._janela_config = None
         self._janela_conversas = None
         self._aba_config = "chave"
+        self._popup_conversa = None
         # Identificador da conversa aberta (para atualizar o historico).
         self._id_conversa = None
         # Qual serviço escreveu a última resposta (Gemini ou plano B).
@@ -2227,13 +2370,16 @@ class Aplicativo:
         BotaoLateral(menu, "Nova conversa", self._nova_conversa, "＋").pack(
             fill="x", padx=8, pady=2
         )
-        BotaoLateral(menu, "Conversas", self._abrir_conversas, "☰").pack(
+        BotaoLateral(menu, "Conversas", self._alternar_lista_conversas, "☰").pack(
             fill="x", padx=8, pady=2
         )
-        BotaoLateral(
+        # A lista de conversas abre em cascata logo abaixo deste botao.
+        self.lista_conversas = tk.Frame(menu, bg=COR_PAINEL)
+        self._botao_config = BotaoLateral(
             menu, "Configurações", self._abrir_config,
             lambda pai: _engrenagem(pai),
-        ).pack(fill="x", padx=8, pady=2)
+        )
+        self._botao_config.pack(fill="x", padx=8, pady=2)
 
     def _montar_chat(self):
         area = tk.Frame(self.principal, bg=COR_FUNDO)
@@ -2697,10 +2843,20 @@ class Aplicativo:
         tela = tk.Canvas(linha, width=76, height=44, bg=COR_FUNDO, highlightthickness=0, bd=0)
         tela.pack(side="left", anchor="n")
         arredondado(tela, 0, 0, 76, 44, 16, fill=COR_IA, outline="")
-        self._pontos_digitando = [
-            tela.create_oval(x - 4, 18, x + 4, 26, fill=COR_TEXTO_3, outline="")
-            for x in (24, 38, 52)
-        ]
+        self._pontos_digitando = []
+        for x in (26, 39, 52):
+            foto = _foto_ponto(TAMANHO_PONTO, COR_TEXTO_3, False)
+            if foto is None:
+                # sem Pillow: volta para o oval (um pouco mais grosso)
+                self._pontos_digitando.append(
+                    tela.create_oval(
+                        x - 3, 19, x + 3, 25, fill=COR_TEXTO_3, outline=""
+                    )
+                )
+            else:
+                self._pontos_digitando.append(
+                    tela.create_image(x, 22, image=foto, anchor="center")
+                )
         self._canvas_digitando = tela
 
     # -- galeria de imagens -------------------------------------------------
@@ -3076,12 +3232,22 @@ class Aplicativo:
 
     def _passo_animacao(self):
         self.animacao_passo = (self.animacao_passo + 1) % 3
+        forte = _foto_ponto(TAMANHO_PONTO, COR_TEXTO, True)
+        fraco = _foto_ponto(TAMANHO_PONTO, COR_TEXTO_3, False)
         for indice, ponto in enumerate(self._pontos_digitando or []):
             if self._canvas_digitando is not None:
-                self._canvas_digitando.itemconfigure(
-                    ponto,
-                    fill=COR_TEXTO if indice == self.animacao_passo else COR_TEXTO_3,
-                )
+                if forte is not None and fraco is not None:
+                    # desenho liso: so troca a imagem do pontinho
+                    self._canvas_digitando.itemconfigure(
+                        ponto,
+                        image=forte if indice == self.animacao_passo else fraco,
+                    )
+                else:
+                    self._canvas_digitando.itemconfigure(
+                        ponto,
+                        fill=COR_TEXTO if indice == self.animacao_passo
+                        else COR_TEXTO_3,
+                    )
         self.animacao_id = self.raiz.after(320, self._passo_animacao)
 
     def _iniciar_digitacao(self, indice):
@@ -3853,115 +4019,180 @@ class Aplicativo:
 
     # -- conversas guardadas -------------------------------------------------
 
-    def _janela_lista(self, titulo, largura=600, altura=560):
-        """Cria uma janela simples com titulo, lista e botao de fechar."""
-        jan = tk.Toplevel(self.raiz)
-        jan.title(titulo)
-        jan.configure(bg=COR_FUNDO)
-        jan.geometry("%dx%d" % (largura, altura))
-        jan.minsize(460, 360)
-        jan.transient(self.raiz)
-        jan.after(150, lambda: ativar_barra_escura(jan))
-        return jan
+    # -- conversas guardadas (lista em cascata na lateral) -------------------
 
-    def _abrir_conversas(self):
-        if (
-            getattr(self, "_janela_conversas", None) is not None
-            and self._janela_conversas.winfo_exists()
-        ):
-            # reabre do zero para a lista vir sempre atualizada
-            self._janela_conversas.destroy()
-        jan = self._janela_lista("Conversas")
-        self._janela_conversas = jan
+    def _alternar_lista_conversas(self):
+        """Abre ou recolhe a lista de conversas, em cascata na lateral."""
+        if self.lista_conversas.winfo_ismapped():
+            self._recolher_lista_conversas()
+            return
+        self._preencher_lista_conversas()
+        # "before" deixa a lista sempre logo abaixo do botao Conversas
+        self.lista_conversas.pack(
+            fill="x", padx=8, pady=(0, 4), before=self._botao_config,
+        )
 
-        corpo = tk.Frame(jan, bg=COR_FUNDO)
-        corpo.pack(fill="both", expand=True, padx=22, pady=18)
+    def _recolher_lista_conversas(self):
+        self._fechar_popup_conversa()
+        try:
+            self.lista_conversas.pack_forget()
+        except Exception:
+            pass
 
-        tk.Label(
-            corpo, text="Conversas guardadas", bg=COR_FUNDO, fg=COR_TEXTO,
-            font=(FONTE, 15, "bold"),
-        ).pack(anchor="w")
-        tk.Label(
-            corpo,
-            text=(
-                "Tudo o que você perguntou fica salvo aqui. Excluir uma "
-                "conversa NÃO apaga o que a IA aprendeu sobre você: isso "
-                "continua na memória."
-            ),
-            bg=COR_FUNDO, fg=COR_TEXTO_3, font=(FONTE, 9), justify="left",
-            wraplength=520,
-        ).pack(anchor="w", pady=(6, 14))
+    def _preencher_lista_conversas(self):
+        """Desenha as conversas salvas, da mais nova para a mais antiga."""
+        for filho in self.lista_conversas.winfo_children():
+            filho.destroy()
+        conversas = list(reversed(carregar_conversas()))
+        if not conversas:
+            tk.Label(
+                self.lista_conversas,
+                text="Nenhuma conversa ainda.\nFaça uma pergunta e ela\n"
+                     "aparece aqui.",
+                bg=COR_PAINEL, fg=COR_TEXTO_3, font=(FONTE, 8),
+                justify="center", pady=10,
+            ).pack(fill="x")
+            return
 
-        lista = tk.Frame(corpo, bg=COR_FUNDO)
-        lista.pack(fill="both", expand=True)
+        for conversa in conversas:
+            item = tk.Frame(
+                self.lista_conversas, bg=COR_BARRA, cursor="hand2",
+            )
+            item.pack(fill="x", pady=2)
+
+            textos = tk.Frame(item, bg=COR_BARRA)
+            textos.pack(side="left", fill="x", expand=True, padx=8, pady=6)
+            titulo = tk.Label(
+                textos,
+                text=(conversa.get("titulo") or "Conversa")[:40],
+                bg=COR_BARRA, fg=COR_TEXTO, font=(FONTE, 9),
+                anchor="w", justify="left", wraplength=120,
+            )
+            titulo.pack(anchor="w")
+            tk.Label(
+                textos, text=conversa.get("quando", ""), bg=COR_BARRA,
+                fg=COR_TEXTO_3, font=(FONTE, 7), anchor="w",
+            ).pack(anchor="w")
+
+            # Os tres pontinhos: abrem o menu da conversa (excluir, abrir)
+            mais = tk.Label(
+                item, text="\u22ef", bg=COR_BARRA, fg=COR_TEXTO_3,
+                font=(FONTE, 12), cursor="hand2",
+            )
+            mais.pack(side="right", padx=(0, 5), pady=2)
+
+            def abrir(_e=None, c=conversa):
+                self._carregar_conversa(c)
+                self._recolher_lista_conversas()
+
+            def pontos(_e=None, c=conversa, botao=mais):
+                self._menu_da_conversa(c, botao)
+
+            botoes_do_item = (item, textos, titulo, mais)
+
+            def _pinta(alvo, fundo, cor_destaque):
+                for botao in alvo:
+                    if botao.winfo_class() in ("Frame", "Canvas"):
+                        botao.configure(bg=fundo)
+                    else:
+                        botao.configure(bg=fundo, fg=cor_destaque)
+
+            def entered(_e=None, alvo=botoes_do_item):
+                _pinta(alvo, COR_ACCENT, "#ffffff")
+
+            def saiu(_e=None, alvo=botoes_do_item):
+                _pinta(alvo, COR_BARRA, COR_TEXTO)
+                mais.configure(fg=COR_TEXTO_3)
+
+            for botao in (item, textos, titulo):
+                botao.bind("<Button-1>", abrir)
+            mais.bind("<Button-1>", pontos)
+            for botao in botoes_do_item:
+                botao.bind("<Enter>", entered)
+                botao.bind("<Leave>", saiu)
+
+    def _menu_da_conversa(self, conversa, ancora):
+        """Caixinha 'Excluir' que abre do lado dos tres pontinhos clicados.
+
+        O menu do Windows vinha com uma borda branca e era dificil de
+        alinhar; aqui e uma janelinha propria, sem borda, com a mesma cara
+        do programa. A conversa abre clicando no titulo.
+        """
+        self._fechar_popup_conversa()
+        pop = tk.Toplevel(self.raiz)
+        pop.overrideredirect(True)          # sem borda de janela
+        pop.configure(bg=COR_PAINEL)        # a "borda" e da propria caixa
+        item = tk.Label(
+            pop, text="Excluir", bg=COR_BARRA, fg=COR_TEXTO,
+            font=(FONTE, 9), cursor="hand2", padx=16, pady=7,
+        )
+        item.pack(fill="x", padx=2, pady=2)
+        self._popup_conversa = pop
 
         def fechar(_e=None):
-            jan.destroy()
+            self._fechar_popup_conversa()
 
-        def desenhar():
-            for filho in lista.winfo_children():
-                filho.destroy()
-            conversas = list(reversed(carregar_conversas()))
-            if not conversas:
-                tk.Label(
-                    lista,
-                    text="Nenhuma conversa guardada ainda.\n"
-                         "Faça uma pergunta e ela aparece aqui.",
-                    bg=COR_FUNDO, fg=COR_TEXTO_3, font=(FONTE, 10),
-                    justify="center",
-                ).pack(expand=True)
-                return
-            for conversa in conversas:
-                linha = tk.Frame(lista, bg=COR_BARRA)
-                linha.pack(fill="x", pady=3)
-                textos = tk.Frame(linha, bg=COR_BARRA)
-                textos.pack(side="left", fill="x", expand=True, padx=12, pady=9)
-                tk.Label(
-                    textos,
-                    text=(conversa.get("titulo") or "Conversa")[:60],
-                    bg=COR_BARRA, fg=COR_TEXTO, font=(FONTE, 10),
-                    anchor="w",
-                ).pack(anchor="w")
-                quantas = len(conversa.get("mensagens", []))
-                tk.Label(
-                    textos,
-                    text="%s  •  %d mensagens"
-                    % (conversa.get("quando", ""), quantas),
-                    bg=COR_BARRA, fg=COR_TEXTO_3, font=(FONTE, 8),
-                    anchor="w",
-                ).pack(anchor="w")
+        def excluir(_e=None):
+            fechar()
+            self._excluir_conversa_da_lista(conversa)
 
-                def abrir(c=conversa):
-                    self._carregar_conversa(c)
-                    fechar()
+        item.bind("<Button-1>", excluir)
+        item.bind(
+            "<Enter>", lambda _e: item.configure(bg=COR_ACCENT, fg="#ffffff")
+        )
+        item.bind(
+            "<Leave>", lambda _e: item.configure(bg=COR_BARRA, fg=COR_TEXTO)
+        )
+        pop.bind("<Escape>", fechar)
+        pop.update_idletasks()
+        largura = pop.winfo_reqwidth()
+        # a borda direita da caixa alinha com os tres pontinhos
+        x = ancora.winfo_rootx() + ancora.winfo_width() - largura
+        y = ancora.winfo_rooty() + ancora.winfo_height() + 2
+        if x < 4:
+            x = 4
+        pop.geometry("+%d+%d" % (x, y))
+        # seguranca: se o usuario esquecer a caixa, ela some sozinha
+        pop.after(6000, fechar)
+        return pop
 
-                def excluir(c=conversa, titulo=conversa.get("titulo", "")):
-                    confirmar = messagebox.askyesno(
-                        "Excluir conversa",
-                        'Excluir a conversa "%s"?\n\n'
-                        "O que a IA aprendeu sobre você continua guardado "
-                        "(só a conversa é apagada)." % titulo[:50],
-                        parent=jan,
-                    )
-                    if not confirmar:
-                        return
-                    salvar_conversas(
-                        [x for x in carregar_conversas()
-                         if x.get("id") != c.get("id")]
-                    )
-                    # se era a conversa aberta, a proxima resposta comeca
-                    # outra conversa (senao ela voltaria sozinha na lista)
-                    if str(self._id_conversa) == str(c.get("id")):
-                        self._id_conversa = None
-                    desenhar()
+    def _fechar_popup_conversa(self):
+        pop = getattr(self, "_popup_conversa", None)
+        if pop is not None:
+            try:
+                pop.destroy()
+            except Exception:
+                pass
+            self._popup_conversa = None
 
-                Botao(linha, "Abrir", abrir).pack(side="right", padx=(0, 6))
-                Botao(linha, "Excluir", excluir).pack(side="right", padx=(0, 12))
+    def _abrir_conversa_da_lista(self, conversa):
+        """Abre a conversa escolhida (quando se clica no titulo)."""
+        self._carregar_conversa(conversa)
+        self._recolher_lista_conversas()
 
-        desenhar()
-        Botao(corpo, "Fechar", fechar).pack(anchor="e", pady=(14, 0))
-        jan.bind("<Escape>", fechar)
-
+    def _excluir_conversa_da_lista(self, conversa):
+        """Apaga a conversa. O que a IA aprendeu continua guardado."""
+        titulo = (conversa.get("titulo") or "Conversa")[:44]
+        confirmar = messagebox.askyesno(
+            "Excluir conversa",
+            'Excluir a conversa "%s"?\n\n'
+            "O que a IA aprendeu sobre você continua guardado "
+            "(só a conversa é apagada)." % titulo,
+            parent=self.raiz,
+        )
+        if not confirmar:
+            return
+        salvar_conversas(
+            [x for x in carregar_conversas()
+             if str(x.get("id")) != str(conversa.get("id"))]
+        )
+        # se era a conversa aberta, a proxima resposta comeca outra
+        # (senao ela voltaria sozinha na lista)
+        if str(self._id_conversa) == str(conversa.get("id")):
+            self._id_conversa = None
+        if self.lista_conversas.winfo_ismapped():
+            self._preencher_lista_conversas()
+        self._definir_status("Conversa excluída. A memória continua guardada.")
     def _carregar_conversa(self, conversa):
         """Abre uma conversa antiga na tela (sem mexer na memoria)."""
         mensagens = [
@@ -4166,6 +4397,47 @@ def main():
         pass
 
     raiz = tk.Tk()
+
+    # No programa compilado (sem janela preta) qualquer erro ficaria
+    # escondido. Aqui tudo que der errado e guardado no erro.log, para
+    # poder ser lido e mandado para quem ajuda.
+    def registrar_erro(onde, erro):
+        try:
+            ARQUIVO_ERRO.parent.mkdir(parents=True, exist_ok=True)
+            with ARQUIVO_ERRO.open("a", encoding="utf-8") as arquivo:
+                arquivo.write(
+                    "\n===== %s | %s =====\n%s\n"
+                    % (time.strftime("%d/%m/%Y %H:%M:%S"), onde, erro)
+                )
+        except Exception:
+            pass
+
+    def ao_falhar(tipo, valor, tb):
+        registrar_erro("erro na tela", "".join(
+            traceback.format_exception(tipo, valor, tb)))
+
+    raiz.report_callback_exception = ao_falhar
+
+    def excecao_nao_tratada(tipo, valor, tb):
+        try:
+            ao_falhar(tipo, valor, tb)
+        finally:
+            try:
+                sys.__excepthook__(tipo, valor, tb)
+            except Exception:
+                pass
+
+    def excecao_em_thread(args):
+        ao_falhar(
+            "erro em outra tarefa",
+            "".join(traceback.format_exception(args.exc_type,
+                                                args.exc_value,
+                                                args.exc_traceback)),
+        )
+
+    sys.excepthook = excecao_nao_tratada
+    threading.excepthook = excecao_em_thread
+
     Aplicativo(raiz)
     raiz.mainloop()
 
