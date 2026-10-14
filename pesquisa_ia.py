@@ -556,6 +556,49 @@ PALAVRAS_DO_MOMENTO = (
 )
 
 
+def _quer_pesquisa(pergunta):
+    """Heurística: pesquisa só quando a pergunta for relevante/externa.
+
+    A IA deve ser, em boa parte, um amigo: cumprimentos, papo sobre a memória
+    e perguntas sobre a si própria não exigem busca web. Qualquer coisa com
+    indício de fato atual, dado numérico, clima, preços ou interrogativo
+    concreto dispara pesquisa normal.
+    """
+    baixo = (pergunta or "").lower()
+    palavras = set(re.findall(r"[\wÀ-ÿ]+", baixo))
+    if _quer_noticias(pergunta) or _quer_imagens(pergunta):
+        return True
+    indicadores_pesquisa = {
+        "qual", "quem", "quando", "onde", "quantos", "quantas", "quanto",
+        "porque", "por que", "como", "weather", "clima", "preço", "preco", "tempo",
+        "cotação", "cotacao", "noticia", "notícia", "resultado", "placar",
+        "hoje", "agora", "último", "ultimo", "atual", "dolar", "dólar",
+        "euro", "bolsa", "governo", "imdb", "score", "lançamento", "lancamento",
+        "quantidade", "taxa", "população", "populacao",
+    }
+    if palavras & indicadores_pesquisa:
+        return True
+    # termos de converse com o amigo pessoa
+    termos_conversa = {
+        "oi", "olá", "ola", "bom", "boa", "tarde", "noite", "dia", "tudo",
+        "bem", "obrigado", "obrigada", "valeu", "memória", "memoria",
+        "lembrou", "lembrar", "sobre mim", "saber", "conversar", "papo",
+        "como você", "vc", "você", "voce", "amigo", "amiga",
+    }
+    if palavras & termos_conversa and len(palavras) <= 12:
+        return False
+    # interrogativos são pesquisa, frases sem pergunta direta são papo
+    if baixo.strip().endswith("?"):
+        # pergunta curta e genérica sobre feeling/estado é conversa
+        if any(p in baixo for p in (
+                "melhor", "feel", "sentindo", "como vai", "como está",
+                "como esta", "animado", "triste", "feliz")):
+            return False
+        return True
+    if len(palavras) <= 7:
+        return False
+    return True
+
 def _quer_noticias(pergunta):
     """Diz se a pergunta parece ser sobre algo atual (notícia)."""
     baixo = pergunta.lower()
@@ -1316,6 +1359,46 @@ def perguntar(
     texto, origem = _gerar_texto_rapido(
         api_key, modelo, prompt, historico_para_ia, cfg
     )
+    return _espacar_blocos(_sem_markdown(texto)), [], [], origem
+
+def conversar(
+    api_key, modelo, historico, pergunta, usar_contexto, progresso=None, cfg=None,
+    id_atual=None,
+):
+    """Responde como um amigo, sem pesquisar na web."""
+    def avisar(mensagem):
+        if progresso is not None:
+            try:
+                progresso(mensagem)
+            except Exception:
+                pass
+    avisar("Conversando com você")
+    memoria = []
+    try:
+        memoria = carregar_memoria()
+    except Exception:
+        memoria = []
+    historico_para_ia = historico if usar_contexto else []
+    hoJe = __import__("time").strftime("%d/%m/%Y")
+    bloco_memoria = (
+        "Memória que a IA tem sobre o usuário:\n" + "\n".join(memoria)
+        if memoria else "Não há memória guardada ainda sobre o usuário."
+    )
+    prompt = (
+        "Data de hoje: %s\n\n"
+        "Você não deve procurar nada na web agora. Responda apenas como um "
+        "amigo atencioso que está conversando com o usuário, usando a memória "
+        "abaixo. Seja natural, sem diagnóstico, sem instrução robótica, sem "
+        "citações de fontes, sem markdown complexo. Pode responder curto. Se a "
+        "resposta precisar de informação factual recente e você não tem,"
+        " avise honestamente que pode não estar atualizado.\n\n"
+        "%s\n\nConversas anteriores relevantes (memória e contexto).\n"
+        "Pergunta do usuário: %s" % (hoJe, bloco_memoria, pergunta)
+    ) + contexto_das_conversas(ignorar=id_atual)
+    texto, origem = _gerar_texto_rapido(
+        api_key, modelo, prompt, historico_para_ia, cfg
+    )
+    origem = "Gemini (sem pesquisa)" if not origem else origem
     return _espacar_blocos(_sem_markdown(texto)), [], [], origem
 
 
@@ -2445,12 +2528,12 @@ class Aplicativo:
         self.canvas.pack(side="left", fill="both", expand=True)
 
         _preparar_scrollbar_escuro(self.raiz)
-        barra = ttk.Scrollbar(
+        self.barra = ttk.Scrollbar(
             area, orient="vertical", command=self.canvas.yview,
             style=ESTILO_BARRA,
         )
-        barra.pack(side="right", fill="y")
-        self.canvas.configure(yscrollcommand=barra.set)
+        self.barra.pack(side="right", fill="y")
+        self.canvas.configure(yscrollcommand=self.barra.set)
 
         self.interno = tk.Frame(self.canvas, bg=COR_FUNDO)
         self._janela = self.canvas.create_window(
@@ -2579,6 +2662,8 @@ class Aplicativo:
         return False
 
     def _rolar(self, evento):
+        if not self.mensagens:
+            return "break"
         try:
             alvo = self.raiz.winfo_containing(evento.x_root, evento.y_root)
         except Exception:
@@ -2921,6 +3006,14 @@ class Aplicativo:
                 )
                 if animando:
                     self._bolha_anim = ref
+        try:
+            if not self.mensagens:
+                self.barra.state(["disabled"])
+                self.canvas.yview_moveto(0.0)
+            else:
+                self.barra.state(["!disabled"])
+        except Exception:
+            pass
         self.raiz.after_idle(self._rolar_fim)
 
     def _montar_boas_vindas(self):
@@ -3638,8 +3731,13 @@ class Aplicativo:
             threading.Thread(target=tarefa_imagens, daemon=True).start()
             return
 
+        amigo = (not ver_imagens) and (not _quer_pesquisa(pergunta))
+
         self._iniciar_digitando()
-        self._definir_status("Pesquisando na web...")
+        if amigo:
+            self._definir_status("Conversando com você...")
+        else:
+            self._definir_status("Pesquisando na web...")
 
         usar_contexto = bool(self.cfg.get("usar_contexto", True))
         modelo = self.cfg.get("modelo", MODELO_PADRAO)
@@ -3650,11 +3748,18 @@ class Aplicativo:
 
         def tarefa():
             try:
-                texto, fontes, buscas, origem = perguntar(
-                    chave, modelo, historico, pergunta, usar_contexto,
-                    progresso=avisar_progresso, cfg=self.cfg,
-                    id_atual=self._id_conversa,
-                )
+                if amigo:
+                    texto, fontes, buscas, origem = conversar(
+                        chave, modelo, historico, pergunta, usar_contexto,
+                        progresso=avisar_progresso, cfg=self.cfg,
+                        id_atual=self._id_conversa,
+                    )
+                else:
+                    texto, fontes, buscas, origem = perguntar(
+                        chave, modelo, historico, pergunta, usar_contexto,
+                        progresso=avisar_progresso, cfg=self.cfg,
+                        id_atual=self._id_conversa,
+                    )
                 self.fila.put(("ok", pergunta, texto, fontes, buscas, origem))
             except Exception as erro:
                 self.fila.put(("erro", pergunta, self._traduzir_erro(erro)))
