@@ -3979,7 +3979,7 @@ class Aplicativo:
         _ajustar_barra_memoria()
         moldura.bind(
             "<MouseWheel>",
-            lambda e: tela.yview_scroll(int(-e.delta / 120), "units"),
+            _rolar_memoria,
         )
 
         def desenhar():
@@ -4045,17 +4045,13 @@ class Aplicativo:
         desenhar()
         def _ligar_memoria(w):
             try:
-                w.bind("<MouseWheel>", lambda e: tela.yview_scroll(
-                    int(-e.delta / 120), "units"))
+                w.bind("<MouseWheel>", _rolar_memoria)
             except Exception:
                 pass
             for c in w.winfo_children():
                 _ligar_memoria(c)
         try:
-            moldura.bind(
-                "<MouseWheel>",
-                lambda e: tela.yview_scroll(int(-e.delta / 120), "units"),
-            )
+            moldura.bind("<MouseWheel>", _rolar_memoria)
             _ligar_memoria(moldura)
         except Exception:
             pass
@@ -4345,10 +4341,37 @@ class Aplicativo:
                         highlightbackground=COR_BORDA)
         caixa.pack(fill="both")
 
-        tk.Label(
-            caixa, text=titulo, bg=COR_BARRA, fg=COR_TEXTO,
+        # Cabecalho arrastavel (permite mover a janelinha)
+        topo = tk.Frame(caixa, bg=COR_BARRA)
+        topo.pack(fill="x", padx=16, pady=(14, 4))
+        rotulo_titulo = tk.Label(
+            topo, text=titulo, bg=COR_BARRA, fg=COR_TEXTO,
             font=(FONTE, 11, "bold"), anchor="w",
-        ).pack(fill="x", padx=16, pady=(14, 4))
+        )
+        rotulo_titulo.pack(fill="x")
+
+        def _arrastar_inicio(_e):
+            pop._drag = (_e.x_root, _e.y_root,
+                          pop.winfo_x(), pop.winfo_y())
+
+        def _arrastar_mover(_e):
+            d = getattr(pop, "_drag", None)
+            if not d:
+                return
+            start_xr, start_yr, start_xw, start_yw = d
+            pop.geometry("+%d+%d" % (
+                start_xw + (_e.x_root - start_xr),
+                start_yw + (_e.y_root - start_yr),
+            ))
+
+        def _arrastar_fim(_e):
+            pop._drag = None
+
+        for widget in (topo, rotulo_titulo):
+            widget.bind("<Button-1>", _arrastar_inicio)
+            widget.bind("<B1-Motion>", _arrastar_mover)
+            widget.bind("<ButtonRelease-1>", _arrastar_fim)
+
         tk.Label(
             caixa, text=texto, bg=COR_BARRA, fg=COR_TEXTO_2,
             font=(FONTE, 9), wraplength=300, justify="left",
@@ -4365,6 +4388,13 @@ class Aplicativo:
         Botao(botoes, "Excluir", sim, destaque=True).pack(side="left")
         Botao(botoes, "Cancelar", cancelar).pack(side="left", padx=(8, 0))
         pop.bind("<Escape>", lambda _e: cancelar())
+        pop.update_idletasks()
+        largura = pop.winfo_width()
+        altura = pop.winfo_height()
+        centro_x = self.raiz.winfo_rootx() + (self.raiz.winfo_width() - largura) // 2
+        centro_y = self.raiz.winfo_rooty() + (self.raiz.winfo_height() - altura) // 2
+        pop.geometry("+%d+%d" % (centro_x, centro_y))
+
         pop.grab_set()
         self.raiz.wait_window(pop)
         return resultado["ok"]
