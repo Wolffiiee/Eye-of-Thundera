@@ -161,6 +161,7 @@ BALHA_RESPIRO = 12
 COR_FUNDO = "#0f0f14"
 COR_PAINEL = "#15151c"
 COR_BARRA = "#1a1a22"
+COR_BARRA_MAIS = "#26262f"     # um tom acima, para o mouse passar por cima
 COR_BORDA = "#2a2a36"
 COR_TEXTO = "#ececf1"
 COR_TEXTO_2 = "#9a9aa8"
@@ -1548,6 +1549,14 @@ _FOTOS_IA = {}
 _FOTOS_ENVIO = {}
 
 
+def anda(widget):
+    """Todos os widgets abaixo de um widget (ele mesmo incluido)."""
+    achados = [widget]
+    for filho in widget.winfo_children():
+        achados.extend(anda(filho))
+    return achados
+
+
 def _foto_enviar(cor_bolao, tamanho=36):
     """Imagem do botao de enviar (bolha + aviao), com as bordas suavizadas.
 
@@ -2422,11 +2431,8 @@ class Aplicativo:
                         pass
 
     def _todos(self, widget):
-        """Todos os widgets abaixo de um widget."""
-        achados = [widget]
-        for filho in widget.winfo_children():
-            achados.extend(self._todos(filho))
-        return achados
+        """Todos os widgets abaixo de um widget (atalho para anda)."""
+        return anda(widget)
 
     def _montar_chat(self):
         area = tk.Frame(self.principal, bg=COR_FUNDO)
@@ -2503,6 +2509,12 @@ class Aplicativo:
         self.botao_enviar.bind("<Enter>", lambda e: self._desenhar_enviar(COR_ENVIAR_HOVER))
         self.botao_enviar.bind("<Leave>", lambda e: self._desenhar_enviar(COR_ENVIAR))
         self.botao_enviar.bind("<Button-1>", lambda e: self._enviar())
+        # Ao redimensionar a janela, o Tk chega a limpar o Canvas do botao;
+        # por isso o desenho e refeito sempre que o tamanho muda.
+        self.botao_enviar.bind(
+            "<Configure>",
+            lambda e: self._desenhar_enviar(COR_ENVIAR),
+        )
 
         # A linha de avisos fica escondida quando nao ha nada a dizer (so
         # aparece sozinha em mensagens como "Imagem salva em ...").
@@ -3563,12 +3575,14 @@ class Aplicativo:
 
         # A configuração ficou grande, então a área do meio tem rolagem.
         tela = tk.Canvas(aba_chave, bg=COR_FUNDO, highlightthickness=0, bd=0)
-        tela.pack(side="left", fill="both", expand=True)
         _preparar_scrollbar_escuro(aba_chave)
         barra = ttk.Scrollbar(
             aba_chave, orient="vertical", command=tela.yview, style=ESTILO_BARRA,
         )
+        # A barra de rolagem e empacotada PRIMEIRO de propósito: o Tk encolhe
+        # quem vem por ultimo quando a janela aperta, e assim a barra some.
         barra.pack(side="right", fill="y")
+        tela.pack(side="left", fill="both", expand=True)
         tela.configure(yscrollcommand=barra.set)
         corpo = tk.Frame(tela, bg=COR_FUNDO)
         corpo.bind("<Configure>", lambda _e: tela.configure(
@@ -3585,7 +3599,14 @@ class Aplicativo:
             tela.yview_scroll(int(-evento.delta / 120), "units")
             return "break"
 
-        aba_chave.bind("<MouseWheel>", _rolar)
+        # A roda do mouse so funciona em cima do widget onde ela foi ligada;
+        # os botoes e caixas de texto "engolem" o evento. Por isso a rolagem
+        # e ligada em TODOS os pedacos da aba, um por um. Isso so pode ser
+        # feito no FINAL, quando todo o conteudo ja existe.
+        def _ligar_todos(widget):
+            widget.bind("<MouseWheel>", _rolar)
+            for filho in widget.winfo_children():
+                _ligar_todos(filho)
 
         def _rolar_ajuda(evento):
             tela_ajuda.yview_scroll(int(-evento.delta / 120), "units")
@@ -3847,6 +3868,9 @@ class Aplicativo:
         # ================= aba AJUDA =================
         self._preencher_aba_ajuda(quadros["ajuda"], _rolar_ajuda)
 
+        # agora que o conteudo inteiro existe, liga a rolagem em tudo
+        _ligar_todos(aba_chave)
+
         mostrar_aba("memoria")
         jan.bind("<Escape>", lambda _e: jan.destroy())
         entrada.focus_set()
@@ -3978,7 +4002,13 @@ class Aplicativo:
             tela.itemconfigure(corpo_id, width=tela.winfo_width())
 
         tela.bind("<Configure>", acertar_largura)
-        pai.bind("<MouseWheel>", ao_rolar)
+        # a roda do mouse e ligada em todos os pedacos da aba (os botoes e
+        # caixas de texto engolem o evento quando so esta no pai)
+        for parte in anda(pai):
+            try:
+                parte.bind("<MouseWheel>", ao_rolar)
+            except Exception:
+                pass
 
         margem = tk.Frame(corpo, bg=COR_FUNDO)
         margem.pack(fill="both", expand=True, padx=24, pady=22)
@@ -4173,7 +4203,8 @@ class Aplicativo:
 
         item.bind("<Button-1>", excluir)
         item.bind(
-            "<Enter>", lambda _e: item.configure(bg=COR_ACCENT, fg="#ffffff")
+            "<Enter>",
+            lambda _e: item.configure(bg=COR_BARRA_MAIS, fg=COR_TEXTO),
         )
         item.bind(
             "<Leave>", lambda _e: item.configure(bg=COR_BARRA, fg=COR_TEXTO)
