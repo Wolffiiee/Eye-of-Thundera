@@ -16,6 +16,7 @@ import math
 import os
 import queue
 import re
+import difflib
 import sys
 import threading
 import time
@@ -2744,15 +2745,29 @@ class Aplicativo:
         if palavra.lower() not in corretor.unknown({palavra.lower()}):
             return
         corretor_en = self._obter_corretor_en()
+        # termo válido em inglês não sugere nada
         if corretor_en and not corretor_en.unknown({palavra.lower()}):
-            return     # palavra em ingles: nao sugerir correcao portuguesa
-        if corretor_en and corretor_en.unknown({palavra.lower()}):
-            sugestoes = list(corretor_en.candidates(palavra.lower()) or [])
-            # se nao houver sugestoes em ingles, tenta portugues
-            if not sugestoes:
-                sugestoes = list(corretor.candidates(palavra.lower()) or [])
+            return
+        cands_pt = list(corretor.candidates(palavra.lower()) or [])
+        cands_en = []
+        if (corretor_en and corretor_en is not False
+                and corretor_en.unknown({palavra.lower()})):
+            cands_en = list(corretor_en.candidates(palavra.lower()) or [])
+        def melhor(cands):
+            if not cands:
+                return 0.0
+            return max(
+                difflib.SequenceMatcher(None, palavra.lower(), c).ratio()
+                for c in cands)
+        # a língua primária é o português: só usa inglês se for
+        # claramente mais parecido (palavra se assemelhar mais ao inglês)
+        if cands_pt and cands_en:
+            if melhor(cands_en) > melhor(cands_pt) + 0.10:
+                sugestoes = cands_en
+            else:
+                sugestoes = cands_pt
         else:
-            sugestoes = list(corretor.candidates(palavra.lower()) or [])
+            sugestoes = cands_en or cands_pt
         if not sugestoes:
             return
         sugestoes = sorted(sugestoes)[:6]
