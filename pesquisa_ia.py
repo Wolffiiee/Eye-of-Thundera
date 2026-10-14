@@ -2261,6 +2261,7 @@ class Aplicativo:
         self._bolha_anim = None
         # Corretor ortográfico (carregado só quando usado).
         self._corretor = None
+        self._corretor_en = None
         self._checagem_id = None
         self._menu_ortografia = None
 
@@ -2670,6 +2671,15 @@ class Aplicativo:
                 self._corretor = False
         return self._corretor
 
+    def _obter_corretor_en(self):
+        if self._corretor_en is None:
+            try:
+                from spellchecker import SpellChecker
+                self._corretor_en = SpellChecker(language="en")
+            except Exception:
+                self._corretor_en = False
+        return self._corretor_en
+
     def _agendar_correcao(self):
         if self._checagem_id is not None:
             try:
@@ -2699,6 +2709,13 @@ class Aplicativo:
             return
         unicas = {p[0].lower() for p in palavras}
         erradas = corretor.unknown(unicas)
+        # Termos em inglês válidos não devem ser marcados.
+        corretor_en = self._obter_corretor_en()
+        if corretor_en:
+            erradas = {
+                w for w in erradas
+                if corretor_en.unknown({w})
+            }
         if not erradas:
             return
         for original, inicio, fim in palavras:
@@ -2726,7 +2743,16 @@ class Aplicativo:
             return
         if palavra.lower() not in corretor.unknown({palavra.lower()}):
             return
-        sugestoes = list(corretor.candidates(palavra.lower()) or [])
+        corretor_en = self._obter_corretor_en()
+        if corretor_en and not corretor_en.unknown({palavra.lower()}):
+            return     # palavra em ingles: nao sugerir correcao portuguesa
+        if corretor_en and corretor_en.unknown({palavra.lower()}):
+            sugestoes = list(corretor_en.candidates(palavra.lower()) or [])
+            # se nao houver sugestoes em ingles, tenta portugues
+            if not sugestoes:
+                sugestoes = list(corretor.candidates(palavra.lower()) or [])
+        else:
+            sugestoes = list(corretor.candidates(palavra.lower()) or [])
         if not sugestoes:
             return
         sugestoes = sorted(sugestoes)[:6]
@@ -2847,9 +2873,56 @@ class Aplicativo:
             font=(FONTE, 9, "bold"),
         ).pack(pady=(30, 10))
 
-        for rotulo, pergunta in SUGESTOES:
+        for rotulo, pergunta in self._sugestoes_dinamicas():
             chip = Chip(self.interno, rotulo, pergunta, self._sugestao_clicada)
             chip.pack(pady=4)
+
+    def _sugestoes_dinamicas(self):
+        """Sugestoes para a tela inicial, baseadas na memoria e nas perguntas
+        que ja foram feitas."""
+        resultado = []
+        visto = set()
+
+        def adicionar(rotulo, pergunta):
+            chave = (rotulo or "").strip().lower()
+            if not chave or chave in visto:
+                return
+            visto.add(chave)
+            resultado.append((rotulo.strip(), (pergunta or rotulo).strip()))
+
+        # Conversas ja aconteceram -> continuar assuntos.
+        try:
+            for c in reversed(carregar_conversas()):
+                titulo = (c.get("titulo") or "").strip()
+                if titulo:
+                    adicionar("Continuar: " + titulo[:40], titulo)
+                if len(resultado) >= 5:
+                    break
+        except Exception:
+            pass
+
+        # Memoria -> perguntar sobre o que a IA ja sabe.
+        try:
+            for fato in carregar_memoria():
+                adicionar("Sobre: " + fato[:32],
+                         "Quero falar sobre %s. Me explique melhor." % fato)
+                if len(resultado) >= 5:
+                    break
+        except Exception:
+            pass
+
+        # Completa com sugestoes de base quando ainda ha pouco historico.
+        if len(resultado) < 5:
+            for rotulo, pergunta in SUGESTOES:
+                if len(resultado) >= 5:
+                    break
+                adicionar(rotulo, pergunta)
+
+        if not resultado:
+            for rotulo, pergunta in SUGESTOES:
+                adicionar(rotulo, pergunta)
+
+        return resultado[:5]
 
     def _sugestao_clicada(self, pergunta):
         self.entrada.delete("1.0", "end")
