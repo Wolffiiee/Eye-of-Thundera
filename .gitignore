@@ -7,7 +7,9 @@
 # resultado das compilacoes (o .exe que vai para a Area de Trabalho)
 build/
 dist/
-*.spec
+
+# arquivos antigos guardados so por seguranca (scripts de teste velhos, backups)
+_arquivo_morto/
 
 # cache do Python
 __pycache__/

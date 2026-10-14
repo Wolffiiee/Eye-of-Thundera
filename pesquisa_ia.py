@@ -42,6 +42,8 @@ except Exception:
     ImageDraw = None
     ImageTk = None
     TEM_PIL = False
+CACHE_EMOJI_COLORIDO = {}
+REFERENCIAS_IMG_EMOJI = []
 
 # ----------------------------------------------------------------------------
 # Configurações gerais
@@ -466,7 +468,7 @@ def aprender_com_o_usuario(api_key, pergunta, resposta):
     Nao mostra nada para o usuario: nem pergunta, nem avisa, nem aparece
     na conversa.
     """
-    global _memoria_cache, _ultimo_aprendizado
+    global _ultimo_aprendizado
     api_key = (api_key or "").strip()
     if not api_key or len((resposta or "")) < 120:
         return None
@@ -1052,7 +1054,7 @@ def _chamar_servico(servico, prompt, historico):
             dados = json.loads(resposta.read().decode("utf-8"))
     except urllib.error.HTTPError as erro:
         raise RuntimeError(_erro_do_servico(servico, erro))
-    except urllib.error.URLError as erro:
+    except urllib.error.URLError:
         raise RuntimeError(
             "Não consegui falar com o %s. Confira a internet e tente de novo."
             % servico.get("nome", "serviço")
@@ -2271,17 +2273,30 @@ class BotaoLateral(tk.Frame):
 
 
 class Chip(tk.Canvas):
-    """Sugestão clicável mostrada na tela de boas-vindas."""
+    """Sugestão clicável mostrada na tela de boas-vindas. Texto completo sempre visível."""
 
     def __init__(self, pai, rotulo, pergunta, comando, largura_max=520):
         super().__init__(pai, bg=COR_FUNDO, highlightthickness=0, bd=0)
+        # Cria texto SEM limite de largura inicial - mostra tudo
         item = self.create_text(
             0, 0, text=rotulo, font=(FONTE, 10), fill=COR_TEXTO_2,
-            width=largura_max, anchor="nw", justify="left",
+            anchor="nw", justify="left",
         )
         x0, y0, x1, y1 = self.bbox(item)
         self.move(item, 18 - x0, 11 - y0)
         largura, altura = (x1 - x0) + 36, (y1 - y0) + 22
+        # Limita largura máxima se necessário
+        if largura > largura_max:
+            largura = largura_max
+            # Recria texto com largura limitada
+            self.delete(item)
+            item = self.create_text(
+                0, 0, text=rotulo, font=(FONTE, 10), fill=COR_TEXTO_2,
+                width=largura_max - 36, anchor="nw", justify="left",
+            )
+            x0, y0, x1, y1 = self.bbox(item)
+            self.move(item, 18 - x0, 11 - y0)
+            largura, altura = (x1 - x0) + 36, (y1 - y0) + 22
         self.configure(width=largura, height=altura)
         fundo = arredondado(
             self, 0, 0, largura, altura, 14, fill=COR_BARRA, outline=COR_BORDA
@@ -2297,6 +2312,35 @@ class Chip(tk.Canvas):
             self.itemconfigure(item, fill=COR_TEXTO_2),
         ))
         self.bind("<Button-1>", lambda e: comando(pergunta))
+        # Se pai redimensionar, recalcula
+        def _on_pai_resize(_e):
+            self.after(10, lambda: self._recalcular_largura(pai, rotulo, largura_max))
+        pai.bind("<Configure>", _on_pai_resize, add="+")
+
+    def _recalcular_largura(self, pai, rotulo, largura_max):
+        try:
+            pw = pai.winfo_width()
+            if pw <= 1:
+                return
+            # Recria com largura baseada no pai
+            w_texto = max(200, min(largura_max - 72, pw - 72))
+            self.delete("all")
+            item = self.create_text(
+                0, 0, text=rotulo, font=(FONTE, 10), fill=COR_TEXTO_2,
+                width=w_texto, anchor="nw", justify="left",
+            )
+            x0, y0, x1, y1 = self.bbox(item)
+            self.move(item, 18 - x0, 11 - y0)
+            largura, altura = (x1 - x0) + 36, (y1 - y0) + 22
+            if largura > largura_max:
+                largura = largura_max
+            self.configure(width=largura, height=altura)
+            fundo = arredondado(
+                self, 0, 0, largura, altura, 14, fill=COR_BARRA, outline=COR_BORDA
+            )
+            self.tag_lower(fundo)
+        except Exception:
+            pass
 
 
 # ----------------------------------------------------------------------------
@@ -2330,6 +2374,10 @@ class Aplicativo:
         self.animacao_passo = 0
         self._pontos_digitando = []
         self._canvas_digitando = None
+        self._telas_bolha = []
+        # Quem quer saber de "cliques em qualquer lugar" (menus que fecham ao
+        # clicar fora). Ver _registrar_clique_global.
+        self._ouvintes_clique = []
         self._redim_id = None
         self._janela_config = None
         self._janela_conversas = None
@@ -2356,6 +2404,13 @@ class Aplicativo:
         raiz.configure(bg=COR_FUNDO)
 
         self._montar_tela()
+        # Clique fora das bolhas desfaz a seleção de texto. Usa bind (e não
+        # bind_all) de propósito: há trechos que desligam todos os atalhos
+        # "bind_all" de clique e apagariam este sem querer.
+        self.raiz.bind("<Button-1>", self._ao_clicar_fora, add="+")
+        # Único bind_all de clique do programa. Os menus se cadastram na lista
+        # (_registrar_clique_global) em vez de mexer em bind_all/unbind_all.
+        self.raiz.bind_all("<Button-1>", self._despachar_clique, add="+")
         self._renderizar()
         self._atualizar_status_chave()
         self.raiz.after(100, self._processar_fila)
@@ -2933,15 +2988,14 @@ class Aplicativo:
 
         pop._fora = fora
         pop.bind("<Escape>", lambda _e: self._fechar_menu_ortografia())
-        self.raiz.bind_all("<Button-1>", fora, add="+")
+        self._registrar_clique_global(fora)
         pop.after(6000, self._fechar_menu_ortografia)
 
     def _fechar_menu_ortografia(self):
         pop = getattr(self, "_menu_ortografia_atual", None)
-        try:
-            self.raiz.unbind_all("<Button-1>")
-        except Exception:
-            pass
+        fora = getattr(pop, "_fora", None)
+        if fora is not None:
+            self._remover_clique_global(fora)
         if pop is not None and isinstance(pop, tk.Toplevel):
             try:
                 pop.destroy()
@@ -2982,6 +3036,7 @@ class Aplicativo:
         self._redim_id = None
         for filho in self.interno.winfo_children():
             filho.destroy()
+        self._telas_bolha = []
         self._pontos_digitando = []
         self._canvas_digitando = None
         self._bolha_anim = None
@@ -3021,7 +3076,7 @@ class Aplicativo:
         bloco.pack(fill="x", pady=(46, 24), padx=24)
 
         tk.Label(
-            bloco, text="Olá! 👋", bg=COR_FUNDO, fg=COR_TEXTO,
+            bloco, text="Olá!", bg=COR_FUNDO, fg=COR_TEXTO,
             font=(FONTE, 24, "bold"),
         ).pack()
         tk.Label(
@@ -3041,15 +3096,6 @@ class Aplicativo:
             Botao(aviso, "Configurar agora", self._abrir_config, destaque=True).pack(
                 side="left", padx=8, pady=6
             )
-
-        tk.Label(
-            bloco, text="Sugestões", bg=COR_FUNDO, fg=COR_TEXTO_3,
-            font=(FONTE, 9, "bold"),
-        ).pack(pady=(30, 10))
-
-        for rotulo, pergunta in self._sugestoes_dinamicas():
-            chip = Chip(self.interno, rotulo, pergunta, self._sugestao_clicada)
-            chip.pack(pady=4)
 
     def _sugestoes_dinamicas(self):
         """Sugestoes para a tela inicial, baseadas na memoria e nas perguntas
@@ -3104,6 +3150,82 @@ class Aplicativo:
         self._ajustar_altura()
         self._enviar()
 
+
+    def _remover_emojis(self, texto):
+        """Remove todos emojis do texto (mantém acentos e cursor de digitação)."""
+        if not texto:
+            return ""
+        # Remove apenas caracteres nas faixas de emoji Unicode (exclui acentos e cursor ▌)
+        resultado = []
+        for ch in texto:
+            cp = ord(ch)
+            # Verifica se é emoji (faixas oficiais de emoji, sem símbolos geométricos básicos)
+            is_emoji = (
+                (0x2600 <= cp <= 0x26FF) or   # Misc symbols (2600-26FF)
+                (0x2700 <= cp <= 0x27BF) or   # Dingbats
+                (0x1F300 <= cp <= 0x1F5FF) or # Misc symbols & pictographs
+                (0x1F600 <= cp <= 0x1F64F) or # Emoticons
+                (0x1F680 <= cp <= 0x1F6FF) or # Transport & map
+                (0x1F900 <= cp <= 0x1F9FF) or # Supplemental symbols
+                (0x1F1E0 <= cp <= 0x1F1FF) or # Flags
+                (0x231A <= cp <= 0x231B) or   # Watch
+                (0x23E9 <= cp <= 0x23EC) or   # Fast forward/rewind
+                (0x23F0 <= cp <= 0x23F3) or   # Audio control
+                (0x2B05 <= cp <= 0x2B07) or   # Arrows
+                (0x2B50 <= cp <= 0x2B55) or   # Stars
+                (0x3030 <= cp <= 0x3030) or   # Wavy dash
+                (0x303D <= cp <= 0x303D) or   # Part alternation mark
+                (0x3297 <= cp <= 0x3299) or   # Circled
+                (0xFE0F <= cp <= 0xFE0F)      # Variation selector
+            )
+            if not is_emoji:
+                resultado.append(ch)
+        return "".join(resultado)
+
+    def _limpar_selecoes(self):
+        """Desmarca o texto selecionado em todas as bolhas do chat."""
+        vivas = []
+        for tela in getattr(self, "_telas_bolha", []):
+            try:
+                if tela.winfo_exists():
+                    tela.select_clear()
+                    vivas.append(tela)
+            except Exception:
+                pass
+        self._telas_bolha = vivas
+
+    def _despachar_clique(self, evento):
+        """Avisa todos os menus abertos que houve um clique."""
+        for funcao in list(self._ouvintes_clique):
+            try:
+                funcao(evento)
+            except Exception:
+                pass
+
+    def _registrar_clique_global(self, funcao):
+        """Liga 'funcao' a todo clique do programa (inclusive em popups).
+
+        Devolve a própria função; guarde-a para chamar
+        _remover_clique_global quando o menu fechar. NUNCA use
+        unbind_all("<Button-1>"): isso apagaria o atalho de todos os menus.
+        """
+        self._ouvintes_clique.append(funcao)
+        return funcao
+
+    def _remover_clique_global(self, funcao):
+        try:
+            self._ouvintes_clique.remove(funcao)
+        except ValueError:
+            pass
+
+    def _ao_clicar_fora(self, _evento):
+        """Clique em qualquer lugar da janela (fora das bolhas) tira a seleção.
+
+        As bolhas tratam o próprio clique e devolvem "break", então este
+        método só roda para cliques em outras partes da tela.
+        """
+        self._limpar_selecoes()
+
     def _criar_bolha(self, texto, autor, texto_completo=None):
         usuario = autor == "user"
         if autor == "erro":
@@ -3121,8 +3243,11 @@ class Aplicativo:
         coluna = tk.Frame(linha, bg=COR_FUNDO)
         largura = self._largura_bolha()
         tela = tk.Canvas(coluna, bg=COR_FUNDO, highlightthickness=0, bd=0)
+
+        # Item de texto ÚNICO - seleção nativa caractere-a-caractere (sem emojis)
+        texto_limpo = self._remover_emojis(texto)
         item = tela.create_text(
-            0, 0, text=texto, font=(FONTE, 11), fill=cor_txt,
+            0, 0, text=texto_limpo, font=(FONTE, 11), fill=cor_txt,
             width=largura, anchor="nw", justify="left",
         )
         x0, y0, x1, y1 = tela.bbox(item) or (0, 0, 1, 1)
@@ -3137,10 +3262,128 @@ class Aplicativo:
         tela.tag_lower(fundo)
         tela.pack(anchor="e" if usuario else "w")
 
+        # --- Seleção nativa + menu Copiar no botão direito ---
+        # Guarda esta bolha na lista, para o clique "lá fora" conseguir
+        # desmarcar a seleção de todas elas (ver _limpar_selecoes).
+        self._telas_bolha.append(tela)
+
+        def _on_click(event):
+            tela.focus_set()
+            # Todo clique novo começa desfazendo a seleção anterior, desta
+            # bolha e das outras. (O Tk só MOVE o ponto de partida com
+            # select_from; ele não apaga a seleção antiga sozinho.)
+            self._limpar_selecoes()
+            # Esta bolha devolve "break", então avisamos os menus abertos
+            # à mão (senão clicar numa bolha não fecharia o menu Copiar).
+            self._despachar_clique(event)
+            try:
+                # Verifica se o click foi sobre o item de texto
+                items = tela.find_overlapping(event.x-1, event.y-1, event.x+1, event.y+1)
+                text_items = [it for it in items if tela.type(it) == "text"]
+                if item not in text_items:
+                    return "break"
+                # Inicia seleção nativa no item de texto
+                tela.icursor(item, "@%d,%d" % (event.x, event.y))
+                tela.select_from(item, "@%d,%d" % (event.x, event.y))
+            except Exception:
+                pass
+            return "break"
+
+        def _on_drag(event):
+            # Estende seleção durante drag
+            try:
+                tela.select_to(item, "@%d,%d" % (event.x, event.y))
+            except Exception:
+                pass
+            return "break"
+
+        def _selecao_propria():
+            """Texto selecionado NESTA bolha ('' se a seleção é de outra)."""
+            try:
+                if str(tela.select_item() or "") != str(item):
+                    return ""
+                return tela.selection_get() or ""
+            except Exception:
+                return ""
+
+        def _show_copiar_menu(canvas, ex, ey):
+            try:
+                sel = canvas.selection_get()
+            except Exception:
+                return
+            if not sel:
+                return
+            # Fecha menu anterior
+            try:
+                if hasattr(canvas, "_copiar_menu") and canvas._copiar_menu:
+                    canvas._copiar_menu.destroy()
+            except Exception:
+                pass
+            menu = tk.Toplevel(canvas)
+            menu.overrideredirect(True)
+            menu.attributes("-topmost", True)
+            menu.configure(bg="#2d2d35", bd=1, highlightbackground="#444", highlightthickness=1)
+            lbl = tk.Label(menu, text="Copiar", bg="#2d2d35", fg="#ececf1",
+                          font=(FONTE, 9), padx=12, pady=6, cursor="hand2")
+            lbl.pack()
+            def _do_copy():
+                try:
+                    txt = canvas.selection_get()
+                except Exception:
+                    txt = ""
+                if txt:
+                    self._copiar_texto(txt)
+                menu.destroy()
+                canvas._copiar_menu = None
+            lbl.bind("<Button-1>", lambda e: _do_copy())
+            # Fecha ao clicar fora
+            def _close(e):
+                try:
+                    if e.widget != lbl and e.widget != menu:
+                        menu.destroy()
+                        canvas._copiar_menu = None
+                except Exception:
+                    pass
+            self._registrar_clique_global(_close)
+            menu.bind(
+                "<Destroy>",
+                lambda e: self._remover_clique_global(_close)
+                if e.widget is menu else None,
+            )
+            # Posiciona no mouse (coordenadas de tela)
+            rx = canvas.winfo_rootx() + ex + 8
+            ry = canvas.winfo_rooty() + ey + 8
+            menu.geometry("+%d+%d" % (rx, ry))
+            menu.focus_set()
+            canvas._copiar_menu = menu
+
+        def _on_right_click(event):
+            try:
+                bb = tela.bbox(item)
+                if bb:
+                    x1, y1, x2, y2 = bb
+                    # Click fora da área do texto -> limpa seleção
+                    if not (x1 <= event.x <= x2 and y1 <= event.y <= y2):
+                        tela.selection_clear()
+                        return "break"
+                if _selecao_propria():
+                    _show_copiar_menu(tela, event.x, event.y)
+            except Exception:
+                pass
+            return "break"
+
+        def _copiar_canvas(event):
+            txt = _selecao_propria()
+            if txt:
+                self._copiar_texto(txt)
+            return "break"
+
+        tela.bind("<Button-1>", _on_click)
+        tela.bind("<B1-Motion>", _on_drag)
+        tela.bind("<Button-3>", _on_right_click)
+        tela.bind("<Control-c>", _copiar_canvas)
+
         if not usuario and autor != "erro":
-            # Iconezinho de copiar logo abaixo da resposta, no canto de fora
-            # do balao (do lado do balão), bem discreto. Passando o mouse em
-            # cima dele, depois de um tempinho, aparece a explicação.
             canto = tk.Frame(coluna, bg=COR_FUNDO)
             canto.pack(anchor="w", pady=(2, 0))
             icone = _icone_copiar(
@@ -3168,8 +3411,10 @@ class Aplicativo:
     def _atualizar_bolha(self, ref, texto):
         """Redesenha uma bolha já existente (usado na animação de escrita)."""
         tela, item = ref["tela"], ref["item"]
-        px, py = 16, 12
-        tela.itemconfigure(item, text=texto, width=ref["largura"])
+        px, py = 16, BALHA_RESPIRO
+        # Remove emojis do texto
+        texto_limpo = self._remover_emojis(texto)
+        tela.itemconfigure(item, text=texto_limpo, width=ref["largura"])
         tela.coords(item, 0, 0)
         x0, y0, x1, y1 = tela.bbox(item) or (0, 0, 1, 1)
         larg, alt = x1 - x0, y1 - y0
@@ -3910,10 +4155,6 @@ class Aplicativo:
             for filho in widget.winfo_children():
                 _ligar_todos(filho)
 
-        def _rolar_ajuda(evento):
-            tela_ajuda.yview_scroll(int(-evento.delta / 120), "units")
-            return "break"
-
         tk.Label(
             corpo, text="Chave da API do Google (Gemini)", bg=COR_FUNDO,
             fg=COR_TEXTO, font=(FONTE, 14, "bold"),
@@ -4168,7 +4409,7 @@ class Aplicativo:
         self._preencher_aba_memoria(quadros["memoria"], jan)
 
         # ================= aba AJUDA =================
-        self._preencher_aba_ajuda(quadros["ajuda"], _rolar_ajuda)
+        self._preencher_aba_ajuda(quadros["ajuda"])
 
         # agora que o conteudo inteiro existe, liga a rolagem em tudo
         _ligar_todos(aba_chave)
@@ -4211,19 +4452,24 @@ class Aplicativo:
         barra.pack(side="right", fill="y")
         tela.pack(side="left", fill="both", expand=True)
         tela.configure(yscrollcommand=barra.set)
+        # Garante tamanho mínimo do canvas para scroll funcionar
+        tela.configure(height=400)
         lista = tk.Frame(tela, bg=COR_FUNDO)
         lista_id = tela.create_window((0, 0), window=lista, anchor="nw")
-        lista.bind(
-            "<Configure>",
-            lambda _e: tela.configure(scrollregion=tela.bbox("all")),
-        )
-        tela.bind(
-            "<Configure>",
-            lambda _e: (
-                tela.itemconfigure(lista_id, width=tela.winfo_width()),
-                tela.coords("empty", tela.winfo_width() // 2, tela.winfo_height() // 2),
-            ),
-        )
+        def _atualizar_scroll_memoria(_e=None):
+            # Usa bbox do frame interno (lista) para scrollregion correta
+            try:
+                tela.configure(scrollregion=tela.bbox("all"))
+            except Exception:
+                pass
+            try:
+                tela.itemconfigure(lista_id, width=tela.winfo_width())
+                tela.coords("empty", tela.winfo_width() // 2, tela.winfo_height() // 2)
+            except Exception:
+                pass
+
+        lista.bind("<Configure>", _atualizar_scroll_memoria)
+        tela.bind("<Configure>", _atualizar_scroll_memoria)
         def _ajustar_barra_memoria(_evento=None):
             try:
                 lista.update_idletasks()
@@ -4335,7 +4581,7 @@ class Aplicativo:
             pass
         env["tempo"] = janela.after(3000, conferir)
 
-    def _preencher_aba_ajuda(self, pai, ao_rolar):
+    def _preencher_aba_ajuda(self, pai, ao_rolar=None):
         """Monta a aba 'Ajuda': como usar o programa."""
         tela = tk.Canvas(pai, bg=COR_FUNDO, highlightthickness=0, bd=0)
         _preparar_scrollbar_escuro(pai)
@@ -4583,7 +4829,7 @@ class Aplicativo:
                     atual = getattr(atual, "master", None)
             self._fechar_popup_conversa()
 
-        self.raiz.bind_all("<Button-1>", fora, add="+")
+        self._fora_popup_conversa = self._registrar_clique_global(fora)
         self._fechar_popup = fechar
         pop.update_idletasks()
         largura = pop.winfo_reqwidth()
@@ -4598,7 +4844,10 @@ class Aplicativo:
         return pop
 
     def _fechar_popup_conversa(self):
-        self.raiz.unbind_all("<Button-1>")
+        fora = getattr(self, "_fora_popup_conversa", None)
+        if fora is not None:
+            self._remover_clique_global(fora)
+            self._fora_popup_conversa = None
         pop = getattr(self, "_popup_conversa", None)
         if pop is not None:
             try:
@@ -4739,6 +4988,8 @@ class Aplicativo:
         self._renderizar()
         self._atualizar_status_chave()
         self.entrada.focus_set()
+        if self.lista_conversas.winfo_ismapped():
+            self._preencher_lista_conversas()
 
     def _guardar_e_aprender(self, pergunta, texto):
         """Salva a conversa e deixa a IA aprender sobre o usuario.
@@ -4750,6 +5001,9 @@ class Aplicativo:
             if getattr(self, "_id_conversa", None) is None:
                 self._id_conversa = str(time.time())
             guardar_conversa(self._id_conversa, self.mensagens)
+            # Atualiza lista de conversas se visível
+            if self.lista_conversas.winfo_ismapped():
+                self._preencher_lista_conversas()
         except Exception:
             pass
         chave = (self.cfg.get("api_key") or "").strip()

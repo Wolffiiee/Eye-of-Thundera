@@ -283,3 +283,32 @@ Atalhos de teclado:
 Se algo der errado, mande o conteúdo do arquivo erro.log (se existir)
 para quem te ajudou.
 
+
+
+
+========================================================
+ ATUALIZAÇÃO DE 14/10/2026 - NOVA PASTA E NOVOS ARQUIVOS
+========================================================
+
+O projeto agora mora em:   C:\Projetos\PesquisaIA
+(saiu do OneDrive, que deixava tudo lento por causa das bibliotecas).
+A pasta antiga ficou como cópia de segurança e pode ser apagada depois
+de alguns dias de uso sem problemas.
+
+Arquivos novos:
+  verificar.bat            -> confere se o programa continua inteiro depois
+                              de uma alteração. Tem que terminar com
+                              "TUDO CERTO".
+  3 - Gerar EXE.bat        -> gera o "Pesquisa IA.exe" novo na pasta "dist".
+                              Depois copie para a Área de Trabalho.
+  INSTRUCOES-PARA-IA.md,
+  PASSO-A-PASSO.md,
+  HISTORICO-DE-MUDANCAS.md -> guias para a IA que programa seguir.
+  PROMPT-PARA-A-IA.md      -> texto pronto para colar na IA.
+  requirements-dev.txt     -> ferramentas só para quem mexe no código.
+  _arquivo_morto           -> coisas antigas guardadas por segurança.
+
+IMPORTANTE: o atalho da Área de Trabalho é o próprio "Pesquisa IA.exe".
+Uma correção no código só aparece nele depois de rodar
+"3 - Gerar EXE.bat" e copiar o .exe novo. Já o
+"2 - Abrir Pesquisa IA.bat" abre direto o código atual.

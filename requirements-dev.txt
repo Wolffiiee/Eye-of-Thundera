@@ -1,0 +1,4 @@
+# Ferramentas só para QUEM MEXE NO CÓDIGO (não vão dentro do programa).
+# Instalar com: .venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+pyinstaller==6.22.3
+pyflakes

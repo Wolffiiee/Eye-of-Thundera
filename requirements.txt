@@ -1,4 +1,7 @@
-google-genai
-ddgs
-pyspellchecker
-pillow
+# Bibliotecas que o programa precisa para FUNCIONAR (versões fixadas).
+# Só mude uma versão de propósito, e rode verificar.bat depois.
+google-genai==2.30.1
+ddgs==9.16.0
+pyspellchecker==0.9.1
+pillow==12.3.0
+httpx==0.28.1
