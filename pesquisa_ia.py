@@ -3975,8 +3975,27 @@ class Aplicativo:
                     barra.state(["!disabled"])
             except Exception:
                 pass
-        lista.bind("<Configure>", lambda _e: _ajustar_barra_memoria())
-        _ajustar_barra_memoria()
+        def _rolar_memoria(_e):
+            try:
+                if (not carregar_memoria() or
+                        lista.winfo_reqheight() <= tela.winfo_height()):
+                    tela.yview_moveto(0.0)
+                    barra.state(['disabled'])
+                    return 'break'
+                barra.state(['!disabled'])
+                tela.yview_scroll(int(-_e.delta / 120), 'units')
+            except Exception:
+                pass
+            return 'break'
+
+        def _centralizar_vazio_memoria(_e=None):
+            _ajustar_barra_memoria()
+            try:
+                tela.coords('empty', tela.winfo_width() // 2,
+                            tela.winfo_height() // 2)
+            except Exception:
+                pass
+        lista.bind('<Configure>', _centralizar_vazio_memoria)
         moldura.bind(
             "<MouseWheel>",
             _rolar_memoria,
