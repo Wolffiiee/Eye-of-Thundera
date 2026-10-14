@@ -2463,6 +2463,7 @@ class Aplicativo:
             lambda e: (
                 self.canvas.itemconfigure(self._janela, width=e.width),
                 self._agendar_redesenho(),
+                self._teto_do_chat(),
             ),
         )
 
@@ -2535,12 +2536,26 @@ class Aplicativo:
         O aviao e uma imagem feita com Pillow (o Canvas do Tk deixa a borda
         em degraus, o que fica serrilhado). Sem Pillow, cai no desenho antigo.
         """
-        self.botao_enviar.delete("all")
+        if getattr(self, "_cor_enviar_atual", None) == cor:
+            return
+        self._cor_enviar_atual = cor
+
         foto = _foto_enviar(cor)
         if foto is not None:
             self._foto_enviar_atual = foto
-            self.botao_enviar.create_image(18, 18, image=foto)
+            item = getattr(self, "_item_enviar", None)
+            if item is not None:
+                try:
+                    self.botao_enviar.itemconfigure(item, image=foto)
+                    return
+                except tk.TclError:
+                    pass
+            self.botao_enviar.delete("all")
+            self._item_enviar = self.botao_enviar.create_image(18, 18, image=foto)
             return
+
+        self.botao_enviar.delete("all")
+        self._item_enviar = None
         cor_bolha = "#%02x%02x%02x" % cor
         cor_aviao = "#%02x%02x%02x" % COR_ENVIAR_TRACO
         self.botao_enviar.create_oval(2, 2, 34, 34, fill=cor_bolha, outline="")
@@ -2563,7 +2578,24 @@ class Aplicativo:
         except Exception:
             alvo = None
         if self._descende_de(alvo, self.canvas):
+            # teto: se o conteudo nao preenche a tela, nao ha por onde
+            # rolar -- manter o topo evita o espaco em branco.
+            try:
+                if self.interno.winfo_height() <= self.canvas.winfo_height():
+                    self.canvas.yview_moveto(0.0)
+                    return "break"
+            except Exception:
+                pass
             self.canvas.yview_scroll(int(-evento.delta / 120), "units")
+            self._teto_do_chat()
+
+    def _teto_do_chat(self):
+        """Evita espaco em branco desnecessario acima da primeira mensagem."""
+        try:
+            if self.interno.winfo_height() <= self.canvas.winfo_height():
+                self.canvas.yview_moveto(0.0)
+        except Exception:
+            pass
 
     def _agendar_redesenho(self):
         if self._redim_id is not None:
@@ -2582,7 +2614,11 @@ class Aplicativo:
     def _rolar_fim(self):
         try:
             self.canvas.update_idletasks()
-            self.canvas.yview_moveto(1.0)
+            # teto: se o conteudo cabe inteiro na tela, nao rola
+            if self.interno.winfo_height() <= self.canvas.winfo_height():
+                self.canvas.yview_moveto(0.0)
+            else:
+                self.canvas.yview_moveto(1.0)
         except Exception:
             pass
 
@@ -3320,7 +3356,10 @@ class Aplicativo:
 
     def _rolar_fim_suave(self):
         try:
-            self.canvas.yview_moveto(1.0)
+            if self.interno.winfo_height() <= self.canvas.winfo_height():
+                self.canvas.yview_moveto(0.0)
+            else:
+                self.canvas.yview_moveto(1.0)
         except Exception:
             pass
 
@@ -3979,17 +4018,33 @@ class Aplicativo:
         Botao(botoes, "Apagar tudo", limpar).pack(side="left")
 
         desenhar()
+        def _ligar_memoria(w):
+            try:
+                w.bind("<MouseWheel>", lambda e: tela.yview_scroll(
+                    int(-e.delta / 120), "units"))
+            except Exception:
+                pass
+            for c in w.winfo_children():
+                _ligar_memoria(c)
+        try:
+            moldura.bind(
+                "<MouseWheel>",
+                lambda e: tela.yview_scroll(int(-e.delta / 120), "units"),
+            )
+            _ligar_memoria(moldura)
+        except Exception:
+            pass
         env["tempo"] = janela.after(3000, conferir)
 
     def _preencher_aba_ajuda(self, pai, ao_rolar):
         """Monta a aba 'Ajuda': como usar o programa."""
         tela = tk.Canvas(pai, bg=COR_FUNDO, highlightthickness=0, bd=0)
-        tela.pack(side="left", fill="both", expand=True)
         _preparar_scrollbar_escuro(pai)
         barra = ttk.Scrollbar(
-            tela, orient="vertical", command=tela.yview, style=ESTILO_BARRA,
+            pai, orient="vertical", command=tela.yview, style=ESTILO_BARRA,
         )
         barra.pack(side="right", fill="y")
+        tela.pack(side="left", fill="both", expand=True)
         tela.configure(yscrollcommand=barra.set)
 
         corpo = tk.Frame(tela, bg=COR_FUNDO)
@@ -4163,7 +4218,6 @@ class Aplicativo:
 
             def abrir(_e=None, c=conversa):
                 self._carregar_conversa(c)
-                self._recolher_lista_conversas()
 
             def pontos(_e=None, c=conversa, botao=mais):
                 self._menu_da_conversa(c, botao)
