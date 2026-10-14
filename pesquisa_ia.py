@@ -2536,7 +2536,8 @@ class Aplicativo:
         O aviao e uma imagem feita com Pillow (o Canvas do Tk deixa a borda
         em degraus, o que fica serrilhado). Sem Pillow, cai no desenho antigo.
         """
-        if getattr(self, "_cor_enviar_atual", None) == cor:
+        if (getattr(self, "_cor_enviar_atual", None) == cor
+                and self.botao_enviar.find_all()):
             return
         self._cor_enviar_atual = cor
 
@@ -3958,6 +3959,18 @@ class Aplicativo:
             "<Configure>",
             lambda _e: tela.itemconfigure(lista_id, width=tela.winfo_width()),
         )
+        def _ajustar_barra_memoria(_evento=None):
+            try:
+                lista.update_idletasks()
+                if lista.winfo_reqheight() <= tela.winfo_height():
+                    barra.configure(state="disabled")
+                    tela.yview_moveto(0.0)
+                else:
+                    barra.configure(state="normal")
+            except Exception:
+                pass
+        lista.bind("<Configure>", lambda _e: _ajustar_barra_memoria())
+        _ajustar_barra_memoria()
         moldura.bind(
             "<MouseWheel>",
             lambda e: tela.yview_scroll(int(-e.delta / 120), "units"),
@@ -4057,13 +4070,7 @@ class Aplicativo:
             tela.itemconfigure(corpo_id, width=tela.winfo_width())
 
         tela.bind("<Configure>", acertar_largura)
-        # a roda do mouse e ligada em todos os pedacos da aba (os botoes e
-        # caixas de texto engolem o evento quando so esta no pai)
-        for parte in anda(pai):
-            try:
-                parte.bind("<MouseWheel>", ao_rolar)
-            except Exception:
-                pass
+
 
         margem = tk.Frame(corpo, bg=COR_FUNDO)
         margem.pack(fill="both", expand=True, padx=24, pady=22)
@@ -4132,6 +4139,19 @@ class Aplicativo:
             margem, "Abrir página para criar a chave",
             lambda: webbrowser.open(URL_CHAVE), destaque=True,
         ).pack(anchor="w", pady=(22, 0))
+
+        def _rolar_ajuda(_e):
+            try:
+                tela.yview_scroll(int(-_e.delta / 120), "units")
+            except Exception:
+                pass
+            return "break"
+
+        for _parte in anda(pai):
+            try:
+                _parte.bind("<MouseWheel>", _rolar_ajuda)
+            except Exception:
+                pass
 
     def _testar_com_retorno(self, chave, ao_terminar):
         if self.ocupado:
@@ -4325,9 +4345,14 @@ class Aplicativo:
         # se era a conversa aberta, a proxima resposta comeca outra
         # (senao ela voltaria sozinha na lista)
         if str(self._id_conversa) == str(conversa.get("id")):
-            self._id_conversa = None
+             self._id_conversa = None
         if self.lista_conversas.winfo_ismapped():
             self._preencher_lista_conversas()
+            # Se nao sobrou conversa alguma, volta para a tela inicial
+            # (conversa nova), para nao deixar a tela 'presa'.
+            if not carregar_conversas():
+                self._id_conversa = None
+                self._nova_conversa()
         self._definir_status("Conversa excluída. A memória continua guardada.")
     def _carregar_conversa(self, conversa):
         """Abre uma conversa antiga na tela (sem mexer na memoria)."""
