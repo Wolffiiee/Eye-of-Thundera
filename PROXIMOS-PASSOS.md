@@ -21,18 +21,17 @@ Claude em outra conversa): leia isto depois do PASSO-A-PASSO.md.
   Intocados. Nunca mexer.
 
 ## O que ainda NÃO foi testado (fazer primeiro, com o Wolf)
-0. **A chave de API do Google parou de valer (erro 401) em 15/10/2026.**
-   O Google está recusando a chave em qualquer chamada. Isso trava
-   **tudo** que usa a IA (perguntar, pesquisar e falar). O Wolf precisa
-   criar uma chave nova em <https://aistudio.google.com/apikey> e colar
-   em Configurações. **Enquanto isso não for feito, nenhuma resposta vai
-   aparecer** — e não é bug do programa.
-1. **Uma pergunta real à IA** (precisa de internet e da chave nova). Peça ao
-   Wolf para fazer uma pergunta e dizer se a resposta apareceu.
-2. **Falar de verdade**: pedir para ele clicar no microfone, falar uma
-   pergunta, clicar de novo e ver se o texto aparece na caixa. O botão já
-   foi testado no `.exe` (fica vermelho, para, e sem voz avisa "Não ouvi
-   nada"), mas **a sua voz ainda não passou pelo Gemini**.
+- **A chave de API foi trocada em 15/10/2026 e está funcionando.** A chave
+  antiga (que o Google passou a recusar com erro 401 "API key not valid" no
+  meio do dia) foi substituída; o Wolf colou a nova em Configurações,
+  testou e **o reconhecimento de voz funcionou de verdade**. Se um dia
+  aparecer erro de chave de novo, o caminho é o mesmo:
+  <https://aistudio.google.com/apikey> → Configurações → Salvar → Testar.
+1. **Uma pergunta real** com a chave nova (as respostas normais ainda não
+   foram testadas de ponta a ponta). Peça ao Wolf para fazer uma pergunta
+   e dizer se a resposta apareceu.
+2. ~~**Falar de verdade**~~ — **FEITO em 15/10/2026**: o Wolf falou no
+   microfone, o texto transcrito apareceu na caixa e a chave nova funciona.
 3. **O botão direito na caixa de digitar com os olhos** (os itens foram
    conferidos pelos testes, mas o visual do menu não foi olhado).
 4. Usar o `.exe` por mais tempo (nos testes ele ficou aberto de 13 a 20

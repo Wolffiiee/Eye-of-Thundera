@@ -28,13 +28,17 @@ baixado/instalado, modificado, adicionado, removido ou movido.
   curva de verdade (a borda da caixa vai entrando 1 px por linha, até
   completar 12 px, dos dois lados).
 - **JUNTO VEIO:** o Wolf avisou que **a voz para texto não funcionou**.
-  Não é bug do programa: a chave de API do Google **está sendo recusada com
-  erro 401 "API key not valid"**, em qualquer chamada (até só para listar
-  modelos). A chave funcionava mais cedo no mesmo dia (uma transcrição de
-  teste deu certo), então o Google passou a recusá-la. Isso afeta **tudo**
-  que usa a IA: perguntar, pesquisar e falar. Enquanto o Wolf não trocar a
-  chave em <https://aistudio.google.com/apikey>, nenhuma resposta vai
-  aparecer.
+  Não é bug do programa: a chave de API do Google **estava sendo recusada
+  com erro 401 "API key not valid"**, em qualquer chamada (até só para
+  listar modelos). A chave funcionava mais cedo no mesmo dia (uma
+  transcrição de teste deu certo), então o Google passou a recusá-la no
+  meio do caminho. Isso afetava **tudo** que usa a IA: perguntar,
+  pesquisar e falar.
+- **RESOLVIDO no mesmo dia:** o Wolf criou uma chave nova em
+  <https://aistudio.google.com/apikey>, colou em Configurações e
+  **testou: o reconhecimento de voz funcionou**. Confirmei daqui também
+  (transcrição de um áudio de teste com a chave nova deu certo). A Tarefa
+  B está agora testada de ponta a ponta pela voz do Wolf.
 
 ---
 
