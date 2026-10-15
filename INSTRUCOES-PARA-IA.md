@@ -95,6 +95,18 @@ trabalhando.
   `_despachar_clique(event)` à mão.
 - **Opção `fg` em Canvas:** Canvas não aceita `fg` (`unknown option "-fg"`
   já aconteceu). Em Canvas use `itemconfigure`.
+- **`winfo_screenwidth` só devolve o monitor PRINCIPAL.** Com dois
+  monitores, um menu posicionado com ele sai na tela errada (no PC do
+  Wolf: janela no segundo monitor, menu aparecia em x=1779, na primeira
+  tela). Use sempre `_tela_virtual()` (métricas de tela virtual do
+  Windows; aqui 3840x1080). Tem teste.
+- **Widget por cima de outro engole os cliques:** o texto de apoio da
+  caixa de digitar é um `Label` com `place()` por cima do `Text`. Tudo
+  que fica por cima precisa repassar o clique (`_clique_no_apoio`,
+  `_menu_no_apoio`) e traduzir a coordenada, porque o Label está
+  deslocado dentro da caixa.
+- **O primeiro clique num programa que não está em primeiro plano só o
+  ativa:** em teste automatizado, dê um clique esquerdo antes do direito.
 - **Texto de `Label` sem `anchor` fica CENTRADO:** um `tk.Label` com
   várias linhas e sem `anchor="w"` centraliza o bloco, mesmo com
   `justify="left"` (o `justify` alinha as linhas entre si, não o bloco).

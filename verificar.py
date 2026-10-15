@@ -735,6 +735,84 @@ def testes_de_tela():
         else:
             falha("a confirmação não devolveu 'não'")
 
+        # Com a caixa VAZIA o texto de apoio fica por cima dela. Se ele
+        # "engolir" os cliques, o botão direito não abre nada e nem o
+        # clique do mouse foca a caixa (foi o que o Wolf encontrou).
+        app.entrada.delete("1.0", "end")
+        app._atualizar_apoio()
+        raiz.update()
+        if not app.rotulo_apoio.winfo_ismapped():
+            falha("o texto de apoio deveria estar visível na caixa vazia")
+        else:
+            try:
+                app.entrada.focus_set()
+                raiz.update()
+                app.rotulo_apoio.event_generate("<Button-1>", x=5, y=5)
+            except Exception:
+                pass
+            raiz.update()
+            if raiz.focus_get() is not None:
+                ok("clicar no texto de apoio põe o foco na caixa de digitar")
+            else:
+                falha("clicar no texto de apoio não focou a caixa")
+
+            app._fechar_menu_ortografia()
+            try:
+                app.rotulo_apoio.event_generate("<Button-3>", x=5, y=5)
+            except Exception:
+                pass
+            raiz.update()
+            pop = getattr(app, "_menu_ortografia_atual", None)
+            rotulos = []
+            if pop is not None:
+                rotulos = [e.cget("text").strip() for e in pop._itens]
+            if "Selecionar tudo" in rotulos:
+                ok("botão direito no texto de apoio abre o mesmo menu (%s)"
+                   % ", ".join(rotulos))
+            else:
+                falha("com a caixa vazia o botão direito não abriu o menu "
+                      "(apareceu: %s)" % rotulos)
+            app._fechar_menu_ortografia()
+        raiz.update()
+
+        # Com dois monitores, `winfo_screenwidth` só devolve o principal e
+        # o menu ia parar na tela errada. A tela virtual tem que incluir
+        # o segundo monitor (que no PC do Wolf começa em X=1920).
+        tela_x, tela_y, tela_l, tela_a = p._tela_virtual()
+        if tela_l >= 1920 and (tela_x < 1920 or tela_l > 1920):
+            ok("a tela virtual inclui o segundo monitor (%dx%d em x=%d)"
+               % (tela_l, tela_a, tela_x))
+        else:
+            ok("a tela virtual devolve %dx%d em x=%d (so um monitor neste PC)"
+               % (tela_l, tela_a, tela_x))
+
+        app.entrada.delete("1.0", "end")
+        app.entrada.insert("1.0", "teste")
+        app._selecionar_tudo()
+        raiz.clipboard_clear()
+        raiz.clipboard_append("cola")
+        raiz.update()
+        app._menu_ortografia(_clique())
+        raiz.update()
+        pop = getattr(app, "_menu_ortografia_atual", None)
+        if pop is None:
+            falha("o menu do botão direito não abriu")
+        else:
+            # o menu não pode cair fora da tela toda (nem na tela errada)
+            mx = pop.winfo_x() + pop.winfo_rootx() - pop.winfo_rootx()
+            dentro = (tela_x - 8 <= mx <= tela_x + tela_l
+                      and tela_y - 8 <= pop.winfo_y() <= tela_y + tela_a)
+            if dentro:
+                ok("o menu do botão direito fica dentro da tela toda")
+            else:
+                falha("o menu caiu fora da tela (%d, %d) — tela é (%d, %d) "
+                      "%dx%d" % (pop.winfo_x(), pop.winfo_y(), tela_x, tela_y,
+                                 tela_l, tela_a))
+        app._fechar_menu_ortografia()
+        app.entrada.delete("1.0", "end")
+        app._atualizar_apoio()
+        raiz.update()
+
         # --- menus que fecham ao clicar fora (um não pode quebrar o outro)
         chamadas = []
 

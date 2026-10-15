@@ -5,6 +5,40 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Botão direito na caixa vazia + menu na tela certa
+
+- **Relato do Wolf:** "o botão direito na caixa de digitar, nada acontece
+  quando não há nada escrito; as opções só aparecem quando tem algo
+  escrito".
+- **Causa 1 (a do relato):** o texto de apoio ("Pergunte qualquer
+  coisa...") é um `tk.Label` colocado **por cima** da caixa de digitar.
+  Com a caixa vazia ele fica visível e **engolia os cliques** — o botão
+  direito batia no Label, que não tinha nenhum clique ligado, e o menu
+  nunca abria. De quebra, o clique com o botão esquerdo também não
+  focava a caixa.
+- **Correção 1:** `_clique_no_apoio` e `_menu_no_apoio` repassam o clique
+  para a caixa (`_evento_da_entrada` traduz as coordenadas, porque o
+  Label está 15 px deslocado dentro dela).
+- **Causa 2 (achada testando):** mesmo com o menu abrindo, ele aparecia
+  **na tela errada**. O código usava `raiz.winfo_screenwidth()`, que num
+  Windows com dois monitores devolve **só a largura do monitor
+  principal** (1920). Com a janela no segundo monitor, o menu era
+  "arrumado" para x = 1920 - 133 - 8 = 1779 — ou seja, na primeira tela.
+- **Correção 2:** nova função `_tela_virtual()`, que pergunta ao Windows
+  pelos "virtual screen metrics" (a união dos monitores: aqui 3840x1080).
+  O menu agora é preso dentro dessa área e nunca pula de tela.
+- **Testado:** `verificar.py` = TUDO CERTO, com testes novos (clicar no
+  texto de apoio foca a caixa; botão direito no texto de apoio abre o
+  mesmo menu; a tela virtual inclui o segundo monitor; o menu fica dentro
+  da tela toda). E **testado com o mouse de verdade no `.exe` novo**: a
+  janela foi para o segundo monitor, o botão direito na caixa vazia
+  abriu o menu em (2368, 853) — exatamente embaixo do clique, na tela
+  certa — com as quatro opções, e "Recortar/Copiar/Colar" aparecendo
+  apagados (correto: com a caixa vazia não há o que recortar, copiar nem
+  colar ainda). Print conferido.
+
+---
+
 ## 2026-10-15 — Nenhuma janela branca (tudo no darkmode do programa)
 
 - **Pedido do Wolf:** "todas as janelas que abrem, como as de confirmação

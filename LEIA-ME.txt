@@ -141,10 +141,12 @@ você começa a digitar. O botão do microfone e o de enviar ficam dentro
 da caixa, no canto direito.
 
 Clicando com o botão do DIREITO dentro da caixa aparece o menu de edição
-de sempre (Recortar, Copiar, Colar, Selecionar tudo). Se a palavra em que
-você clicou estiver escrita errada, as correções aparecem em cima desse
-menu. O que não dá para usar naquele momento (Recortar/Copiar sem nada
-selecionado, Colar sem nada copiado) aparece apagado.
+de sempre (Recortar, Copiar, Colar, Selecionar tudo). Funciona com a caixa
+vazia ou cheia, e também em cima do texto cinza "Pergunte qualquer
+coisa...". Se a palavra em que você clicou estiver escrita errada, as
+correções aparecem em cima desse menu. O que não dá para usar naquele
+momento (Recortar/Copiar sem nada selecionado, Colar com nada copiado)
+aparece apagado.
 
 Numa janela muito larga, o programa se ocupa com a largura máxima de
 820 pixels e deixa as bordas em branco, para o texto não ficar comprido

@@ -2291,6 +2291,31 @@ def _foto_ponto(tamanho, cor, forte):
 
 
 
+def _tela_virtual():
+    """Devolve (x, y, largura, altura) da tela toda, com TODOS os monitores.
+
+    `winfo_screenwidth`/`winfo_screenheight` do tkinter devolvem só o
+    monitor principal. Com dois monitores, um menu aberto no segundo
+    aparecia na tela errada. Aqui usamos os "virtual screen metrics" do
+    Windows, que juntam os dois.
+
+    Devolve a tela principal se não conseguir perguntar ao Windows.
+    """
+    try:
+        import ctypes
+        # 76 = SM_XVIRTUALSCREEN, 77 = SM_YVIRTUALSCREEN,
+        # 78 = SM_CXVIRTUALSCREEN, 79 = SM_CYVIRTUALSCREEN
+        x = ctypes.windll.user32.GetSystemMetrics(76)
+        y = ctypes.windll.user32.GetSystemMetrics(77)
+        largura = ctypes.windll.user32.GetSystemMetrics(78)
+        altura = ctypes.windll.user32.GetSystemMetrics(79)
+        if largura > 0 and altura > 0:
+            return int(x), int(y), int(largura), int(altura)
+    except Exception:
+        pass
+    return 0, 0, 1920, 1080
+
+
 def _deixar_dialogo_do_sistema_escuro(raiz, segundos=10):
     """Tenta deixar escura a janela de escolher arquivo do Windows.
 
@@ -3026,11 +3051,16 @@ class Aplicativo:
             undo=True, autoseparators=True, maxundo=-1,
         )
         # Texto de apoio dentro da caixa: some assim que a pessoa digita.
+        # Ele fica POR CIMA da caixa, então precisa repassar os cliques
+        # para ela — senão, com a caixa vazia, o clique do mouse não
+        # focava a caixa e o botão direito não abria o menu.
         self.rotulo_apoio = tk.Label(
             caixa, text="Pergunte qualquer coisa...", bg=COR_BARRA,
             fg=COR_TEXTO_3, font=(FONTE, 11),
         )
         self.rotulo_apoio.place(x=15, y=11)
+        self.rotulo_apoio.bind("<Button-1>", self._clique_no_apoio)
+        self.rotulo_apoio.bind("<Button-3>", self._menu_no_apoio)
         self.entrada.bind("<FocusIn>", lambda _e: self._atualizar_apoio())
         self.entrada.bind("<FocusOut>", lambda _e: self._atualizar_apoio())
         self.botao_enviar = tk.Canvas(
@@ -3490,6 +3520,41 @@ class Aplicativo:
         else:
             self.linha_status.pack_forget()
 
+    def _evento_da_entrada(self, evento):
+        """Repassa um clique feito no texto de apoio como se fosse na caixa.
+
+        O texto de apoio ("Pergunte qualquer coisa...") é um Label por cima
+        da caixa; sem esta tradução, o clique pararia nele e a caixa nem
+        focaria, nem abriria o menu do botão direito.
+        """
+        try:
+            dx = self.entrada.winfo_rootx() - self.rotulo_apoio.winfo_rootx()
+            dy = self.entrada.winfo_rooty() - self.rotulo_apoio.winfo_rooty()
+        except Exception:
+            dx = dy = 0
+        return type("Evento", (object,), {
+            "x": evento.x + dx, "y": evento.y + dy,
+            "x_root": evento.x_root, "y_root": evento.y_root,
+            "state": getattr(evento, "state", 0),
+        })()
+
+    def _clique_no_apoio(self, evento):
+        """Clicar no texto de apoio = clicar dentro da caixa de digitar."""
+        self.entrada.focus_set()
+        try:
+            self.entrada.mark_set(
+                "insert", "@%d,%d" % (evento.x, evento.y))
+            self.entrada.see("insert")
+        except Exception:
+            pass
+        return "break"
+
+    def _menu_no_apoio(self, evento):
+        """Botão direito no texto de apoio = botão direito na caixa."""
+        self.entrada.focus_set()
+        self._menu_ortografia(self._evento_da_entrada(evento))
+        return "break"
+
     def _atualizar_apoio(self):
         """Mostra o texto de apoio ("Pergunte qualquer coisa...") só quando a
         caixa está vazia. Se a pessoa já escreveu (ou colou), ele some."""
@@ -3812,11 +3877,16 @@ class Aplicativo:
         altura = pop.winfo_reqheight()
         x = evento.x_root
         y = evento.y_root + 4
-        # evita cair fora da tela
-        if x + largura > self.raiz.winfo_screenwidth():
-            x = self.raiz.winfo_screenwidth() - largura - 8
-        if y + altura > self.raiz.winfo_screenheight():
-            y = evento.y_root - altura - 4
+        # Evita cair fora da tela. Usa a tela VIRTUAL (a união de todos os
+        # monitores): com dois monitores, `winfo_screenwidth` devolve só a
+        # largura do principal, e o menu ia parar na tela errada.
+        tela_x, tela_y, tela_l, tela_a = _tela_virtual()
+        if x + largura > tela_x + tela_l:
+            x = tela_x + tela_l - largura - 8
+        if y + altura > tela_y + tela_a:
+            y = max(tela_y + 4, evento.y_root - altura - 4)
+        if x < tela_x + 4:
+            x = tela_x + 4
         pop.geometry("+%d+%d" % (x, y))
 
         def fora(_e=None):
