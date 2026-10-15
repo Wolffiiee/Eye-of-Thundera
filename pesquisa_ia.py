@@ -28,7 +28,7 @@ from pathlib import Path
 
 import tkinter as tk
 import tkinter.ttk as ttk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog
 
 import roteador
 import voz
@@ -2291,6 +2291,171 @@ def _foto_ponto(tamanho, cor, forte):
 
 
 
+def _deixar_dialogo_do_sistema_escuro(raiz, segundos=10):
+    """Tenta deixar escura a janela de escolher arquivo do Windows.
+
+    A janela de "Salvar como..." é do próprio Windows e o tkinter não
+    deixa trocar as cores dela. O que dá para fazer é pedir ao Windows que
+    a desenhe no modo escuro, setando o tema da janela depois que ela
+    abre. Se a sua versão do Windows não aceitar, a janela aparece clara
+    mesmo assim (o programa continua funcionando).
+
+    Chame ANTES de abrir a janela de arquivos; ela cuida sozinha.
+    """
+    try:
+        import ctypes
+        from ctypes import wintypes
+    except Exception:
+        return
+
+    try:
+        THEMING = ctypes.WinDLL("uxtheme")
+    except Exception:
+        THEMING = None
+
+    estado = {"fim": time.time() + segundos, "vistas": set()}
+
+    def todas_dialogos():
+        achadas = []
+
+        @ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+        def cada(hwnd, _l):
+            buffer = ctypes.create_unicode_buffer(64)
+            ctypes.windll.user32.GetClassNameW(hwnd, buffer, 64)
+            if buffer.value == "#32770":          # classe das janelas do Win
+                achadas.append(hwnd)
+            return True
+
+        ctypes.windll.user32.EnumWindows(cada, 0)
+        return achadas
+
+    def escurecer():
+        if time.time() > estado["fim"]:
+            return
+        try:
+            for hwnd in todas_dialogos():
+                if hwnd in estado["vistas"]:
+                    continue
+                estado["vistas"].add(hwnd)
+                if THEMING is not None:
+                    # "DarkMode_Explorer" e o tema escuro das janelas do
+                    # Explorer no Windows 10/11.
+                    THEMING.SetWindowTheme(hwnd, "DarkMode_Explorer", None)
+        except Exception:
+            return
+        try:
+            raiz.after(250, escurecer)
+        except Exception:
+            pass
+
+    try:
+        raiz.after(150, escurecer)
+    except Exception:
+        pass
+
+
+def _dialogo_escuro(pai, titulo, texto, botoes=("Ok",), destaque=0,
+                     largura_texto=380, plain=False):
+    """Janelinha de aviso no tema do programa (sem nada branco).
+
+    Este é o ÚNICO jeito de mostrar aviso, pergunta ou confirmação. Não use
+    `messagebox` nem `simpledialog` do tkinter: o Windows desenha aqueles
+    com fundo branco e borda do sistema, e destoa do programa inteiro.
+
+    `botoes` é uma lista de rótulos (o primeiro é o padrão). Devolve o
+    rótulo do botão clicado, ou None se a pessoa fechou com Esc.
+    `destaque` marca qual botão fica com a cor de destaque.
+    """
+    escolhido = {"valor": None}
+    pop = tk.Toplevel(pai)
+    pop.overrideredirect(True)
+    pop.configure(bg=COR_PAINEL)
+    janela = tk.Frame(pop, bg=COR_PAINEL)
+    janela.pack(padx=1, pady=1)
+    caixa = tk.Frame(janela, bg=COR_BARRA, highlightthickness=1,
+                     highlightbackground=COR_BORDA)
+    caixa.pack(fill="both")
+
+    # cabecalho arrastavel
+    topo = tk.Frame(caixa, bg=COR_BARRA)
+    topo.pack(fill="x", padx=16, pady=(16, 6))
+    rotulo = tk.Label(
+        topo, text=titulo, bg=COR_BARRA, fg=COR_TEXTO,
+        font=(FONTE, 11, "bold"), anchor="w", justify="left",
+        wraplength=largura_texto,
+    )
+    rotulo.pack(fill="x")
+
+    def _arrastar_inicio(_e):
+        pop._drag = (_e.x_root, _e.y_root, pop.winfo_x(), pop.winfo_y())
+
+    def _arrastar_mover(_e):
+        d = getattr(pop, "_drag", None)
+        if not d:
+            return
+        x0, y0, xa, ya = d
+        pop.geometry("+%d+%d" % (xa + (_e.x_root - x0),
+                                ya + (_e.y_root - y0)))
+
+    def _arrastar_fim(_e):
+        pop._drag = None
+
+    for widget in (topo, rotulo):
+        widget.bind("<Button-1>", _arrastar_inicio)
+        widget.bind("<B1-Motion>", _arrastar_mover)
+        widget.bind("<ButtonRelease-1>", _arrastar_fim)
+
+    if texto:
+        tk.Label(
+            caixa, text=texto, bg=COR_BARRA, fg=COR_TEXTO_2,
+            font=(FONTE, 9), wraplength=largura_texto, justify="left",
+            anchor="w",
+        ).pack(fill="x", padx=16, pady=(0, 12))
+
+    def fechar(_e=None):
+        pop.destroy()
+
+    padrao = None
+    if botoes:
+        barra = tk.Frame(caixa, bg=COR_BARRA)
+        barra.pack(fill="x", padx=16, pady=(0, 16))
+        for indice, nome in enumerate(botoes):
+            def clicar(qual=nome):
+                escolhido["valor"] = qual
+                pop.destroy()
+
+            Botao(barra, nome, clicar,
+                  destaque=(indice == destaque)).pack(
+                      side="left", padx=(0, 8) if indice else 0)
+        padrao = botoes[destaque if destaque < len(botoes) else 0]
+    else:
+        fechar()
+
+    pop.bind("<Escape>", lambda _e: fechar())
+    if padrao:
+        def enter(_e):
+            escolhido["valor"] = padrao
+            pop.destroy()
+
+        pop.bind("<Return>", enter)
+    pop.update_idletasks()
+    largura = pop.winfo_width()
+    altura = pop.winfo_height()
+    try:
+        centro_x = pai.winfo_rootx() + (pai.winfo_width() - largura) // 2
+        centro_y = pai.winfo_rooty() + (pai.winfo_height() - altura) // 2
+    except Exception:
+        centro_x = centro_y = 200
+    pop.geometry("+%d+%d" % (centro_x, centro_y))
+    if not plain:
+        try:
+            pop.grab_set()
+            pai.wait_window(pop)
+        except Exception:
+            pass
+    return escolhido["valor"]
+
+
 def _preparar_scrollbar_escuro(raiz):
     """Deixa a barra de rolagem com a cor escura do programa.
 
@@ -4522,6 +4687,8 @@ class Aplicativo:
         grande = item.get("_grande")
         if grande is None:
             return
+        # A janela de arquivos é do Windows; pedimos para ela abrir escura.
+        _deixar_dialogo_do_sistema_escuro(self.raiz)
         caminho = filedialog.asksaveasfilename(
             parent=self.raiz,
             title="Salvar imagem como...",
@@ -4537,8 +4704,9 @@ class Aplicativo:
             grande.convert("RGB").save(caminho)
             self._definir_status("Imagem salva em: %s" % caminho, COR_OK)
         except Exception as erro:
-            messagebox.showerror(
-                "Erro", "Não consegui salvar a imagem: %s" % erro
+            _dialogo_escuro(
+                self.raiz, "Erro",
+                "Não consegui salvar a imagem: %s" % erro,
             )
 
     def _recolher(self, area):
@@ -5057,19 +5225,21 @@ class Aplicativo:
                 salvar_config(self.cfg)
                 self._atualizar_status_chave()
                 self._checar_ortografia()
-                messagebox.showinfo(
-                    "Salvo", "As chaves foram salvas no seu computador.", parent=jan
+                _dialogo_escuro(
+                    jan, "Salvo",
+                    "As chaves foram salvas no seu computador.",
                 )
             except Exception as erro:
-                messagebox.showerror(
-                    "Erro", "Não consegui salvar: %s" % erro, parent=jan
+                _dialogo_escuro(
+                    jan, "Erro", "Não consegui salvar: %s" % erro,
                 )
 
         def testar():
             chave = var_chave.get().strip()
             if not chave:
-                messagebox.showwarning(
-                    "Falta a chave", "Cole a chave antes de testar.", parent=jan
+                _dialogo_escuro(
+                    jan, "Falta a chave",
+                    "Cole a chave antes de testar.",
                 )
                 return
 
@@ -5085,14 +5255,13 @@ class Aplicativo:
                     except Exception:
                         pass
                     self._atualizar_status_chave()
-                    messagebox.showinfo(
-                        "Tudo certo",
+                    _dialogo_escuro(
+                        jan, "Tudo certo",
                         "A chave está funcionando! Já pode pesquisar.",
-                        parent=jan,
                     )
                 else:
                     self._atualizar_status_chave()
-                    messagebox.showerror("Problema com a chave", msg, parent=jan)
+                    _dialogo_escuro(jan, "Problema com a chave", msg)
 
             self._testar_com_retorno(var_chave.get().strip(), terminou)
 
@@ -5208,10 +5377,9 @@ class Aplicativo:
                 campo=servico["campo_chave"], nome=servico["nome"]
             ):
                 if not vars_reserva[campo].get().strip():
-                    messagebox.showwarning(
-                        "Falta a chave",
+                    _dialogo_escuro(
+                        jan, "Falta a chave",
                         "Cole a chave do %s antes de testar." % nome,
-                        parent=jan,
                     )
                     return
                 if self.ocupado:
@@ -5427,11 +5595,11 @@ class Aplicativo:
             env["tempo"] = janela.after(3000, conferir)
 
         def limpar():
-            if not messagebox.askyesno(
-                "Apagar a memória",
+            if _dialogo_escuro(
+                janela, "Apagar a memória",
                 "Apagar tudo o que a IA aprendeu sobre você?",
-                parent=janela,
-            ):
+                botoes=("Apagar", "Cancelar"),
+            ) != "Apagar":
                 return
             esquecer_memoria()
             desenhar()
@@ -5781,75 +5949,12 @@ class Aplicativo:
                 pass
             self._popup_conversa = None
 
-    def _confirmar(self, titulo, texto):
-        """Diálogo de confirmação no tema escuro (sem branco do Windows)."""
-        resultado = {"ok": False}
-        pop = tk.Toplevel(self.raiz)
-        pop.overrideredirect(True)
-        pop.configure(bg=COR_PAINEL)
-        janela = tk.Frame(pop, bg=COR_PAINEL)
-        janela.pack(padx=1, pady=1)
-        caixa = tk.Frame(janela, bg=COR_BARRA, highlightthickness=1,
-                        highlightbackground=COR_BORDA)
-        caixa.pack(fill="both")
-
-        # Cabecalho arrastavel (permite mover a janelinha)
-        topo = tk.Frame(caixa, bg=COR_BARRA)
-        topo.pack(fill="x", padx=16, pady=(14, 4))
-        rotulo_titulo = tk.Label(
-            topo, text=titulo, bg=COR_BARRA, fg=COR_TEXTO,
-            font=(FONTE, 11, "bold"), anchor="w",
+    def _confirmar(self, titulo, texto, sim="Sim", nao="Não"):
+        """Pergunta de confirmação no tema escuro (sem branco do Windows)."""
+        resposta = _dialogo_escuro(
+            self.raiz, titulo, texto, botoes=(sim, nao), destaque=0,
         )
-        rotulo_titulo.pack(fill="x")
-
-        def _arrastar_inicio(_e):
-            pop._drag = (_e.x_root, _e.y_root,
-                          pop.winfo_x(), pop.winfo_y())
-
-        def _arrastar_mover(_e):
-            d = getattr(pop, "_drag", None)
-            if not d:
-                return
-            start_xr, start_yr, start_xw, start_yw = d
-            pop.geometry("+%d+%d" % (
-                start_xw + (_e.x_root - start_xr),
-                start_yw + (_e.y_root - start_yr),
-            ))
-
-        def _arrastar_fim(_e):
-            pop._drag = None
-
-        for widget in (topo, rotulo_titulo):
-            widget.bind("<Button-1>", _arrastar_inicio)
-            widget.bind("<B1-Motion>", _arrastar_mover)
-            widget.bind("<ButtonRelease-1>", _arrastar_fim)
-
-        tk.Label(
-            caixa, text=texto, bg=COR_BARRA, fg=COR_TEXTO_2,
-            font=(FONTE, 9), wraplength=300, justify="left",
-        ).pack(fill="x", padx=16, pady=(0, 12), anchor="w")
-
-        botoes = tk.Frame(caixa, bg=COR_BARRA)
-        botoes.pack(fill="x", padx=16, pady=(0, 12))
-        def sim():
-            resultado["ok"] = True
-            pop.destroy()
-        def cancelar():
-            resultado["ok"] = False
-            pop.destroy()
-        Botao(botoes, "Excluir", sim, destaque=True).pack(side="left")
-        Botao(botoes, "Cancelar", cancelar).pack(side="left", padx=(8, 0))
-        pop.bind("<Escape>", lambda _e: cancelar())
-        pop.update_idletasks()
-        largura = pop.winfo_width()
-        altura = pop.winfo_height()
-        centro_x = self.raiz.winfo_rootx() + (self.raiz.winfo_width() - largura) // 2
-        centro_y = self.raiz.winfo_rooty() + (self.raiz.winfo_height() - altura) // 2
-        pop.geometry("+%d+%d" % (centro_x, centro_y))
-
-        pop.grab_set()
-        self.raiz.wait_window(pop)
-        return resultado["ok"]
+        return resposta == sim
 
     def _janela_chave_ruim(self, texto):
         """Janelinha avisando que a chave do Google parou de valer.
@@ -5861,50 +5966,17 @@ class Aplicativo:
             self._fechar_menu_ortografia()
         except Exception:
             pass
-        pop = tk.Toplevel(self.raiz)
-        pop.overrideredirect(True)
-        pop.configure(bg=COR_PAINEL)
-        caixa = tk.Frame(pop, bg=COR_BARRA, highlightthickness=1,
-                         highlightbackground=COR_BORDA)
-        caixa.pack(fill="both", padx=1, pady=1)
-
-        tk.Label(
-            caixa, text="A chave do Google parou de valer", bg=COR_BARRA,
-            fg=COR_TEXTO, font=(FONTE, 11, "bold"), anchor="w", wraplength=340,
-            justify="left",
-        ).pack(fill="x", padx=16, pady=(16, 6))
-        tk.Label(
-            caixa, text=texto + "\n\nEnquanto isso, nenhuma resposta vai "
-            "aparecer — nem digitando, nem falando.", bg=COR_BARRA,
-            fg=COR_TEXTO_2, font=(FONTE, 9), wraplength=340, justify="left",
-            anchor="w",
-        ).pack(fill="x", padx=16, pady=(0, 4))
-
-        def abrir():
+        escolha = _dialogo_escuro(
+            self.raiz, "A chave do Google parou de valer",
+            texto + "\n\nEnquanto isso, nenhuma resposta vai aparecer — nem "
+            "digitando, nem falando.",
+            botoes=("Criar chave nova", "Colar chave nova"),
+            destaque=0,
+        )
+        if escolha == "Criar chave nova":
             webbrowser.open(URL_CHAVE)
-            pop.destroy()
-
-        def depois():
-            pop.destroy()
+        elif escolha == "Colar chave nova":
             self._abrir_config("chave")
-
-        botoes = tk.Frame(caixa, bg=COR_BARRA)
-        botoes.pack(fill="x", padx=16, pady=(8, 16))
-        Botao(botoes, "Criar chave nova", abrir, destaque=True).pack(
-            side="left")
-        Botao(botoes, "Colar chave nova", depois).pack(side="left", padx=(8, 0))
-
-        pop.bind("<Escape>", lambda _e: pop.destroy())
-        pop.update_idletasks()
-        largura = pop.winfo_width()
-        altura = pop.winfo_height()
-        centro_x = (self.raiz.winfo_rootx()
-                    + (self.raiz.winfo_width() - largura) // 2)
-        centro_y = (self.raiz.winfo_rooty()
-                    + (self.raiz.winfo_height() - altura) // 2)
-        pop.geometry("+%d+%d" % (centro_x, centro_y))
-        pop.grab_set()
-        self.raiz.wait_window(pop)
 
     def _abrir_conversa_da_lista(self, conversa):
         """Abre a conversa escolhida (quando se clica no titulo)."""
@@ -6041,25 +6113,25 @@ class Aplicativo:
         if tipo == "teste_ok":
             self._definir_ocupado(False)
             self._atualizar_status_chave()
-            messagebox.showinfo(
-                "Tudo certo", "A chave da API está funcionando. Pode pesquisar!"
+            _dialogo_escuro(
+                self.raiz, "Tudo certo",
+                "A chave da API está funcionando. Pode pesquisar!",
             )
             return
 
         if tipo == "teste_erro":
             self._definir_ocupado(False)
-            messagebox.showerror("Problema com a chave", item[1])
+            _dialogo_escuro(self.raiz, "Problema com a chave", item[1])
             return
 
         if tipo == "teste_reserva_ok":
             _, nome, texto = item
             self._definir_ocupado(False)
             self._definir_status("%s está funcionando." % nome, COR_OK)
-            messagebox.showinfo(
-                "Tudo certo",
+            _dialogo_escuro(
+                self.raiz, "Tudo certo",
                 "O %s respondeu: %s\n\nO plano B já pode ser usado."
                 % (nome, (texto or "OK")[:120]),
-                parent=self._pai_aviso(),
             )
             return
 
@@ -6067,8 +6139,8 @@ class Aplicativo:
             _, nome, msg = item
             self._definir_ocupado(False)
             self._definir_status("")
-            messagebox.showerror(
-                "Problema com o %s" % nome, msg, parent=self._pai_aviso()
+            _dialogo_escuro(
+                self.raiz, "Problema com o %s" % nome, msg,
             )
             return
 
@@ -6242,8 +6314,8 @@ if __name__ == "__main__":
         try:
             raiz_erro = tk.Tk()
             raiz_erro.withdraw()
-            messagebox.showerror(
-                "Pesquisa IA - erro ao abrir",
+            _dialogo_escuro(
+                raiz_erro, "Pesquisa IA - erro ao abrir",
                 "O programa não conseguiu abrir.\n\n"
                 "Detalhes foram salvos em:\n%s\n\n"
                 "Últimas linhas:\n%s" % (ARQUIVO_ERRO, detalhes[-600:]),

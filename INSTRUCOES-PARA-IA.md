@@ -42,7 +42,17 @@ trabalhando.
   TÍTULO ("Pesquisa IA") em todos os processos e mova com `SetWindowPos`.
 
 ## Regras de trabalho (obrigatórias)
-0. **Nunca** tente criar, adivinhar ou "consertar" a chave de API do
+0. **Nenhuma janela branca, nunca.** Todo aviso, pergunta, confirmação e
+   erro tem que sair pela `_dialogo_escuro(pai, titulo, texto,
+   botoes=(...))` — ou pelo `_confirmar(titulo, texto)`, que já usa essa
+   função. **Proibidos:** `messagebox`, `simpledialog`, `tk_optionMenu` e
+   qualquer outra janela do tkinter/sistema (elas abrem brancas e
+   destoam). O `verificar.py` **falha** se qualquer um desses aparecer.
+   A única exceção é a janela de "Salvar como...", que é do Windows e não
+   dá para trocar as cores — para ela existe
+   `_deixar_dialogo_do_sistema_escuro(raiz)`, que pede ao Windows o tema
+   escuro (pode não funcionar em toda versão do Windows).
+1. **Nunca** tente criar, adivinhar ou "consertar" a chave de API do
    Google por conta própria. O Google não tem API pública para criar
    chaves no AI Studio, e qualquer contorno exigiria a senha do Wolf.
    O que o programa faz é avisar com clareza e oferecer a chave reserva.

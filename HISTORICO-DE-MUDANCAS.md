@@ -5,6 +5,45 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Nenhuma janela branca (tudo no darkmode do programa)
+
+- **Pedido do Wolf:** "todas as janelas que abrem, como as de confirmação
+  de teste, fossem em darkmode também, para manter o padrão do app... e
+  para futuras adições também, sempre em darkmode e sem bordas brancas".
+- **O que estava branco:** 13 janelas do `messagebox` do tkinter (que o
+  Windows desenha com fundo branco e borda do sistema): "Salvo", "Erro",
+  "Falta a chave", "Tudo certo" (chave e plano B), "Problema com a chave",
+  "Apagar a memória" e a janela de erro fatal ao abrir o programa.
+- **Correção:** nova função única `_dialogo_escuro(pai, titulo, texto,
+  botoes=(...), destaque=0, largura_texto=380)`, que monta a janelinha
+  com as mesmas cores, a mesma fonte e os mesmos botões do resto do
+  programa (sem borda do Windows). Devolve o rótulo do botão clicado.
+  - `_confirmar()` virou um chamarão dela (aceita os rótulos "Sim/Não" ou
+    "Apagar/Cancelar").
+  - `_janela_chave_ruim()` também (os botões abrem a página do Google ou
+    as Configurações depois que o diálogo fecha).
+  - `messagebox` saiu do import: não existe mais no programa.
+- **Janela de "Salvar imagem como...":** essa é do próprio Windows e o
+  tkinter não deixa trocar as cores. O que dá para fazer é pedir ao
+  Windows que ela abra no tema escuro:
+  `_deixar_dialogo_do_sistema_escuro(raiz)` procura a janela da classe
+  `#32770` e aplica `SetWindowTheme("DarkMode_Explorer")`. **Honesto:**
+  isso depende da versão do Windows e pode não funcionar em todas.
+- **Regra para o futuro (o pedido do Wolf):** o `verificar.py` agora
+  **FALHA** se `messagebox`, `simpledialog` ou `tk_optionMenu` aparecerem
+  no código (a regra ignora comentários e docstrings para não se acusar
+  sozinha). Está escrito também no `INSTRUCOES-PARA-IA.md` como regra 0.
+- **Testado:** `verificar.py` = TUDO CERTO. Testes novos: (1) a regra das
+  janelas brancas; (2) o diálogo tem as cores do programa (conferidas
+  widget por widget, não por impressão de tela); (3) a confirmação devolve
+  "não" quando fechada; (4) a janela de chave inválida abre e fecha.
+  Conferência no print: "Excluir conversa" e "A chave do Google parou de
+  valer" saíram escuras (41 e 145 pixels claros, só o texto e o botão
+  azul). **O botão direito da caixa de digitar continua sem conferência
+  visual** — é o único item ainda pendente dos testes.
+
+---
+
 ## 2026-10-15 — Chave reserva com troca automática + aviso com botão
 
 - **Pedido do Wolf:** "consegue atualizar a chave sempre que acontecer

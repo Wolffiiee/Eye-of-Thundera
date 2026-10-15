@@ -115,6 +115,25 @@ except Exception as erro:
 
 # --- 4. regras do projeto ---------------------------------------------------
 codigo = ARQUIVO.read_text(encoding="utf-8")
+# Nenhuma janela do Windows pode aparecer: messagebox, simpledialog e
+# filedialog abrem brancos e destoam do programa. Para aviso, pergunta e
+# confirmação use SEMPRE `_dialogo_escuro(...)` (ou `_confirmar`).
+for proibido, motivo in (
+    ("messagebox.", "use _dialogo_escuro(pai, titulo, texto)"),
+    ("simpledialog", "use _dialogo_escuro(pai, titulo, texto)"),
+    ("tk_optionMenu", "use _dialogo_escuro(pai, titulo, texto)"),
+):
+    # fora do que está em comentário ou dentro de texto (docstring),
+    # para a regra não acusar a própria documentação
+    sem_texto = re.sub(r'""".*?"""|\'\'\'.*?\'\'\'', "", codigo, flags=re.S)
+    sem_texto = re.sub(r"#.*", "", sem_texto)
+    achados = re.findall(r"(?<![\"'])\b%s" % re.escape(proibido), sem_texto)
+    if achados:
+        falha("%s é PROIBIDO no projeto (%d uso(s)): a janela do Windows é "
+              "branca. %s." % (proibido, len(achados), motivo))
+    else:
+        ok("nenhum %s (janela branca) no código" % proibido)
+
 n_unbind = len(re.findall(r'\.unbind_all\(\s*["\']<Button-1>', codigo))
 n_bind = len(re.findall(r'\.bind_all\(\s*["\']<Button-1>', codigo))
 if n_unbind:
@@ -665,14 +684,27 @@ def testes_de_tela():
         app._falhou_principal = False
         app.cfg["api_key_reserva"] = ""
 
-        # a janelinha de "chave inválida" tem que abrir sem estourar erro
-        # (o teste fecha ela sozinha depois de um instante)
-        def fecha_janela():
+        # --- diálogo escuro: tem que ter as cores do programa e nada
+        # --- branco (as janelas do Windows são brancas e destoam)
+        cores = {
+            "caixa": p.COR_BARRA, "painel": p.COR_PAINEL,
+            "borda": p.COR_BORDA, "fundo": p.COR_FUNDO,
+        }
+        vistas = {}
+
+        def guarda_dialogo():
             for w in raiz.winfo_children():
                 if isinstance(w, tk.Toplevel):
+                    for item in p.anda(w):
+                        try:
+                            fundo = item.cget("bg")
+                        except Exception:
+                            continue
+                        if fundo in cores.values():
+                            vistas[fundo] = vistas.get(fundo, 0) + 1
                     w.destroy()
 
-        raiz.after(500, fecha_janela)
+        raiz.after(700, guarda_dialogo)
         try:
             app._janela_chave_ruim(
                 "Uma das chaves de API parece inválida. Abra Configurações.")
@@ -681,6 +713,27 @@ def testes_de_tela():
         except Exception as erro:
             falha("a janela de chave inválida quebrou: %r" % (erro,))
         raiz.update()
+
+        if vistas.get(cores["caixa"], 0) >= 2:
+            ok("diálogo escuro tem as cores do programa (%d widgets na cor da "
+               "caixa)" % vistas[cores["caixa"]])
+        else:
+            falha("o diálogo não está com as cores do programa (%s)" % vistas)
+        for nome, cor in cores.items():
+            if vistas.get(cor):
+                ok("diálogo escuro usa a cor de %s" % nome)
+
+        # a confirmação também tem que ser escura e devolver a resposta
+        def responde():
+            for w in raiz.winfo_children():
+                if isinstance(w, tk.Toplevel):
+                    w.destroy()
+
+        raiz.after(600, responde)
+        if app._confirmar("Excluir conversa", "Apagar?") is False:
+            ok("confirmação escura devolve 'não' quando ela é fechada")
+        else:
+            falha("a confirmação não devolveu 'não'")
 
         # --- menus que fecham ao clicar fora (um não pode quebrar o outro)
         chamadas = []
