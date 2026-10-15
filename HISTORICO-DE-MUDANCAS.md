@@ -5,6 +5,48 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Tarefa A: amigo que só pesquisa quando precisa
+
+- **Pedido do Wolf:** executar o `PLANO-NOVAS-FUNCOES.md`, Tarefa A.
+- **Adicionado:** `roteador.py` (funções puras, só biblioteca padrão, sem
+  importar o programa): `regra_local` (cumprimento e comandos `/web` e
+  `/papo` decidem na hora, sem gastar IA), `decidir` (regra -> modelo com
+  JSON -> heurística de reserva, nunca trava), `heuristica_pesquisa` (só
+  pesquisa com palavras de "agora"), `fato_pedido` ("lembra que..." vira
+  fato) e `prompt_roteador`.
+- **Adicionado:** `PLANO-NOVAS-FUNCOES.md` (plano escrito pelo Claude,
+  colocado na pasta pelo Wolf).
+- **Modificado:** `pesquisa_ia.py`:
+  - `INSTRUCOES` agora abre com "amigo bem informado"; novo
+    `INSTRUCOES_AMIGO` (tom de amigo, sem web, sem inventar fatos).
+  - `instrucoes_da_ia(modo="pesquisa")`, e o `modo` passa por
+    `_gerar_texto`, `_chamar_servico` e `_gerar_texto_rapido` (amigo usa
+    temperatura 0.7 e 12 falas; pesquisa continua 0.3 e 6).
+  - `perguntar(..., consulta=None)`: a busca usa a consulta do roteador; o
+    prompt final continua com a pergunta original.
+  - `conversar`: prompt curto (data + pergunta + conversas); bloco de
+    memória duplicado removido (a memória já vai no `instrucoes_da_ia`).
+  - `_enviar`: a decisão sai da thread da tela e vai para a thread de
+    fundo (`_decidir_modo` com o modelo rápido e 8 s de limite); status
+    "Pensando..." e depois "Pesquisando na web..." ou "Conversando...".
+    Imagens e notícias explícitas continuam pesquisando como antes.
+    "Lembra que..." grava direto na memória, sem gastar IA.
+  - Novo `cfg["modo_pesquisa"]` (auto|sempre|nunca) com botão pequeno
+    ("Web: automática", clique alterna) sob a caixa de digitar, e novo
+    `cfg["aprender"]` (padrão ligado). Aprendizado agora roda quando a
+    fala tem 12+ caracteres OU a resposta 120+.
+  - `_quer_pesquisa` ficou sem uso (o roteador assumiu); mantida no código
+    por enquanto.
+- **Modificado:** `verificar.py`: 20 testes novos do roteador (regras,
+  JSON limpo/cercado/lixo/erro, frases reais, fato pedido, prompts).
+- **Não testado:** pergunta real à IA nem uso longo (precisa da chave e do
+  Wolf). Os controles de modo na aba Conversa das Configurações ficam
+  para a Tarefa D (a aba ainda não existe).
+- **Testado:** `verificar.py` = TUDO CERTO. Sem .exe novo (o plano só pede
+  .exe ao final de B, C e D).
+
+---
+
 ## 2026-10-15 — Duplo/triplo clique, .exe novo e pasta antiga apagada
 
 - **Pedido do Wolf:** fazer tudo que desse, trabalhar só com a pasta nova,

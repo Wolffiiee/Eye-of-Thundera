@@ -325,6 +325,94 @@ if not falhas:
 else:
     aviso("testes de tela pulados porque houve falha acima")
 
+# --- 6. roteador: papo ou pesquisa (sem internet) --------------------------
+try:
+    sys.path.insert(0, str(PASTA))
+    import roteador
+    import pesquisa_ia as _pia
+
+    def confere(condicao, nome):
+        if condicao:
+            ok(nome)
+        else:
+            falha(nome)
+
+    r = roteador.regra_local
+    confere(r("oi") == "amigo", "roteador: 'oi' é papo")
+    confere(r("valeu!") == "amigo", "roteador: 'valeu!' é papo")
+    confere(r("/web preço do dólar") == "pesquisa",
+            "roteador: '/web ...' é pesquisa")
+    confere(r("sem pesquisar, o que acha de RPG?") == "amigo",
+            "roteador: 'sem pesquisar' é papo")
+    confere(r("oi", modo="sempre") == "pesquisa",
+            "roteador: modo 'sempre' pesquisa tudo")
+    confere(r("quanto custa?", modo="nunca") == "amigo",
+            "roteador: modo 'nunca' nunca pesquisa")
+
+    def quebrou(_prompt):
+        raise RuntimeError("sem internet")
+
+    d = roteador.decidir("oi", [], quebrou)
+    confere(d == {"modo": "amigo", "consulta": "oi", "origem": "regra"},
+            "roteador: 'oi' decide papo pela regra")
+    d = roteador.decidir("/web preço do dólar", [], quebrou)
+    confere(d["modo"] == "pesquisa" and d["consulta"] == "preço do dólar"
+            and d["origem"] == "regra",
+            "roteador: '/web ...' tira o prefixo da consulta")
+    d = roteador.decidir(
+        "q?", [], lambda p: '{"pesquisar": true, "consulta": "x", "motivo": "y"}')
+    confere(d["modo"] == "pesquisa" and d["origem"] == "modelo",
+            "roteador: entende JSON limpo do modelo")
+    d = roteador.decidir(
+        "q?", [],
+        lambda p: 'texto ```json {"pesquisar": false, "consulta": "", '
+                   '"motivo": "papo"} ``` fim')
+    confere(d["modo"] == "amigo" and d["origem"] == "modelo",
+            "roteador: entende JSON dentro de cerca")
+    d = roteador.decidir("q?", [], lambda p: "não entendi nada")
+    confere(d["origem"] == "padrao",
+            "roteador: texto solto cai na heurística")
+    d = roteador.decidir("q?", [], quebrou)
+    confere(d["origem"] == "padrao",
+            "roteador: erro do modelo cai na heurística")
+
+    def modelo_amigo(_p):
+        return '{"pesquisar": false, "consulta": "", "motivo": "papo"}'
+
+    d = roteador.decidir("como você está hoje?", [], modelo_amigo)
+    confere(d["modo"] == "amigo", "roteador: 'como você está hoje?' é papo")
+    d = roteador.decidir("quanto está o dólar hoje?", [], quebrou)
+    confere(d["modo"] == "pesquisa",
+            "roteador: 'quanto está o dólar hoje?' é pesquisa")
+    d = roteador.decidir("me explica o que é uma API", [], modelo_amigo)
+    confere(d["modo"] == "amigo",
+            "roteador: 'me explica o que é uma API' é papo")
+    d = roteador.decidir("qual a última versão do Windows 11?", [], quebrou)
+    confere(d["modo"] == "pesquisa",
+            "roteador: 'última versão' é pesquisa pela heurística")
+
+    confere(roteador.fato_pedido("lembra que eu gosto de RPG")
+            == "gosto de RPG",
+            "roteador: 'lembra que...' vira fato guardado")
+    confere(roteador.fato_pedido("que dia é hoje?") is None,
+            "roteador: pergunta normal não é pedido para lembrar")
+
+    # instrucoes_da_ia com memória falsa (nunca lê a memória de verdade)
+    _memoria_real = _pia.carregar_memoria
+    _pia.carregar_memoria = lambda: []
+    try:
+        texto_amigo = _pia.instrucoes_da_ia("amigo")
+        texto_pesquisa = _pia.instrucoes_da_ia("pesquisa")
+    finally:
+        _pia.carregar_memoria = _memoria_real
+    confere("material achado" not in texto_amigo,
+            "roteador: prompt do amigo não fala de material da web")
+    confere("material achado" in texto_pesquisa,
+            "roteador: prompt de pesquisa continua com o material da web")
+except Exception as erro:
+    falha("os testes do roteador quebraram: %r" % (erro,))
+    print(traceback.format_exc()[-900:])
+
 print()
 if falhas:
     print("RESULTADO: %d FALHA(S). Corrija antes de entregar." % len(falhas))

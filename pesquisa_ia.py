@@ -30,6 +30,8 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog, messagebox
 
+import roteador
+
 # Pillow é usado para mostrar as imagens na conversa. Se ele não estiver
 # instalado, o programa funciona normalmente (só não mostra imagens).
 try:
@@ -124,7 +126,7 @@ else:
     ARQUIVO_ERRO = Path(__file__).resolve().parent / "erro.log"
 
 INSTRUCOES = (
-    "Você é um assistente de pesquisa pessoal, escrito para uma pessoa comum "
+    "Você é um amigo bem informado, que pesquisa na web para uma pessoa comum "
     "no Brasil.\n"
     "\n"
     "Você recebe a pergunta do usuário e um material achado agora mesmo na "
@@ -150,6 +152,24 @@ INSTRUCOES = (
     "leitura.\n"
     "- Escreva em texto simples: NÃO use asteriscos (*), cerquilhas (#) nem "
     "outras marcações. Para fazer uma lista, comece a linha com '•'."
+)
+
+INSTRUCOES_AMIGO = (
+    "Você conversa como um amigo de confiança: natural, caloroso, direto, "
+    "com humor quando combinar. Sem formalidade.\n"
+    "\n"
+    "Curto quando o papo é leve; mais fundo quando a pessoa pedir.\n"
+    "Aqui você NÃO tem resultados da web. Se a resposta depender de algo "
+    "atual e você não tiver certeza, diga isso em uma frase e ofereça "
+    "pesquisar. Nunca invente número, data ou fato.\n"
+    "Use o que sabe da pessoa só quando ajudar, de forma natural; nunca diga "
+    "que 'lembrou' ou 'guardou', nem liste o que sabe dela. Exceção: se ela "
+    "pedir para lembrar de algo, confirme curto ('Anotado!').\n"
+    "Dê opinião quando pedirem e discorde com jeito quando precisar.\n"
+    "Nada de frases de robô ('Como posso ajudar?' em toda resposta) nem "
+    "repetir a pergunta.\n"
+    "Escreva em texto simples: NÃO use asteriscos (*) nem emojis. Para fazer "
+    "uma lista, comece a linha com '•'."
 )
 
 # ----------------------------------------------------------------------------
@@ -207,6 +227,8 @@ def carregar_config():
     cfg.setdefault("modelo", MODELO_PADRAO)
     cfg.setdefault("usar_contexto", True)
     cfg.setdefault("usar_plano_b", True)
+    cfg.setdefault("modo_pesquisa", "auto")
+    cfg.setdefault("aprender", True)
     for _servico in SERVICOS_RESERVA:
         cfg.setdefault(_servico["campo_chave"], "")
 
@@ -420,14 +442,15 @@ def contexto_das_conversas(limite=MAX_CARACTERES_CONTEXTO, ignorar=None):
     )
 
 
-def instrucoes_da_ia():
+def instrucoes_da_ia(modo="pesquisa"):
     """Instrucoes do programa + a memoria sobre o usuario."""
+    base = INSTRUCOES_AMIGO if modo == "amigo" else INSTRUCOES
     fatos = carregar_memoria()
     if not fatos:
-        return INSTRUCOES
+        return base
     lista = "\n".join("- " + fato for fato in fatos[:40])
     return (
-        INSTRUCOES
+        base
         + "\n\nO QUE VOCE SABE SOBRE ESTA PESSOA (use essas informacoes de "
         "forma natural, sem nunca dizer que voce sabe, sem falar de "
         "memoria e sem perguntar como voce sabe):\n" + lista
@@ -470,7 +493,8 @@ def aprender_com_o_usuario(api_key, pergunta, resposta):
     """
     global _ultimo_aprendizado
     api_key = (api_key or "").strip()
-    if not api_key or len((resposta or "")) < 120:
+    if not api_key or (len((resposta or "")) < 120
+                       and len((pergunta or "")) < 12):
         return None
     if time.time() - _ultimo_aprendizado < ESPACO_ENTRE_APRENDIZADOS:
         return None
@@ -712,6 +736,39 @@ def _termo_imagens(pergunta):
     texto = _CONECTORES_IMAGEM.sub("", texto)
     texto = re.sub(r"\s+", " ", texto).strip(" ?.!,\u2026-")
     return texto
+
+
+def _decidir_modo(api_key, texto, historico, modo="auto"):
+    """Pergunta ao roteador se precisa pesquisar. Nunca trava a conversa.
+
+    Usa o modelo rápido com tempo curto; se falhar, o roteador decide
+    sozinho pela heurística de reserva.
+    """
+    def chamar_modelo(prompt):
+        from google import genai
+        from google.genai import types
+
+        http = types.HttpOptions(
+            timeout=8000,
+            retry_options=types.HttpRetryOptions(
+                attempts=1,
+                initial_delay=0.2,
+                max_delay=1.0,
+                http_status_codes=[408, 429, 500, 502, 503, 504],
+            ),
+        )
+        cliente = genai.Client(api_key=api_key, http_options=http)
+        resposta = cliente.models.generate_content(
+            model=MODELO_MEMORIA,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0,
+                response_mime_type="application/json",
+            ),
+        )
+        return (getattr(resposta, "text", "") or "").strip()
+
+    return roteador.decidir(texto, historico, chamar_modelo, modo)
 
 
 def _baixar_bytes(url, tempo=8.0, limite=4_000_000):
@@ -1009,7 +1066,7 @@ def _erro_do_servico(servico, erro):
     return "O %s deu erro: %s" % (nome, detalhe or erro)
 
 
-def _chamar_servico(servico, prompt, historico):
+def _chamar_servico(servico, prompt, historico, modo="pesquisa"):
     """Chama um serviço de reserva (Groq, OpenRouter...) e devolve o texto.
 
     Usa a biblioteca que já vem com o Python, então não é preciso instalar
@@ -1018,8 +1075,9 @@ def _chamar_servico(servico, prompt, historico):
     import urllib.error
     import urllib.request
 
-    mensagens = [{"role": "system", "content": instrucoes_da_ia()}]
-    for turno in (historico or [])[-6:]:
+    amigo = (modo == "amigo")
+    mensagens = [{"role": "system", "content": instrucoes_da_ia(modo)}]
+    for turno in (historico or [])[-12 if amigo else -6:]:
         texto = (turno.get("text") or "").strip()
         if not texto:
             continue
@@ -1031,7 +1089,7 @@ def _chamar_servico(servico, prompt, historico):
         {
             "model": servico["modelo"],
             "messages": mensagens,
-            "temperature": 0.3,
+            "temperature": 0.7 if amigo else 0.3,
         }
     ).encode("utf-8")
 
@@ -1079,7 +1137,7 @@ def testar_servico(cfg, campo_chave):
 
 
 def _gerar_texto(api_key, modelo, prompt, historico, cfg=None,
-                 com_plano_b=True):
+                 com_plano_b=True, modo="pesquisa"):
     """Chama o Gemini (grátis) para escrever a resposta final.
 
     Tenta o modelo principal e, se ele estiver fora do ar, passa rapidamente
@@ -1087,15 +1145,18 @@ def _gerar_texto(api_key, modelo, prompt, historico, cfg=None,
     tenta os serviços de plano B (Groq, OpenRouter) que estiverem com chave.
 
     Devolve (texto, origem), sendo a origem o nome de quem escreveu a resposta.
+    No modo "amigo" usa temperatura 0.7 e as últimas 12 falas; no modo
+    "pesquisa" usa 0.3 e as últimas 6.
     """
     from google.genai import types
 
+    amigo = (modo == "amigo")
     cliente = _criar_cliente(api_key)
     ordem = [modelo] + [m for m in MODELOS_RESERVA if m != modelo]
     ultimo_erro = None
 
     conteudo = []
-    for turno in (historico or [])[-6:]:
+    for turno in (historico or [])[-12 if amigo else -6:]:
         conteudo.append(
             types.Content(
                 role=turno["role"],
@@ -1108,8 +1169,8 @@ def _gerar_texto(api_key, modelo, prompt, historico, cfg=None,
         for nome in ordem:
             try:
                 config = types.GenerateContentConfig(
-                    temperature=0.3,
-                    system_instruction=instrucoes_da_ia(),
+                    temperature=0.7 if amigo else 0.3,
+                    system_instruction=instrucoes_da_ia(modo),
                 )
                 resposta = cliente.models.generate_content(
                     model=nome, contents=conteudo, config=config
@@ -1134,7 +1195,7 @@ def _gerar_texto(api_key, modelo, prompt, historico, cfg=None,
             erros = []
             for servico in servicos:
                 try:
-                    texto = _chamar_servico(servico, prompt, historico)
+                    texto = _chamar_servico(servico, prompt, historico, modo)
                     if texto:
                         return texto, servico["nome"]
                     erros.append("%s: não devolveu texto" % servico["nome"])
@@ -1208,7 +1269,8 @@ ANTENACAO_PADRAO = 3.0  # segundos de vantagem do Gemini
 
 
 def _gerar_texto_rapido(
-    api_key, modelo, prompt, historico, cfg=None, antecipacao=ANTENACAO_PADRAO
+    api_key, modelo, prompt, historico, cfg=None, antecipacao=ANTENACAO_PADRAO,
+    modo="pesquisa",
 ):
     """Pede a resposta para varias IAs ao mesmo tempo e fica com a primeira.
 
@@ -1238,7 +1300,8 @@ def _gerar_texto_rapido(
         try:
             # com_plano_b=False: aqui quem cuida do plano B e a outra thread
             texto, origem = _gerar_texto(
-                api_key, modelo, prompt, historico, cfg, com_plano_b=False
+                api_key, modelo, prompt, historico, cfg, com_plano_b=False,
+                modo=modo,
             )
             avisar_fim("gemini", texto, origem)
         except Exception as erro:
@@ -1248,7 +1311,7 @@ def _gerar_texto_rapido(
         ultimo_erro = None
         for servico in servicos:
             try:
-                texto = _chamar_servico(servico, prompt, historico)
+                texto = _chamar_servico(servico, prompt, historico, modo)
             except Exception as erro:
                 ultimo_erro = erro
                 continue
@@ -1279,7 +1342,7 @@ def _gerar_texto_rapido(
 
 def perguntar(
     api_key, modelo, historico, pergunta, usar_contexto, progresso=None, cfg=None,
-    id_atual=None,
+    id_atual=None, consulta=None,
 ):
     """Pesquisa na web e pede para a IA juntar tudo em uma resposta.
 
@@ -1292,6 +1355,9 @@ def perguntar(
 
     O "id_atual" é a conversa que está aberta na tela: ela não entra de novo
     no contexto das conversas antigas.
+
+    A "consulta" (opcional) é o que vai para a busca na web; o prompt final
+    continua com a pergunta original do usuário.
     """
     def avisar(mensagem):
         if progresso is not None:
@@ -1300,9 +1366,10 @@ def perguntar(
             except Exception:
                 pass
 
+    busca = (consulta or pergunta or "").strip() or pergunta
     avisar("Procurando na web")
-    resultados = _buscar_texto(pergunta)
-    noticias = _buscar_noticias(pergunta) if _quer_noticias(pergunta) else []
+    resultados = _buscar_texto(busca)
+    noticias = _buscar_noticias(busca) if _quer_noticias(busca) else []
 
     blocos = []
     for indice, item in enumerate(resultados, 1):
@@ -1375,30 +1442,14 @@ def conversar(
             except Exception:
                 pass
     avisar("Conversando com você")
-    memoria = []
-    try:
-        memoria = carregar_memoria()
-    except Exception:
-        memoria = []
     historico_para_ia = historico if usar_contexto else []
     hoJe = __import__("time").strftime("%d/%m/%Y")
-    bloco_memoria = (
-        "Memória que a IA tem sobre o usuário:\n" + "\n".join(memoria)
-        if memoria else "Não há memória guardada ainda sobre o usuário."
-    )
     prompt = (
         "Data de hoje: %s\n\n"
-        "Você não deve procurar nada na web agora. Responda apenas como um "
-        "amigo atencioso que está conversando com o usuário, usando a memória "
-        "abaixo. Seja natural, sem diagnóstico, sem instrução robótica, sem "
-        "citações de fontes, sem markdown complexo. Pode responder curto. Se a "
-        "resposta precisar de informação factual recente e você não tem,"
-        " avise honestamente que pode não estar atualizado.\n\n"
-        "%s\n\nConversas anteriores relevantes (memória e contexto).\n"
-        "Pergunta do usuário: %s" % (hoJe, bloco_memoria, pergunta)
+        "Pergunta do usuário: %s" % (hoJe, pergunta)
     ) + contexto_das_conversas(ignorar=id_atual)
     texto, origem = _gerar_texto_rapido(
-        api_key, modelo, prompt, historico_para_ia, cfg
+        api_key, modelo, prompt, historico_para_ia, cfg, modo="amigo",
     )
     origem = "Gemini (sem pesquisa)" if not origem else origem
     return _espacar_blocos(_sem_markdown(texto)), [], [], origem
@@ -2621,6 +2672,21 @@ class Aplicativo:
         )
         caixa.pack(fill="x")
 
+        linha_modo = tk.Frame(rodape, bg=COR_FUNDO)
+        linha_modo.pack(fill="x", pady=(6, 0))
+        self.rotulo_modo_web = tk.Label(
+            linha_modo, text="", bg=COR_FUNDO, fg=COR_TEXTO_3,
+            font=(FONTE, 9), cursor="hand2",
+        )
+        self.rotulo_modo_web.pack(side="left")
+        self.rotulo_modo_web.bind(
+            "<Button-1>", lambda _e: self._alternar_modo_web())
+        tk.Label(
+            linha_modo, text="Enter envia, Shift+Enter quebra a linha",
+            bg=COR_FUNDO, fg=COR_TEXTO_3, font=(FONTE, 9),
+        ).pack(side="right")
+        self._atualizar_rotulo_modo_web()
+
         self.entrada = tk.Text(
             caixa, height=1, wrap="word", font=(FONTE, 11),
             bg=COR_BARRA, fg=COR_TEXTO, insertbackground=COR_ACCENT,
@@ -2672,6 +2738,33 @@ class Aplicativo:
         self._status_visivel = False
 
         self.entrada.focus_set()
+
+    def _texto_modo_web(self):
+        """Texto do botão que escolhe quando pesquisar na web."""
+        return {
+            "auto": "Web: automática",
+            "sempre": "Web: sempre",
+            "nunca": "Web: nunca",
+        }.get(self.cfg.get("modo_pesquisa", "auto"), "Web: automática")
+
+    def _atualizar_rotulo_modo_web(self):
+        try:
+            self.rotulo_modo_web.configure(text=self._texto_modo_web())
+        except Exception:
+            pass
+
+    def _alternar_modo_web(self):
+        """Alterna automática -> sempre -> nunca e salva a escolha."""
+        ordem = ["auto", "sempre", "nunca"]
+        atual = self.cfg.get("modo_pesquisa", "auto")
+        proximo = ordem[(ordem.index(atual) + 1) % len(ordem)] \
+            if atual in ordem else "auto"
+        self.cfg["modo_pesquisa"] = proximo
+        try:
+            salvar_config(self.cfg)
+        except Exception:
+            pass
+        self._atualizar_rotulo_modo_web()
 
     def _desenhar_enviar(self, cor):
         """Desenha o botao de enviar.
@@ -4021,16 +4114,14 @@ class Aplicativo:
             threading.Thread(target=tarefa_imagens, daemon=True).start()
             return
 
-        amigo = (not ver_imagens) and (not _quer_pesquisa(pergunta))
-
         self._iniciar_digitando()
-        if amigo:
-            self._definir_status("Conversando com você...")
-        else:
-            self._definir_status("Pesquisando na web...")
+        self._definir_status("Pensando...")
 
         usar_contexto = bool(self.cfg.get("usar_contexto", True))
         modelo = self.cfg.get("modelo", MODELO_PADRAO)
+        modo_cfg = self.cfg.get("modo_pesquisa", "auto")
+        if modo_cfg not in ("auto", "sempre", "nunca"):
+            modo_cfg = "auto"
         historico = list(self.historico)
 
         def avisar_progresso(mensagem):
@@ -4038,17 +4129,34 @@ class Aplicativo:
 
         def tarefa():
             try:
-                if amigo:
+                # Pedido explícito ("lembra que..."): grava direto na
+                # memória, sem gastar chamada de IA.
+                try:
+                    fato = roteador.fato_pedido(pergunta)
+                    if fato:
+                        _mesclar_memoria([fato])
+                except Exception:
+                    pass
+                decisao = _decidir_modo(chave, pergunta, historico, modo_cfg)
+                modo = decisao.get("modo", "amigo")
+                consulta = decisao.get("consulta") or pergunta
+                # Notícia explícita continua pesquisando, como antes.
+                if _quer_noticias(pergunta):
+                    modo = "pesquisa"
+                    consulta = pergunta
+                if modo == "amigo":
+                    avisar_progresso("Conversando com você...")
                     texto, fontes, buscas, origem = conversar(
                         chave, modelo, historico, pergunta, usar_contexto,
                         progresso=avisar_progresso, cfg=self.cfg,
                         id_atual=self._id_conversa,
                     )
                 else:
+                    avisar_progresso("Pesquisando na web...")
                     texto, fontes, buscas, origem = perguntar(
                         chave, modelo, historico, pergunta, usar_contexto,
                         progresso=avisar_progresso, cfg=self.cfg,
-                        id_atual=self._id_conversa,
+                        id_atual=self._id_conversa, consulta=consulta,
                     )
                 self.fila.put(("ok", pergunta, texto, fontes, buscas, origem))
             except Exception as erro:
@@ -5051,6 +5159,8 @@ class Aplicativo:
                 self._preencher_lista_conversas()
         except Exception:
             pass
+        if not self.cfg.get("aprender", True):
+            return
         chave = (self.cfg.get("api_key") or "").strip()
         if not chave:
             return
