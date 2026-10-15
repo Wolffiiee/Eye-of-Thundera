@@ -73,6 +73,8 @@ NOME_NO_CODIGO = {
     "ddgs": "ddgs",
     "pyspellchecker": "spellchecker",
     "pillow": "PIL",
+    # a biblioteca chama-se pywebview, mas o modulo que se importa e' webview
+    "pywebview": "webview",
 }
 try:
     for pacote in (PASTA / "requirements.txt").read_text(encoding="utf-8").splitlines():
@@ -95,7 +97,9 @@ except Exception as erro:
 # --- 3. análise do código (pyflakes) ---------------------------------------
 try:
     r = subprocess.run(
-        [sys.executable, "-m", "pyflakes", str(ARQUIVO), str(Path(__file__))],
+        [sys.executable, "-m", "pyflakes", str(ARQUIVO), str(Path(__file__)),
+         str(PASTA / "app_web.py"), str(PASTA / "memoria.py"),
+         str(PASTA / "roteador.py"), str(PASTA / "voz.py")],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
     if "No module named pyflakes" in (r.stderr or ""):

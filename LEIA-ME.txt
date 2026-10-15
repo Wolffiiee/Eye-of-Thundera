@@ -367,6 +367,13 @@ Arquivos novos:
                               "TUDO CERTO".
   3 - Gerar EXE.bat        -> gera o "Pesquisa IA.exe" novo na pasta "dist".
                               Depois copie para a Área de Trabalho.
+  5 - Ver a tela nova.bat  -> abre a TELA NOVA (que ainda esta em
+                              construcao) no segundo monitor, para voce ver
+                              como ela vai ficar. Ela so LE: nao mexe nas
+                              suas conversas, na sua memoria nem nas suas
+                              chaves, e as conversas mostradas sao de
+                              exemplo. Para voltar ao programa de sempre,
+                              abra o atalho "Pesquisa IA" da Area de Trabalho.
   4 - Fazer backup.bat      -> cópia de segurança: salva o código e todo o
                               histórico do Git num .zip dentro da pasta
                               "Backup Pesquisa IA" do seu OneDrive (que vai

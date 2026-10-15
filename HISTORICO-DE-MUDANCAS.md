@@ -35,6 +35,60 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Tela nova: PASSO 1 pronto (dá para ver e tocar)
+
+O Wolf pediu para ver a tela nova antes de decidir. Feito o passo 1.
+
+- **Criado `app_web.py`**: a ponte entre o Python e a tela. Abre a janela
+  nova (`web\index.html`) e responde o que o `web\app.js` pede.
+- **Criado `5 - Ver a tela nova.bat`**: o Wolf dá dois cliques e a tela
+  abre no segundo monitor.
+- **Criado `Pesquisa IA Tela Nova.spec`**: `.exe` da tela nova em um
+  arquivo SEPARADO, de propósito. O `Pesquisa IA.spec` (o programa que já
+  funciona) não foi tocado — se a tela nova der problema, o programa de
+  sempre não é afetado.
+- **`pywebview` entrou no `requirements.txt`**: estava instalado na
+  máquina, mas não registrado. Sem isso o `.exe` gerado não abriria.
+- **Modo `--demo`**: mostra três conversas de exemplo (com emoji
+  COLORIDO) para o Wolf ver a tela cheia. **Não lê nem grava nada dele.**
+- **Passo 1 é SÓ LEITURA, de propósito.** As funções que só leem
+  funcionam (conversas, memória, chaves — e salvar em .txt, que é
+  independente). As que mudam algo devolvem um aviso honesto dizendo em
+  qual passo serão feitas (`aviso_honesto`). Assim nenhum teste pode
+  mexer nas conversas, na memória ou nas chaves do Wolf. Para quem ler
+  o arquivo depois: "funciona" e "ainda não" são coisas diferentes no
+  mesmo arquivo, e o motivo está escrito em cima de cada função.
+- **Defeito achado e corrigido no CSS:** o aviso ("Cole a sua chave...")
+  ficava a 96 px da borda de baixo — exatamente em cima da caixa de
+  digitar. Como a caixa cresce quando se escreve muito, o aviso cobria o
+  texto. Foi para o topo, abaixo do cabeçalho, onde não atrapalha.
+- **Abridor para tirar print da tela nova** (`_tmp\print_web.py`): a
+  janela do pywebview não devolve o handle do Windows (devolve o
+  controlador do WebView2), então o `PrintWindow` precisou achar a
+  janela pelo título com `EnumWindows`. É só conferência, fica em `_tmp`.
+- **Ruído conhecido:** o pywebview imprime um erro de COM do WebView2
+  ("CoreWebView2Controller members can only be accessed from the UI
+  thread") ao tentar ler o zoom. **Não afeta a janela** — ela abre,
+  carrega e funciona. Fica registrado para não assustar quem for rodar.
+- **Teste:** `verificar.py` passou a checar o `pywebview` (o módulo se
+  chama `webview`, não `pywebview` — o teste confundia e dava FALHA) e o
+  pyflakes agora cobre `app_web.py`, `memoria.py`, `roteador.py` e
+  `voz.py` também.
+- **`.exe` do programa de sempre:** não precisou ser regerado (o da
+  Área de Trabalho, de 19:23, já é mais novo que o `pesquisa_ia.py`).
+
+### O que o Wolf viu (prints conferidos)
+- Tela inicial com 3 conversas de exemplo, bolhas arredondadas,
+  emojis **coloridos** de verdade (o foguete vermelho, o alien verde,
+  a lua laranja) e caixa de digitar com cantos redondos.
+- Aba **Chaves** em cartões, com "Mostrar"/"Testar" e o aviso "Chave
+  salva neste computador" (mostrando só os 4 últimos caracteres, nunca a
+  chave inteira).
+- Aba **Memória** com os 12 fatos do Wolf, busca, "Organizar" e "Apagar
+  tudo".
+
+---
+
 ## 2026-10-15 — Tela em HTML: teste decisivo (funciona aqui) + Configurações sem texto espremido
 
 ### 1. A tela em HTML foi testada de verdade (e funciona)

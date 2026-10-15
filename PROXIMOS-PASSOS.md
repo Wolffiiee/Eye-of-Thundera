@@ -61,14 +61,23 @@ rodando pelo código: na pasta do projeto) e siga o PASSO-A-PASSO.md.
      LADO da antiga, e o atalho da Área de Trabalho continua na antiga até
      a nova ficar igual ou melhor. Assim nunca sobra o Wolf sem programa;
    - passos (cada um com commit e `verificar.bat` verde):
-     1. `app_web.py` mínimo: janela + `index.html` + uma função de exemplo;
-     2. lista de conversas e conversa (ler do Python);
-     3. enviar pergunta e mostrar a resposta escrevendo por partes;
+     1. ~~`app_web.py` mínimo~~ **FEITO em 15/10/2026** (o Wolf já viu a
+        tela): a ponte existe, a janela abre no 2º monitor, mostra as
+        conversas (ou as de exemplo, com `--demo`) e abre as 4 abas de
+        Configurações. **Passo 1 é SÓ LEITURA**: as funções que mudam
+        algo devolvem um aviso dizendo em qual passo serão feitas, para
+        nenhum teste mexer nos dados do Wolf. Entrou também o
+        `5 - Ver a tela nova.bat` e o spec separado da tela nova.
+     2. lista de conversas e conversa de verdade (gravar e excluir);
+     3. enviar pergunta e mostrar a resposta aparecendo por partes;
      4. caixa de digitar, microfone, botão enviar, modo web;
-     5. janela de Configurações com as 4 abas (a Tarefa D, junto aqui);
+     5. janela de Configurações com as 4 abas gravando de verdade
+        (a Tarefa D entra aqui, para não ser feita duas vezes);
      6. microfone de ponta a ponta, salvar .txt, copiar, pesquisar;
      7. atalhos de teclado, cantos arredondados da caixa, borda da janela;
-     8. `verificar.bat` cobrindo a tela nova + `.exe` gerado e testado.
+     8. `verificar.bat` cobrindo a tela nova + `.exe` gerado e testado
+        (usando o spec `Pesquisa IA Tela Nova.spec`, que é separado do
+        do programa que já funciona).
 1. ~~**Memória sem repetição**~~ **FEITA e corrigida em 15/10/2026** pelo
    opencode: ligada ao programa e com os 2 defeitos que o Claude deixou
    corrigidos (perdia o nome e a data de nascimento; guardava "NADA").

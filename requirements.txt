@@ -6,3 +6,6 @@ pyspellchecker==0.9.1
 pillow==12.3.0
 httpx==0.28.1
 sounddevice==0.5.6
+# Tela nova (HTML). So o app_web.py usa; o programa de sempre (tkinter)
+# continua funcionando sem ela.
+pywebview==6.2.1

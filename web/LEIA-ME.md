@@ -32,15 +32,36 @@ de graça (no Tk ele só sai de uma cor).
 - `spike_webview.py` — o teste acima. **Não é do programa.**
 
 ## O que falta (ordem de trabalho)
-1. `app_web.py`: a ponte em Python (a lista de conversas, a conversa, o
-   modo web, o microfone, salvar/copiar).
-2. Ligar a lista de conversas e a conversa.
+1. ~~`app_web.py` mínimo~~ **FEITO (passo 1)**: a ponte existe, a janela
+   abre no 2º monitor, mostra as conversas do Wolf (ou as de exemplo, com
+   `--demo`) e abre as 4 abas de Configurações. As funções que só leem
+   funcionam; as que mudam algo avisam em qual passo serão feitas, para
+   nenhum teste mexer nos dados do Wolf.
+2. Ligar a lista de conversas e a conversa de verdade (ler do Python).
 3. Enviar pergunta e mostrar a resposta aparecendo aos poucos.
 4. Caixa de digitar, microfone, botão enviar, modo web.
-5. Janela de Configurações com as 4 abas (a Tarefa D).
+5. Janela de Configurações com as 4 abas funcionando de verdade (gravar).
 6. Salvar em .txt, copiar, pesquisar.
 7. Atalhos de teclado, cantos arredondados da caixa, borda escura da janela.
 8. `verificar.bat` cobrindo a tela nova e `.exe` gerado e testado.
+
+## Como abrir
+- **Para o Wolf:** duplo clique em `5 - Ver a tela nova.bat` (abre no 2º
+  monitor, em modo exemplo, sem tocar em nada).
+- **Para quem programa:** `.venv\Scripts\python.exe app_web.py` (usa as
+  conversas de verdade, só leitura). Com `--demo`, usa as de exemplo.
+
+## O `.exe` da tela nova
+Existe um spec separado, `Pesquisa IA Tela Nova.spec`, de propósito: o
+`Pesquisa IA.spec` (o programa que já funciona) não foi tocado. Se a tela
+nova der problema, o programa do Wolf não é afetado. Ainda não foi gerado
+(não é preciso até o passo 8).
+
+## Ruído conhecido (não é defeito)
+O pywebview imprime um erro de COM do WebView2 ("CoreWebView2Controller
+members can only be accessed from the UI thread") quando tenta ler o
+zoom da página. A janela abre, carrega e funciona normalmente. É ruído do
+próprio pywebview.
 
 ## Duas coisas que o teste descobriu (importante)
 - A ponte do pywebview é **assíncrona**: `window.pywebview.api.algo(...)`

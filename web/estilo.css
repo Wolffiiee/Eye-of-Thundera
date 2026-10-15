@@ -191,6 +191,9 @@ select { background: var(--bg); color: var(--texto); border: 1px solid var(--bor
 .ajuda p { color: var(--texto-2); max-width: 66ch; margin: 0 0 12px; font-size: 14px; }
 .ajuda kbd { background: var(--superficie-2); border: 1px solid var(--borda); border-radius: 6px; padding: 1px 7px; font: 12.5px var(--fonte); }
 
-#aviso { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 60; background: var(--superficie-2);
+/* O aviso fica no TOPO, abaixo do cabecalho. Antes ele ficava a 96 px do
+   fundo, que era exatamente em cima da caixa de digitar: como a caixa
+   cresce quando se escreve muito, o aviso cobria o que estava escrito. */
+#aviso { position: fixed; left: 50%; top: 62px; transform: translateX(-50%); z-index: 60; background: var(--superficie-2);
   border: 1px solid #33334a; border-radius: 12px; padding: 10px 16px; font-size: 13.5px; box-shadow: var(--sombra); max-width: 80vw; }
 #aviso.erro { border-color: #5a2a36; color: #ffc9c9; }
