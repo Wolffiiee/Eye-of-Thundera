@@ -5,6 +5,39 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Salvar a resposta em arquivo (.txt)
+
+- **Pedido do Wolf:** item 2 da lista ("hoje só dá pra copiar").
+- **Adicionado na bolha da IA:** um segundo botão embaixo da resposta, ao
+  lado do de copiar — um **disquete** (`_desenhar_salvar` /
+  `_icone_salvar`), que salva aquele texto num `.txt`.
+- **Atalho:** **Ctrl+S** salva a última resposta (`_salvar_ultima`), no
+  mesmo formato do botão de copiar (que já tinha Ctrl+C).
+- **Nome do arquivo sugerido** (`_nome_de_resposta`): pega a primeira linha
+  que tiver conteúdo, tira a numeração de lista ("1. ", "12) "), apaga
+  tudo que o Windows proíbe em nome de arquivo (`\ / : * ? " < > |`),
+  reduz espaços repetidos e corta em 48 caracteres. O nome sempre termina
+  em `.txt`.
+- **Gravação:** `utf-8-sig` (o Bloco de Notas do Windows abre com acentos
+  certos; outros programas também entendem). Se a pessoa cancelar a
+  janela, **não é erro** e o arquivo que já existia fica intacto — tem
+  teste para isso. Se der erro ao gravar, aparece a janelinha escura
+  `_dialogo_escuro` (nada de janela branca).
+- **Limpeza no caminho:** o botão de copiar e o novo botão de salvar são o
+  mesmo desenho, então `_icone_copiar` virou um atalho de
+  `_icone_resposta(pai, comando, nome, desenhar, desenhar_no_canvas, ...)`.
+  Cada símbolo passa também como ele deve ser desenhado **direto no
+  Canvas**, para o botão continuar funcionando (só que serrilhado) se o
+  Pillow faltar.
+- **O que já existia e foi aproveitado:** a janela de "Salvar como" do
+  Windows já era aberta escura por `_deixar_dialogo_do_sistema_escuro`
+  (usada para salvar imagem), e todo aviso de erro já é `_dialogo_escuro`.
+- **Testado:** nome sugerido em 4 casos + texto gigante; os dois botões
+  existem na resposta e respondem ao clique; o arquivo sai com o texto
+  certo; cancelar não estraga o que já estava lá.
+
+---
+
 ## 2026-10-15 — Backup do código (cópia de segurança)
 
 - **Pedido do Wolf:** "vou deixar isso na tua mão, faz o que tu achar que

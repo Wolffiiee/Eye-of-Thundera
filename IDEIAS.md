@@ -48,8 +48,9 @@ conversa de semana passada ("aquela do bolo de cenoura").
 
 - **Aumentar/diminuir o texto** — um botão ou atalho (Ctrl + / Ctrl -) para
   deixar a letra do chat maior. Ajuda muito na leitura.
-- **Salvar a resposta num arquivo** — além de copiar, um botão "Salvar como"
-  para guardar a resposta em .txt.
+- ~~**Salvar a resposta num arquivo**~~ - **FEITO em 15/10/2026**: botão de
+  disquete embaixo de cada resposta (ao lado do de copiar) e Ctrl+S, que
+  salvam a última resposta num .txt com o nome tirado da primeira linha.
 - **Atalhos novos** — por exemplo Ctrl+F para procurar na conversa, e um
   atalho para abrir as Configurações.
 - **Resumo do dia** — um botão que monta um resumo das notícias do dia, sem

@@ -2064,9 +2064,68 @@ def _desenhar_copiar(pincel, s, cor, fundo_dentro, espessura=1):
     )
 
 
-def _icone_copiar(pai, comando, tamanho=19, cor=COR_TEXTO_3,
-                  cor_vivo=COR_TEXTO, fundo_ativo=COR_BARRA):
-    """Ícone discreto de 'copiar' (duas folhas) usado nas respostas.
+def _nome_de_resposta(texto, maximo=48):
+    """Sugere um nome de arquivo (.txt) a partir do começo da resposta.
+
+    Pega a primeira linha que tenha conteúdo, tira aenumerateção, troca
+    tudo que o Windows proíbe em nome de arquivo e corta em `maximo`
+    caracteres (para o nome não ficar enorme na janela de salvar).
+    """
+    nome = ""
+    for linha in str(texto or "").splitlines():
+        limpa = linha.strip().lstrip("#*->•·-—").strip()
+        # tira a numeração de lista ("1. ", "12) ") para o nome ficar limpo
+        limpa = re.sub(r"^\d{1,2}[.)]\s*", "", limpa).strip()
+        if limpa:
+            nome = limpa
+            break
+    if not nome:
+        return "resposta.txt"
+    nome = re.sub(r'[\\/:*?"<>|\r\n\t]', "", nome)      # proibido no Windows
+    nome = re.sub(r"\s+", " ", nome).strip()            # espaços repetidos
+    nome = nome[:maximo].strip().rstrip(".,;:-— ")
+    if not nome:
+        return "resposta.txt"
+    return nome + ".txt"
+
+
+def _desenhar_salvar(pincel, s, cor, fundo_dentro, espessura=1):
+    """Disquete (o ícone de salvar): quadrado com a fenda de cima e o rótulo."""
+    dentro = fundo_dentro or (0, 0, 0, 0)
+    # corpo do disquete
+    pincel.rectangle(
+        [3.5 * s, 3.5 * s, 18.5 * s, 18.5 * s], fill=dentro, outline=cor,
+        width=espessura,
+    )
+    # a parte de cima que gira com o disquete
+    pincel.rectangle(
+        [8 * s, 3.5 * s, 14 * s, 9 * s], fill=dentro, outline=cor,
+        width=espessura,
+    )
+    # o rótulo de baixo
+    pincel.rectangle(
+        [7 * s, 12.5 * s, 15 * s, 18.5 * s], outline=cor, width=espessura,
+    )
+
+
+def _desenhar_salvar_no_canvas(desenho, s, cor, fundo, dentro):
+    """Versão do disquete direto no Canvas (usada quando não tem Pillow)."""
+    desenho.create_rectangle(
+        3.5 * s, 3.5 * s, 18.5 * s, 18.5 * s, fill=dentro, outline=cor,
+        width=1,
+    )
+    desenho.create_rectangle(
+        8 * s, 3.5 * s, 14 * s, 9 * s, fill=dentro, outline=cor, width=1,
+    )
+    desenho.create_rectangle(
+        7 * s, 12.5 * s, 15 * s, 18.5 * s, outline=cor, width=1,
+    )
+
+
+def _icone_resposta(pai, comando, nome, desenhar, desenhar_no_canvas,
+                    tamanho=19, cor=COR_TEXTO_3, cor_vivo=COR_TEXTO,
+                    fundo_ativo=COR_BARRA):
+    """Ícone discreto das respostas (copiar, salvar...).
 
     Passa a ser um botão de verdade: quando o mouse entra, aparece um
     quadradinho de fundo e o desenho fica mais claro; quando sai, volta
@@ -2078,10 +2137,10 @@ def _icone_copiar(pai, comando, tamanho=19, cor=COR_TEXTO_3,
         cursor="hand2",
     )
     repouso = _foto_de_simbolo(
-        "copiar", n, cor, _desenhar_copiar, fundo_dentro=COR_FUNDO,
+        nome, n, cor, desenhar, fundo_dentro=COR_FUNDO,
     )
     ativo = _foto_de_simbolo(
-        "copiar", n, cor_vivo, _desenhar_copiar, fundo=fundo_ativo,
+        nome, n, cor_vivo, desenhar, fundo=fundo_ativo,
         cantos=6, fundo_dentro=fundo_ativo,
     )
 
@@ -2094,14 +2153,9 @@ def _icone_copiar(pai, comando, tamanho=19, cor=COR_TEXTO_3,
                 arredondado(
                     desenho, 0, 0, n, n, 6, fill=fundo_ativo, outline=""
                 )
-            s = n / 22.0
-            desenho.create_rectangle(
-                5.5 * s, 3.5 * s, 16.5 * s, 14.5 * s, outline=cor_atual, width=1
-            )
-            desenho.create_rectangle(
-                9.5 * s, 7.5 * s, 20 * s, 18.5 * s, fill=COR_FUNDO,
-                outline=cor_atual, width=1,
-            )
+            desenhar_no_canvas(desenho, n / 22.0, cor_atual,
+                                fundo_ativo if mouse_por_cima else COR_FUNDO,
+                                fundo_ativo if mouse_por_cima else COR_FUNDO)
     else:
         item = desenho.create_image(
             n / 2.0, n / 2.0, image=repouso, anchor="center",
@@ -2127,6 +2181,36 @@ def _icone_copiar(pai, comando, tamanho=19, cor=COR_TEXTO_3,
     desenho.bind("<Leave>", saiu)
     desenho.bind("<Button-1>", apertou)
     return desenho
+
+
+def _desenhar_copiar_no_canvas(desenho, s, cor, fundo, dentro):
+    """As duas folhas do 'copiar' direto no Canvas (sem Pillow)."""
+    desenho.create_rectangle(
+        5.5 * s, 3.5 * s, 16.5 * s, 14.5 * s, outline=cor, width=1
+    )
+    desenho.create_rectangle(
+        9.5 * s, 7.5 * s, 20 * s, 18.5 * s, fill=dentro, outline=cor, width=1,
+    )
+
+
+def _icone_copiar(pai, comando, tamanho=19, cor=COR_TEXTO_3,
+                  cor_vivo=COR_TEXTO, fundo_ativo=COR_BARRA):
+    """Ícone de 'copiar resposta' (duas folhas)."""
+    return _icone_resposta(
+        pai, comando, "copiar", _desenhar_copiar, _desenhar_copiar_no_canvas,
+        tamanho=tamanho, cor=cor, cor_vivo=cor_vivo,
+        fundo_ativo=fundo_ativo,
+    )
+
+
+def _icone_salvar(pai, comando, tamanho=19, cor=COR_TEXTO_3,
+                  cor_vivo=COR_TEXTO, fundo_ativo=COR_BARRA):
+    """Ícone de 'salvar resposta em arquivo' (disquete)."""
+    return _icone_resposta(
+        pai, comando, "salvar", _desenhar_salvar, _desenhar_salvar_no_canvas,
+        tamanho=tamanho, cor=cor, cor_vivo=cor_vivo,
+        fundo_ativo=fundo_ativo,
+    )
 
 
 def _desenhar_engrenagem(pincel, s, cor, fundo_dentro, espessura=1):
@@ -3011,6 +3095,7 @@ class Aplicativo:
         self.raiz.bind("<F5>", lambda _e: self._nova_conversa())
         self.raiz.bind("<Control-b>", lambda _e: self._alternar_lateral())
         self.raiz.bind("<Control-m>", lambda _e: self._alternar_mic())
+        self.raiz.bind("<Control-s>", lambda _e: self._salvar_ultima())
 
     def _montar_rodape(self):
         rodape = tk.Frame(self.principal, bg=COR_FUNDO)
@@ -3991,6 +4076,46 @@ class Aplicativo:
                 return
         self._definir_status("Ainda não tem resposta para copiar.")
 
+    def _salvar_resposta(self, texto, nome_sugerido=None):
+        """Salva uma resposta num arquivo .txt e avisa onde ele ficou."""
+        if not texto or not str(texto).strip():
+            self._definir_status("Não tem resposta para salvar.", COR_ERRO_TX)
+            return
+        if nome_sugerido is None:
+            nome_sugerido = _nome_de_resposta(texto)
+        # A janela de arquivos é do Windows; pedimos para ela abrir escura.
+        _deixar_dialogo_do_sistema_escuro(self.raiz)
+        caminho = filedialog.asksaveasfilename(
+            parent=self.raiz,
+            title="Salvar resposta como...",
+            initialfile=nome_sugerido,
+            defaultextension=".txt",
+            filetypes=[
+                ("Arquivo de texto", "*.txt"),
+                ("Todos os arquivos", "*.*"),
+            ],
+        )
+        if not caminho:
+            return                    # a pessoa cancelou: não é erro
+        try:
+            with open(caminho, "w", encoding="utf-8-sig") as arquivo:
+                arquivo.write(str(texto).rstrip() + "\n")
+        except Exception as erro:
+            _dialogo_escuro(
+                self.raiz, "Erro",
+                "Não consegui salvar a resposta em arquivo: %s" % erro,
+            )
+            return
+        self._definir_status("Resposta salva em: %s" % caminho, COR_OK)
+
+    def _salvar_ultima(self):
+        """Salva a última resposta em arquivo (Ctrl+S)."""
+        for msg in reversed(self.mensagens):
+            if msg["role"] == "model":
+                self._salvar_resposta(msg["text"])
+                return
+        self._definir_status("Ainda não tem resposta para salvar.")
+
     # -- desenho das mensagens ---------------------------------------------
 
     def _renderizar(self):
@@ -4398,6 +4523,11 @@ class Aplicativo:
             )
             icone.pack(side="left", padx=(2, 0))
             Dica(icone, "Copiar resposta")
+            botao_salvar = _icone_salvar(
+                canto, lambda: self._salvar_resposta(texto_completo)
+            )
+            botao_salvar.pack(side="left", padx=(2, 0))
+            Dica(botao_salvar, "Salvar resposta em arquivo")
 
         if usuario:
             avatar_usuario(linha).pack(
@@ -5803,7 +5933,8 @@ class Aplicativo:
             "Ctrl+B mostra ou esconde a barra da esquerda.\n"
             "Ctrl+M liga e desliga a gravação do microfone.\n"
             "Ctrl+A seleciona tudo o que está na caixa de digitar.\n"
-            "Ctrl+Z desfaz e Ctrl+Y refaz.",
+            "Ctrl+Z desfaz e Ctrl+Y refaz.\n"
+            "Ctrl+S salva a última resposta num arquivo de texto.",
         )
         bloco(
             "Cores e tamanho",

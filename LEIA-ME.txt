@@ -113,6 +113,13 @@ Para copiar uma resposta, passe o mouse no iconezinho que fica no canto de
 fora do balão da resposta (embaixo dele). Depois de um tempinho em cima,
 aparece a explicação "Copiar resposta"; um clique copia tudo.
 
+Do lado do iconezinho de copiar tem um do disquete: um clique nele abre a
+janela de "Salvar como..." e guarda a resposta num arquivo de texto
+(.txt) para você abrir depois, imprimir ou mandar para alguém. O nome do
+arquivo é sugerido com o começo da resposta (ex.: se a resposta começa com
+"A capital do Pará é Belém", ele se chama "A capital do Pará.txt").
+Atalho: Ctrl+S salva a última resposta, sem precisar ir até o botão.
+
 Palavras escritas errado aparecem só com um sublinhado vermelho (a palavra
 continua na cor normal, para o texto ficar fácil de ler). Para ver as
 sugestões, clique com o botão direito na palavra sublinhada.
@@ -178,6 +185,7 @@ Atalhos de teclado:
   - Ctrl + A       -> seleciona tudo o que está na caixa de digitar.
   - Ctrl + Z       -> desfaz o que foi escrito.
   - Ctrl + Y       -> refaz.
+  - Ctrl + S       -> salva a última resposta num arquivo de texto (.txt).
 
 
 ========================================================

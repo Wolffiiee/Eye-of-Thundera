@@ -21,6 +21,7 @@ import importlib.util
 import io
 import py_compile
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -580,6 +581,90 @@ def testes_de_tela():
         app.entrada.delete("1.0", "end")
         app._atualizar_apoio()
         raiz.update()
+
+        # --- botões da resposta: Copiar e Salvar ----------------------------
+        # Cada resposta da IA tem dois botões embaixo: o de copiar e o de
+        # salvar em arquivo. Se o de salvar sumir (ou o clique nele não
+        # fizer nada), o Wolf fica sem jeito de guardar a resposta.
+        _esperar(raiz, 0.5)   # deixa o redesenho das bolhas terminar
+        _botoes = []
+        for _widget in p.anda(app.interno):
+            if not isinstance(_widget, tk.Canvas):
+                continue
+            if str(_widget.cget("cursor")) != "hand2":
+                continue
+            if _widget.winfo_width() != 19 or _widget.winfo_height() != 19:
+                continue
+            _botoes.append(_widget)
+        # na tela de teste tem 1 resposta da IA = 2 botões (copiar + salvar)
+        if len(_botoes) == 2:
+            ok("a resposta tem os 2 botões: copiar e salvar")
+        else:
+            falha("esperava 2 botões na resposta (copiar e salvar), achei %d"
+                  % len(_botoes))
+
+        # o clique precisa chamar a ação certa
+        _chamadas = []
+        _quadro = tk.Frame(app.interno, bg=p.COR_FUNDO)
+        _quadro.pack()
+        for _fabrica, _nome in ((p._icone_copiar, "copiar"),
+                                (p._icone_salvar, "salvar")):
+            _fabrica(_quadro, lambda n=_nome: _chamadas.append(n)).pack()
+        _quadro.update_idletasks()
+        for _filho in _quadro.winfo_children():
+            _filho.event_generate("<Button-1>", x=5, y=5)
+        raiz.update()
+        _quadro.destroy()
+        if _chamadas == ["copiar", "salvar"]:
+            ok("clicar em cada botão roda a ação certa")
+        else:
+            falha("os botões da resposta não responderam ao clique: %r"
+                  % _chamadas)
+
+        # o nome do arquivo sai da primeira linha, sem caractere proibido
+        for _texto, _esperado in (
+            ("A capital do Pará\ne outra coisa", "A capital do Pará.txt"),
+            ("1. Introdução\nmais texto", "Introdução.txt"),
+            ("", "resposta.txt"),
+            ('sao: SP / "teste" *fim', "sao SP teste fim.txt"),
+        ):
+            _obtido = p._nome_de_resposta(_texto)
+            if _obtido == _esperado:
+                ok("nome do arquivo: %r -> %s" % (_texto[:22], _obtido))
+            else:
+                falha("nome do arquivo para %r saiu %r, esperava %r"
+                      % (_texto[:22], _obtido, _esperado))
+        if p._nome_de_resposta("x" * 300).endswith(".txt"):
+            ok("nome do arquivo não fica gigante mesmo com texto enorme")
+        else:
+            falha("nome do arquivo para texto enorme não termina em .txt")
+
+        # salvar de verdade num arquivo da pasta _tmp
+        _dir = PASTA / "_tmp" / "teste-salvar"
+        shutil.rmtree(_dir, ignore_errors=True)
+        _dir.mkdir(parents=True, exist_ok=True)
+        _alvo = _dir / "saida.txt"
+        _original_salvar = p.filedialog.asksaveasfilename
+        try:
+            p.filedialog.asksaveasfilename = lambda **_kw: str(_alvo)
+            app._salvar_resposta("primeira linha\nsegunda linha")
+            _conteudo = _alvo.read_text(encoding="utf-8-sig")
+            if _conteudo.strip() == "primeira linha\nsegunda linha":
+                ok("o botão salvar grava a resposta no arquivo, inteira")
+            else:
+                falha("o arquivo ficou com %r" % _conteudo[:80])
+
+            # cancelar não é erro e não estraga o arquivo que já existia
+            p.filedialog.asksaveasfilename = lambda **_kw: ""
+            app._salvar_resposta("isso nao deve ser salvo")
+            if _alvo.read_text(encoding="utf-8-sig").strip() == (
+                    "primeira linha\nsegunda linha"):
+                ok("cancelar não estraga o arquivo que já existia")
+            else:
+                falha("cancelar alterou o arquivo")
+        finally:
+            p.filedialog.asksaveasfilename = _original_salvar
+        shutil.rmtree(_dir, ignore_errors=True)
 
         # Mexer na altura da caixa de digitar encolhe a conversa, e o Canvas
         # agenda um redesenho (ele recria as bolhas). Deixa o redesenho

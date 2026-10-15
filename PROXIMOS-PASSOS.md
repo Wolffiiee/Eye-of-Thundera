@@ -49,7 +49,12 @@ rodando pelo código: na pasta do projeto) e siga o PASSO-A-PASSO.md.
    só precisa de uma conta do Wolf. Enquanto isso, lembrar de rodar o
    `4 - Fazer backup.bat` de tempos em tempos.
    (De quebra: o `.git` tinha 48 MB de lixo; limpo, ficou 0,5 MB.)
-2. **Salvar a resposta em .txt** (hoje só dá pra copiar).
+2. ~~**Salvar a resposta em .txt.**~~ **FEITO em 15/10/2026**: botão de
+   disquete embaixo de cada resposta (ao lado do de copiar) e atalho
+   **Ctrl+S**, que salvam a resposta num `.txt`. O nome do arquivo sai da
+   primeira linha da resposta, limpo (sem caractere que o Windows proíbe e
+   sem a numeração de lista). A janela de "Salvar como" é a do Windows e
+   ela tenta abrir escura.
 3. **Fontes citadas na resposta** — a IA já pesquisa e sabe de onde tirou
    cada coisa; hoje ela joga esse rastro fora. É o que dá confiança.
 4. **TAREFA D** do `PLANO-NOVAS-FUNCOES.md`: Configurações em 4 abas
