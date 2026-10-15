@@ -985,6 +985,52 @@ def testes_de_tela():
         raiz.update()
         testes_lista_de_conversas(p, raiz, app)
 
+        # --- Configurações: o texto tem que acompanhar a largura da janela
+        # Antes cada parágrafo tinha um wraplength fixo (540, 560, 600...),
+        # tudo diferente, e o Wolf viu o texto espremido na aba Chave.
+        try:
+            app._janela_config = None
+            app._abrir_config("chave")
+            _esperar(raiz, 0.6)
+            jan = getattr(app, "_janela_config", None)
+            textos = [w for w in (p.anda(jan) if jan else [])
+                      if isinstance(w, tk.Label)
+                      and int(w.cget("wraplength") or 0) > 0]
+            if not textos:
+                falha("a aba Chave não tem nenhum texto com quebra de linha")
+            else:
+                if all(t.cget("wraplength") for t in textos):
+                    ok("os %d textos das Configurações têm largura definida"
+                       % len(textos))
+                else:
+                    falha("algum texto das Configurações ficou sem largura")
+                jan.geometry("640x700" + POSICAO_TESTE)
+                _esperar(raiz, 0.5)
+                estreitas2 = {int(t.cget("wraplength")) for t in textos}
+                jan.geometry("1300x820" + POSICAO_TESTE)
+                _esperar(raiz, 0.5)
+                largas = {int(t.cget("wraplength")) for t in textos}
+                if len(estreitas2) == 1 and len(largas) == 1 and \
+                        max(estreitas2) < max(largas):
+                    ok("o texto das Configurações acompanha a janela "
+                       "(%d px estreito -> %d px largo)"
+                       % (max(estreitas2), max(largas)))
+                else:
+                    falha("o texto não acompanha a janela: estreito=%s "
+                          "largo=%s" % (sorted(estreitas2), sorted(largas)))
+                if max(largas) <= max(estreitas2) + 700:
+                    ok("o texto não fica largo demais em janela grande")
+                else:
+                    falha("o texto esticou demais: %d px" % max(largas))
+            if jan is not None:
+                try:
+                    jan.destroy()
+                except Exception:
+                    pass
+                app._janela_config = None
+        except Exception as erro:
+            falha("os testes das Configurações quebraram: %r" % (erro,))
+
         # --- coluna centralizada (por último: mexer no tamanho da janela
         # --- redesenha as bolhas e as referências do começo do teste ficam
         # --- velhas, então esta parte tem que vir depois de tudo)

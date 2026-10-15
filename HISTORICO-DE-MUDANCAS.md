@@ -35,6 +35,58 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Tela em HTML: teste decisivo (funciona aqui) + Configurações sem texto espremido
+
+### 1. A tela em HTML foi testada de verdade (e funciona)
+
+O Wolf aprovou refazer a tela em HTML ("tudo o que puder ser otimizado, tá
+liberado"). Antes de mexer em 6500 linhas, o `web/spike_webview.py` foi
+reescrito para responder o que decide a decisão. Resultado na casa do Wolf:
+
+| Pergunta | Resposta |
+|---|---|
+| a janela abre? | sim |
+| abre no 2º monitor (x=2000)? | **sim** (regra do Wolf: nunca no 1º) |
+| o Python chama o JavaScript? | sim |
+| o JavaScript chama o Python (a ponte)? | sim (`Ola, Wolf! (veio do Python)`) |
+| **o emoji sai COLORIDO?** | **sim: 1.855 de 2.937 pixels com cor (63%)** |
+| dá para selecionar texto? | sim (`Primeira linha de`) |
+
+Antes disso foi conferido que o WebView2 Runtime está instalado (versão
+155.0.4283.45) e que há Edge e Chrome. `pywebview` 6.2.1 já estava
+instalado (instalado pelo Claude, **sem** estar no `requirements.txt`).
+
+**Por que o teste conta:** o Tk do Windows só desenha emoji de uma cor.
+O navegador desenha colorido sozinho. 63% de pixels coloridos é a prova
+de que os emojis coloridos saem de graça na tela nova — e é o motivo de
+pular a Tarefa E inteira.
+
+Duas coisas que o teste ensinou (e que o `.exe` vai precisar):
+- a ponte do pywebview é **assíncrona**: `window.pywebview.api.algo(...)`
+  devolve uma Promise. O JavaScript tem que usar `.then(...)`.
+- o `pywebview` precisa entrar no `requirements.txt` **e** no
+  `Pesquisa IA.spec` (senão o `.exe` gerado não abre).
+
+### 2. Configurações: o texto estava espremido (corrigido)
+
+O Wolf avisou que na aba Chaves o texto parecia espremido pela janela.
+A causa: **15 parágrafos com `wraplength` fixo** e todos diferentes
+(380, 490, 540, 560, 600...). Cada um quebrava a linha num ponto
+arbitrário, então o texto não preenchia a janela e sobrava vão vazio.
+
+- **Novo:** `_acompanhar_largura(janela)` percorre os `Label` com quebra de
+  linha e faz a largura acompanhar a da janela, mudando sozinha quando o
+  Wolf redimensiona. Vale para as **quatro** abas de uma vez.
+- **Aba Chave:** o título "Chave da API do Google (Gemini)" aparecia
+  **duas vezes seguidas** (uma em corpo grande, outra em negrito 10).
+  Agora aparece uma vez só.
+- **Janela** de 700x780 para **760x800** (mais folga).
+- **Teste novo:** abre a aba Chave, mede a largura do texto a 640 px e a
+  1300 px de largura e confirma que o texto acompanha (deu 564 px para
+  1224 px) e que não estica demais.
+
+---
+
 ## 2026-10-15 — Revisão do trabalho do Claude (memória) + 2 defeitos corrigidos
 
 - **Situação encontrada:** o Claude trabalhou até os tokens acabarem. Deixou

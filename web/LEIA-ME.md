@@ -1,33 +1,58 @@
-# Tela nova em HTML (protótipo, NÃO é o programa)
+# Tela nova em HTML (protótipo, em construção)
 
-> **Isso aqui não faz parte do Pesquisa IA que você usa.**
-> O programa que funciona é o `pesquisa_ia.py` (tkinter), na pasta acima.
-> Esta pasta é uma experiência para um dia trocar a tela por uma tela de
-> verdade em HTML (que resolveria a seleção de texto, a formatação e os
-> emojis coloridos de uma vez).
+> **Isso aqui AINDA não é o programa que você usa.**
+> O programa que funciona é o `pesquisa_ia.py` (tkinter), na pasta acima,
+> e o atalho da Área de Trabalho continua apontando para ele.
+> Esta pasta é a tela NOVA, que vamos terminar antes de trocar.
 
-## Onde parou (15/10/2026, trabalho parou no meio)
-- `index.html` — o esqueleto da tela: barra da esquerda com a lista de
-  conversas, área da conversa, caixa de digitar, janela de Configurações
-  com as 4 abas (Memória, Conversa, Chaves, Ajuda).
-- `estilo.css` — o tema escuro. Usa cores novas (mais escuras e mais
-  "modernas" que as do programa atual): fundo `#0e0e13`.
-- `app.js` — a lógica da tela. **Fala com o Python por
-  `window.pywebview.api`**, ou seja: falta a ponte (o arquivo
-  `app_web.py`, que ainda não existe) e falta instalar a biblioteca
-  `pywebview` no projeto.
-- `spike_webview.py` — teste rápido: confere se o `pywebview` funciona
-  neste computador, se a janela abre no segundo monitor (x=2000) e se os
-  emojis aparecem em cor. **Não foi confirmado** que rodou sem erro.
+## O teste decisivo já passou (15/10/2026)
+Rode `..\.venv\Scripts\python.exe web\spike_webview.py`. Ele abre uma janela
+teste no 2º monitor e responde:
 
-## Para continuar, o caminho é
-1. Rodar o `spike_webview.py` e ver o que ele responde.
-2. Se o `pywebview` não funcionar aqui, **parar** e voltar ao tkinter
-   (não vale a pena trocar o programa inteiro por uma tela que não abre).
-3. Só depois escrever o `app_web.py` (a ponte Python ↔ JavaScript).
+| Pergunta | Resultado |
+|---|---|
+| a janela abre? | sim |
+| abre no 2º monitor (x=2000)? | sim |
+| Python chama o JavaScript? | sim |
+| JavaScript chama o Python (a ponte)? | sim |
+| **o emoji sai COLORIDO?** | **sim (63% dos pixels com cor)** |
+| dá para selecionar texto? | sim |
 
-## Aviso importante
-Isto é **item 7 da lista, o último de todos**, e o plano diz para só fazer
-se o Wolf quiser mesmo. Trocar a tela inteira é mexer em tudo de uma vez
-(6500 linhas) — o jeito seguro é fazer a tela nova aos poucos, ao lado da
-antiga, e só trocar quando ela estiver igual ou melhor.
+Ou seja: **a tela nova funciona neste computador.** E o emoji colorido vem
+de graça (no Tk ele só sai de uma cor).
+
+## O que já existe aqui
+- `index.html` — o esqueleto: barra da esquerda com as conversas, área da
+  conversa, caixa de digitar, janela de Configurações com as 4 abas.
+  Os ícones são SVG (desenhados, sem depender de fonte).
+- `estilo.css` — o tema escuro. Cores novas, mais escuras que as do
+  programa atual: fundo `#0e0e13`, destaque `#3d6bff`.
+- `app.js` — a lógica da tela. Fala com o Python por
+  `window.pywebview.api`.
+- `spike_webview.py` — o teste acima. **Não é do programa.**
+
+## O que falta (ordem de trabalho)
+1. `app_web.py`: a ponte em Python (a lista de conversas, a conversa, o
+   modo web, o microfone, salvar/copiar).
+2. Ligar a lista de conversas e a conversa.
+3. Enviar pergunta e mostrar a resposta aparecendo aos poucos.
+4. Caixa de digitar, microfone, botão enviar, modo web.
+5. Janela de Configurações com as 4 abas (a Tarefa D).
+6. Salvar em .txt, copiar, pesquisar.
+7. Atalhos de teclado, cantos arredondados da caixa, borda escura da janela.
+8. `verificar.bat` cobrindo a tela nova e `.exe` gerado e testado.
+
+## Duas coisas que o teste descobriu (importante)
+- A ponte do pywebview é **assíncrona**: `window.pywebview.api.algo(...)`
+  devolve uma `Promise`. No JavaScript tem que usar `.then(...)`:
+  ```js
+  window.pywebview.api.ola('Wolf').then(v => mostrar(v));
+  ```
+- O `pywebview` **precisa** entrar no `requirements.txt` e no
+  `Pesquisa IA.spec`. Ele está instalado nesta máquina, mas não está
+  registrado em nenhum dos dois: sem isso, o `.exe` gerado não abre.
+
+## Regra de ouro desta fase
+**O `pesquisa_ia.py` continua inteiro e continua sendo o atalho do Wolf.**
+A tela nova nasce ao lado da antiga. Só trocamos quando ela estiver igual
+ou melhor. Assim nunca sobra o Wolf sem programa funcionando.

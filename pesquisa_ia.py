@@ -1743,6 +1743,39 @@ def anda(widget):
     return achados
 
 
+def _acompanhar_largura(janela, margem=76):
+    """Faz os textos da janela quebrarem na largura REAL dela.
+
+    Cada texto era criado com um `wraplength` fixo (380, 490, 540, 560,
+    600...), tudo diferente. O efeito era o que o Wolf viu: numa janela
+    estreita o texto ficava cortado/espremido, e numa larga sobrava um
+    vão vazio do lado. Aqui a largura do texto acompanha a da janela e se
+    ajusta sozinha quando o Wolf redimensiona.
+
+    Devolve a função de ajuste, para quem precisar chamar na hora.
+    """
+    def ajustar(_evento=None):
+        largura = janela.winfo_width() - margem
+        if largura < 200:
+            return                      # ainda não desenhou: espera
+        for item in anda(janela):
+            if not isinstance(item, tk.Label):
+                continue
+            try:
+                if int(item.cget("wraplength")) <= 0:
+                    continue           # texto de uma linha só: não mexe
+                item.configure(wraplength=largura)
+            except Exception:
+                pass
+
+    janela.bind("<Configure>", ajustar)
+    try:
+        janela.after(40, ajustar)       # a janela já tem largura
+    except Exception:
+        pass
+    return ajustar
+
+
 def _foto_enviar(cor_bolao, tamanho=36):
     """Imagem do botao de enviar (bolha + aviao), com as bordas suavizadas.
 
@@ -5239,8 +5272,11 @@ class Aplicativo:
         self._aba_config = "memoria"
         jan.title("Configurações")
         jan.configure(bg=COR_FUNDO)
-        jan.geometry("700x780")
-        jan.minsize(580, 620)
+        # A janela e um pouco maior que antes: o Wolf pediu uma folga maior
+        # porque o texto das Configurações ficava espremido. Os textos
+        # acompanham a largura (veja _acompanhar_largura).
+        jan.geometry("760x800")
+        jan.minsize(600, 620)
         jan.transient(self.raiz)
         jan.after(150, lambda: ativar_barra_escura(jan))
 
@@ -5348,16 +5384,14 @@ class Aplicativo:
             wraplength=560,
         ).pack(anchor="w", pady=(4, 0))
 
-        tk.Label(
-            corpo, text="Chave da API do Google (Gemini)", bg=COR_FUNDO,
-            fg=COR_TEXTO_2, font=(FONTE, 10, "bold"),
-        ).pack(anchor="w", pady=(20, 6))
-
+        # (o titulo "Chave da API do Google" ja aparece acima, em corpo
+        # grande; aqui comeca direto o campo, senão o texto aparecia duas
+        # vezes seguidas e parecia um erro)
         moldura = tk.Frame(
             corpo, bg=COR_BARRA, highlightthickness=1,
             highlightbackground=COR_BORDA,
         )
-        moldura.pack(fill="x")
+        moldura.pack(fill="x", pady=(14, 0))
         var_chave = tk.StringVar(value=self.cfg.get("api_key", ""))
         entrada = tk.Entry(
             moldura, textvariable=var_chave, show="•", font=(FONTE, 11),
@@ -5666,6 +5700,10 @@ class Aplicativo:
 
         # agora que o conteudo inteiro existe, liga a rolagem em tudo
         _ligar_todos(aba_chave)
+
+        # E faz os textos de TODAS as abas quebrarem na largura da janela
+        # (sem isso eles usavam larguras fixas e ficavam espremidos).
+        _acompanhar_largura(jan)
 
         # A aba pedida só pode ser mostrada DEPOIS que as abas existem
         # (antes disso o `mostrar_aba` não acha nada, e a janela abriria

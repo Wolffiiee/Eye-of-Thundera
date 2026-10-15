@@ -41,40 +41,55 @@ rodando pelo código: na pasta do projeto) e siga o PASSO-A-PASSO.md.
 
 ## O que ainda falta construir (ordem sugerida pelo Wolf em 15/10/2026)
 
-### ORDEM NOVA (Claude, 15/10 à noite): siga esta; a lista antiga logo abaixo
-### fica só como histórico. Já feitos: backup, salvar .txt, Tarefas A, B e C.
-1. **Memória sem repetição** (pedido do Wolf: "não guardar várias vezes o
-   mesmo tipo de informação, ex. prefere ser chamado de Wolf"). O arquivo
-   `memoria.py` JÁ EXISTE e está testado (`python memoria.py` = TUDO CERTO),
-   só falta ligar no `pesquisa_ia.py` (tudo local, custo de token zero):
-   a. `import memoria`.
-   b. `_mesclar_memoria(novos)`: `nova, mudou = memoria.mesclar(
-      carregar_memoria(), novos)`; se `mudou`, `salvar_memoria(nova)`;
-      devolver `nova`. (Troca a regra antiga, que só pegava texto idêntico
-      ou contido.)
-   c. `salvar_memoria`: guardar as ÚLTIMAS `MAX_MEMORIAS` (`[-MAX_MEMORIAS:]`).
-      Hoje é `[:MAX_MEMORIAS]`: quando enche, o programa para de aprender.
-   d. `aprender_com_o_usuario`: junto com a conversa, mandar ao modelo o que
-      já está guardado (últimos 60 fatos, 120 caracteres cada) com o aviso
-      "JÁ GUARDADO: não repita nem reescreva de outro jeito; devolva só o
-      que for NOVO ou uma CORREÇÃO. Se não houver, responda NADA".
-   e. Ao abrir o programa: `memoria.consolidar(carregar_memoria())`; se mudou,
-      copiar antes o `memoria.json` para `memoria_antes_de_organizar.json`
-      (só se essa cópia ainda não existir) e salvar. Isso limpa a memória que
-      já está cheia de repetição.
-   f. `verificar.py`: chamar `memoria.autoteste()` (lista vazia = [OK]).
-   g. Na Tarefa D, botão "Organizar" na aba Memória (chama `consolidar`).
+### ORDEM NOVA (opencode, 15/10, depois do teste decisivo): o HTML FUNCIONA
+### neste PC, então a tela nova entra AGORA e a Tarefa E de emojis coloridos
+### está CANCELADA (no HTML o emoji colorido vem de graça).
+### Já feitos: backup, salvar .txt, Tarefas A, B e C, memória sem repetição
+### (ligada e corrigida) e o texto das Configurações que quebrava linha errado.
+0. **TELA NOVA EM HTML — o caminho agora.** O teste decisivo passou
+   (`web\spike_webview.py`): a janela abre no 2º monitor, a ponte
+   Python↔JavaScript funciona e o **emoji sai colorido** (1.855 de 2.937
+   pixels com cor, 63%). Antes de começar:
+   - pôr `pywebview` no `requirements.txt` **e** no `Pesquisa IA.spec`
+     (hoje ele está instalado na máquina, mas não está em nenhum dos dois:
+     sem isso o `.exe` gerado não abre);
+   - a ponte é **assíncrona**: no JavaScript, `window.pywebview.api.algo(...)`
+     devolve uma Promise, então tem que usar `.then(...)` (o teste mostra);
+   - os arquivos da tela já existem em `web\` (`index.html`, `estilo.css`,
+     `app.js`); falta a ponte em Python (`app_web.py`);
+   - **NÃO apague nem renomeie o `pesquisa_ia.py`.** A tela nova nasce AO
+     LADO da antiga, e o atalho da Área de Trabalho continua na antiga até
+     a nova ficar igual ou melhor. Assim nunca sobra o Wolf sem programa;
+   - passos (cada um com commit e `verificar.bat` verde):
+     1. `app_web.py` mínimo: janela + `index.html` + uma função de exemplo;
+     2. lista de conversas e conversa (ler do Python);
+     3. enviar pergunta e mostrar a resposta escrevendo por partes;
+     4. caixa de digitar, microfone, botão enviar, modo web;
+     5. janela de Configurações com as 4 abas (a Tarefa D, junto aqui);
+     6. microfone de ponta a ponta, salvar .txt, copiar, pesquisar;
+     7. atalhos de teclado, cantos arredondados da caixa, borda da janela;
+     8. `verificar.bat` cobrindo a tela nova + `.exe` gerado e testado.
+1. ~~**Memória sem repetição**~~ **FEITA e corrigida em 15/10/2026** pelo
+   opencode: ligada ao programa e com os 2 defeitos que o Claude deixou
+   corrigidos (perdia o nome e a data de nascimento; guardava "NADA").
+   Falta só o botão "Organizar" na aba Memória (aba 0, passo 5).
 2. **TAREFA D** (Configurações em 4 abas; aba Memória com buscar, editar,
-   adicionar, exportar, interruptor "aprender sozinho" e o botão Organizar).
+   adicionar, exportar, interruptor "aprender sozinho" e o botão Organizar)
+   — vai junto com o passo 5 da tela nova, para não fazer duas vezes.
 3. **Fontes citadas na resposta** (confiança).
-4. **TAREFA E: emojis coloridos** (guia completo no `PLANO-NOVAS-FUNCOES.md`,
-   seção 8; vale ler a E0 para não repetir o erro de antes). Fica depois da D
-   e ANTES de "reescrever em HTML"; se o HTML for aprovado logo, pule a E.
+4. ~~**TAREFA E: emojis coloridos**~~ **CANCELADA**: o passo 0 já entrega
+   emoji colorido de graça. O guia completo continua no
+   `PLANO-NOVAS-FUNCOES.md` seção 8, caso um dia a tela nova seja
+   descartada e o programa volte a ser só Tk (aí a E volta a valer).
 5. Ideias do `IDEIAS.md` (perguntas para continuar, procurar nas conversas,
    fixar conversa no topo, letra maior/menor, conversa privada...).
 6. "Gavetas" de memória por assunto (hoje é UMA memória; não confundir com
    os lugares fixos de nome/cidade/idade do `memoria.py`).
-7. Reescrever a tela em HTML (só no fim, e só se o Wolf quiser).
+7. ~~**Reescrever a tela em HTML**~~ **DECIDIDO em 15/10/2026**: virou o
+   item 0, porque o teste mostrou que funciona neste PC.
+
+(lista do Claude, superada: ela começava em 1. memória sem repetição, que já
+foi feita, e punha a tela em HTML por último.)
 
 (lista antiga:)
 1. ~~**Backup do código.**~~ **FEITO em 15/10/2026**: existe o
