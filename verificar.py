@@ -303,6 +303,7 @@ def testes_de_tela():
             pass
         raiz.update()
         ok("janela de Configurações abre e troca de aba")
+        testes_lista_de_conversas(p, raiz, app)
 
         if erros_tk:
             for e in erros_tk[:3]:
@@ -312,6 +313,112 @@ def testes_de_tela():
     finally:
         try:
             raiz.destroy()
+        except Exception:
+            pass
+
+
+# --- 5b. lista de conversas: tres pontinhos -> Excluir ----------------------
+
+
+def _esperar(raiz, segundos):
+    fim = time.time() + segundos
+    while time.time() < fim:
+        raiz.update()
+        time.sleep(0.05)
+
+
+def testes_lista_de_conversas(p, raiz, app):
+
+    # Dados falsos: o teste nunca mexe nas conversas nem na memoria do Wolf.
+    guardadas = [
+        {"id": "a1", "titulo": "Conversa de teste A",
+         "quando": "01/01/2026 as 10:00",
+         "mensagens": [{"role": "user", "text": "oi"}]},
+        {"id": "b2", "titulo": "Conversa de teste B",
+         "quando": "01/01/2026 as 11:00",
+         "mensagens": [{"role": "user", "text": "ola"}]},
+    ]
+    originais = (p.carregar_conversas, p.salvar_conversas, p.carregar_memoria)
+    p.carregar_conversas = lambda: list(guardadas)
+    p.salvar_conversas = lambda lista: guardadas.__setitem__(
+        slice(None), list(lista))
+    p.carregar_memoria = lambda: []
+    try:
+        if app.lista_conversas.winfo_ismapped():
+            app._recolher_lista_conversas()
+        app._alternar_lista_conversas()
+        _esperar(raiz, 0.3)
+
+        def pontinhos():
+            achados = []
+            for item in app.lista_conversas.winfo_children():
+                for w in p.anda(item):
+                    try:
+                        if w.cget("text") == "\u22ef":
+                            achados.append(w)
+                    except Exception:
+                        pass
+            return achados
+
+        def aberto():
+            pop = getattr(app, "_popup_conversa", None)
+            try:
+                return pop is not None and pop.winfo_exists()
+            except Exception:
+                return False
+
+        pts = pontinhos()
+        if len(pts) != 2:
+            falha("lista de conversas: esperava 2 itens, achei %d" % len(pts))
+            return
+        pts[0].event_generate("<Button-1>", x=3, y=3)
+        _esperar(raiz, 0.3)
+        if aberto():
+            ok("tres pontinhos abrem o menu Excluir")
+        else:
+            falha("tres pontinhos NAO abrem o menu Excluir")
+            return
+
+        # clicar fora fecha o menu
+        app.canvas.event_generate("<Button-1>", x=5, y=5)
+        _esperar(raiz, 0.3)
+        if not aberto():
+            ok("clicar fora fecha o menu da conversa")
+        else:
+            falha("clicar fora NAO fecha o menu da conversa")
+
+        # abre de novo e exclui (a confirmacao e trocada por um "sim")
+        app._confirmar = lambda _titulo, _texto: True
+        pts = pontinhos()
+        pts[0].event_generate("<Button-1>", x=3, y=3)
+        _esperar(raiz, 0.3)
+        excluir = None
+        if aberto():
+            for w in p.anda(app._popup_conversa):
+                try:
+                    if w.cget("text") == "Excluir":
+                        excluir = w
+                except Exception:
+                    pass
+        if excluir is None:
+            falha("menu da conversa abriu sem o botao Excluir")
+            return
+        excluir.event_generate("<Button-1>", x=3, y=3)
+        _esperar(raiz, 0.4)
+        restantes = [c["id"] for c in guardadas]
+        if restantes == ["a1"]:
+            ok("Excluir apaga a conversa certa (a mais nova, B)")
+        else:
+            falha("Excluir apagou errado; sobraram %r (esperado ['a1'])"
+                  % (restantes,))
+        if not aberto():
+            ok("menu fecha depois de excluir")
+        else:
+            falha("menu continua aberto depois de excluir")
+    finally:
+        p.carregar_conversas, p.salvar_conversas, p.carregar_memoria = originais
+        try:
+            app._recolher_lista_conversas()
         except Exception:
             pass
 

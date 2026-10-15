@@ -4974,6 +4974,10 @@ class Aplicativo:
             if self._popup_conversa is None:
                 return
             alvo = _e.widget if _e is not None else None
+            if alvo is ancora:
+                # Este e o MESMO clique que abriu a caixinha (ele ainda
+                # sobe ate a janela). Sem isto ela fechava na hora.
+                return
             if alvo is not None:
                 atual = alvo
                 while atual is not None:
