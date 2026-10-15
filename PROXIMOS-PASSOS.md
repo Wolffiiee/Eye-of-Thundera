@@ -29,17 +29,35 @@ Claude em outra conversa): leia isto depois do PASSO-A-PASSO.md.
   aba Chave) e uma janelinha de aviso com botão para criar chave nova.
   Se um dia a principal cair de novo, a reserva cobre sozinha; sem
   reserva, o botão abre a página do Google.
-1. **Uma pergunta real** com a chave nova (as respostas normais ainda não
-   foram testadas de ponta a ponta). Peça ao Wolf para fazer uma pergunta
-   e dizer se a resposta apareceu.
-2. ~~**Falar de verdade**~~ — **FEITO em 15/10/2026**: o Wolf falou no
-   microfone, o texto transcrito apareceu na caixa e a chave nova funciona.
-3. **O botão direito na caixa de digitar com os olhos** (os itens foram
-   conferidos pelos testes, mas o visual do menu não foi olhado).
-4. Usar o `.exe` por mais tempo (nos testes ele ficou aberto de 13 a 20
+- **As janelas escuras foram conferidas com os olhos pelo Wolf** (15/10).
+- **O botão direito na caixa vazia foi achado pelo Wolf e consertado**;
+  falta só ele olhar o corrigido.
+1. **Uma pergunta normal** (digitando) com a chave nova — é o único
+   caminho que nunca foi testado de ponta a ponta.
+2. Usar o `.exe` por mais tempo (nos testes ele ficou aberto de 13 a 20
    segundos, sem criar `erro.log`).
 Se algo falhar, leia o `erro.log` (no `.exe`: `%LOCALAPPDATA%\PesquisaIA\`;
 rodando pelo código: na pasta do projeto) e siga o PASSO-A-PASSO.md.
+
+## O que ainda falta construir (ordem sugerida pelo Wolf em 15/10/2026)
+1. **Backup do código.** Hoje tudo está só neste computador (o Git está
+   dentro dele). Se o disco queimar, vai junto. O projeto tem menos de
+   1 MB: ou um repositório privado no GitHub, ou uma cópia da pasta em
+   outro lugar.
+2. **Salvar a resposta em .txt** (hoje só dá pra copiar).
+3. **Fontes citadas na resposta** — a IA já pesquisa e sabe de onde tirou
+   cada coisa; hoje ela joga esse rastro fora. É o que dá confiança.
+4. **TAREFA D** do `PLANO-NOVAS-FUNCOES.md`: Configurações em 4 abas
+   (Memória, Conversa, Chaves, Ajuda).
+5. **Ideias do `IDEIAS.md`**, da mais útil para a menos: perguntas para
+   continuar, procurar nas conversas, fixar conversa no topo,
+   aumentar/diminuir a letra (Ctrl + / Ctrl -), conversa privada,
+   pesquisa "séria", memória com data, exportar tudo.
+6. **Memória separada por assunto** ("gavetas", como no sistema que o Wolf
+   viu na internet). Hoje existe UMA memória só. Não está em nenhum plano.
+7. **Reescrever só a tela em HTML** (manter busca e IA em Python). É o
+   que resolve de vez a seleção de texto e a formatação. Trabalho grande,
+   deixar pro final.
 
 ## Regra da tela de teste (importante)
 O segundo monitor do Wolf começa em **X=1920**. **Toda** janela de teste
@@ -55,10 +73,6 @@ título "Pesquisa IA" em todos os processos. Para printar a janela, use
 - Quando o Wolf pedir uma biblioteca nova: fixar a versão em
   `requirements.txt`, atualizar o `requirements-lock.txt`
   (`.venv\Scripts\python.exe -m pip freeze`) e anotar no HISTORICO.
-- Itens do `IDEIAS.md`. Ordem sugerida (do mais útil para o mais trabalhoso):
-  salvar a resposta em .txt, fontes citadas na resposta, perguntas para
-  continuar, procurar nas conversas, fixar conversa no topo,
-  aumentar/diminuir o texto (Ctrl + / Ctrl -).
 
 ## Sobre trocar de tecnologia (só se o Wolf pedir)
 Python não é o problema; o que limita é o tkinter. Opções, da mais simples
