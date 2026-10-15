@@ -203,6 +203,43 @@ def testes_de_tela():
         else:
             falha("selecionar arrastando o mouse parou de funcionar")
 
+        # duplo clique seleciona a palavra; triplo clique seleciona tudo
+        time.sleep(0.7)  # para não contar como continuação do clique anterior
+        item_b = texto_de(b)
+        conteudo_b = b.itemcget(item_b, "text")
+        alvo_i = conteudo_b.index("mensagem") + 3
+        yy = int(y0 + 5)
+        xs = [xx for xx in range(int(x0), int(x1))
+              if int(b.index(item_b, "@%d,%d" % (xx, yy))) == alvo_i]
+        if not xs:
+            falha("não achei onde clicar para testar duplo/triplo clique")
+        else:
+            def clicar():
+                b.event_generate("<ButtonPress-1>", x=xs[0], y=yy)
+                b.event_generate("<ButtonRelease-1>", x=xs[0], y=yy)
+
+            clicar()
+            clicar()
+            raiz.update()
+            try:
+                palavra = b.selection_get()
+            except Exception:
+                palavra = ""
+            if palavra == "mensagem":
+                ok("duplo clique seleciona a palavra")
+            else:
+                falha("duplo clique selecionou %r (esperado 'mensagem')" % palavra)
+            clicar()
+            raiz.update()
+            try:
+                tudo = b.selection_get()
+            except Exception:
+                tudo = ""
+            if tudo == conteudo_b:
+                ok("triplo clique seleciona o texto todo da bolha")
+            else:
+                falha("triplo clique selecionou %r (esperado o texto todo)" % tudo)
+
         # --- menus que fecham ao clicar fora (um não pode quebrar o outro)
         chamadas = []
 

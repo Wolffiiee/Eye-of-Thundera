@@ -3297,6 +3297,49 @@ class Aplicativo:
                 pass
             return "break"
 
+        def _letra_de_palavra(caractere):
+            return caractere.isalnum() or caractere == "_"
+
+        def _on_duplo_clique(event):
+            """Duplo clique: seleciona a palavra que está sob o mouse."""
+            tela.focus_set()
+            self._limpar_selecoes()
+            self._despachar_clique(event)
+            try:
+                conteudo = tela.itemcget(item, "text")
+                if not conteudo:
+                    return "break"
+                pos = int(tela.index(item, "@%d,%d" % (event.x, event.y)))
+                pos = max(0, min(pos, len(conteudo) - 1))
+                if conteudo[pos].isspace():
+                    return "break"
+                ini = fim = pos
+                if _letra_de_palavra(conteudo[pos]):
+                    while ini > 0 and _letra_de_palavra(conteudo[ini - 1]):
+                        ini -= 1
+                    while (fim < len(conteudo) - 1
+                           and _letra_de_palavra(conteudo[fim + 1])):
+                        fim += 1
+                tela.select_from(item, ini)
+                tela.select_to(item, fim)
+            except Exception:
+                pass
+            return "break"
+
+        def _on_triplo_clique(event):
+            """Triplo clique: seleciona o texto inteiro da bolha."""
+            tela.focus_set()
+            self._limpar_selecoes()
+            self._despachar_clique(event)
+            try:
+                conteudo = tela.itemcget(item, "text")
+                if conteudo:
+                    tela.select_from(item, 0)
+                    tela.select_to(item, len(conteudo) - 1)
+            except Exception:
+                pass
+            return "break"
+
         def _selecao_propria():
             """Texto selecionado NESTA bolha ('' se a seleção é de outra)."""
             try:
@@ -3380,6 +3423,8 @@ class Aplicativo:
 
         tela.bind("<Button-1>", _on_click)
         tela.bind("<B1-Motion>", _on_drag)
+        tela.bind("<Double-Button-1>", _on_duplo_clique)
+        tela.bind("<Triple-Button-1>", _on_triplo_clique)
         tela.bind("<Button-3>", _on_right_click)
         tela.bind("<Control-c>", _copiar_canvas)
 
