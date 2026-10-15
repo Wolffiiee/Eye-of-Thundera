@@ -32,6 +32,11 @@ _TERCEIROS = re.compile(
     r"namorada|amigo|amiga|primo|prima|tio|tia|avo|cachorro|cachorra|gato|"
     r"gata|pet|chefe|colega)\b"
 )
+# Respostas vazias do modelo quando nao ha fato novo. NAO sao informacao
+# sobre o usuario e nunca podem virar "lembra do programa".
+_SEM_INFORMACAO = frozenset(
+    "nada nenhum nenhuma nao ha sem nada sem novidade n/a -".split()
+)
 _GAVETAS = (
     ("nome", re.compile(
         r"\b(chamad[oa]|chamar|apelido|nick|nickname)\b"
@@ -52,6 +57,24 @@ def _sem_acento(texto):
 def limpar(fato):
     texto = " ".join(str(fato).split()).lstrip("-*\u2022 ").strip()
     return texto[:TAMANHO_MAXIMO]
+
+
+def tem_informacao(fato):
+    """Falso quando o 'fato' e so a resposta vazia do modelo ("NADA")."""
+    return _sem_acento(fato).strip(" .-*_") not in _SEM_INFORMACAO
+
+
+def juntar(a, b):
+    """Junta dois fatos da MESMA gaveta sem perder nenhum dos dois.
+
+    Devolve o texto junto, ou None quando nao cabe em TAMANHO_MAXIMO
+    (nesse caso os dois ficam guardados separados, que e melhor do que
+    cortar a ponta de um deles).
+    """
+    if _sem_acento(a) == _sem_acento(b):
+        return a
+    junto = "%s | %s" % (a, b)
+    return junto if len(junto) <= TAMANHO_MAXIMO else None
 
 
 def _tokens(fato):
@@ -103,22 +126,35 @@ def _relacao(velho, novo):
 
 
 def mesclar(atuais, novos):
-    """Junta fatos novos aos atuais. Devolve (lista, mudou)."""
+    """Junta fatos novos aos atuais. Devolve (lista, mudou).
+
+    REGRA DE OURO: nunca perder informacao. Se um fato sumir da lista, e
+    porque o que ficou diz a mesma coisa (ou diz mais). Isso e conferido
+    pelo autoteste().
+    """
     original = list(atuais)
-    lista = [limpar(f) for f in original if limpar(f)]
+    lista = [f for f in (limpar(x) for x in original) if f and tem_informacao(f)]
     for bruto in novos:
         fato = limpar(bruto)
-        if len(fato) < 4:
+        if len(fato) < 4 or not tem_informacao(fato):
             continue
         gaveta = _gaveta(fato)
         if gaveta:
-            mesmos = [i for i, f in enumerate(lista) if _gaveta(f) == gaveta]
-            if mesmos:
-                if any(_tokens(lista[i]) == _tokens(fato) for i in mesmos):
-                    continue
-                lista[mesmos[0]] = fato
-                for i in reversed(mesmos[1:]):
+            mesmo = [i for i, f in enumerate(lista) if _gaveta(f) == gaveta]
+            if mesmo:
+                juntado = fato
+                sobrando = []
+                for i in mesmo:
+                    cabem = juntar(lista[i], juntado)
+                    if cabem is None:
+                        # nao da para juntar sem cortar: os dois ficam
+                        sobrando.append(lista[i])
+                    else:
+                        juntado = cabem
+                for i in reversed(mesmo):
                     del lista[i]
+                lista.extend(sobrando)
+                lista.append(juntado)
                 continue
         acao = None
         for i, f in enumerate(lista):
@@ -138,9 +174,14 @@ def mesclar(atuais, novos):
 
 def consolidar(lista):
     """Arruma uma memoria que ja existe (tira repetidos). (lista, mudou)."""
-    limpos = [limpar(f) for f in lista if limpar(f)]
+    limpos = [f for f in (limpar(x) for x in lista) if f and tem_informacao(f)]
     novo, _ = mesclar([], limpos)
     return novo, novo != list(lista)
+
+
+def _informacoes(fatos):
+    """Todo o conteudo dos fatos, como um conjunto de palavras."""
+    return set().union(*[_tokens(f) for f in fatos]) if fatos else set()
 
 
 def autoteste():
@@ -151,10 +192,14 @@ def autoteste():
         if obtido != esperado:
             erros.append("%s: obtido %r, esperado %r" % (nome, obtido, esperado))
 
-    esperar("apelido em outras palavras vira 1 so",
-            mesclar(["Prefere ser chamado de Wolf"],
-                    ["O apelido do usuario e Wolf"])[0],
-            ["O apelido do usuario e Wolf"])
+    # Apelido e nome andam juntos na mesma gaveta: o resultado tem que ser
+    # UM fato (nao cinco) e tem que guardar as palavras dos dois.
+    juntado = mesclar(["Prefere ser chamado de Wolf"],
+                      ["O apelido do usuario e Wolf"])[0]
+    esperar("apelido em outras palavras vira 1 so", len(juntado), 1)
+    esperar("juntar nomes nao perde palavra",
+            _tokens(juntado[0]) >= _tokens("Prefere ser chamado de Wolf"),
+            True)
     esperar("3 jeitos de dizer o apelido viram 1",
             len(consolidar(["Prefere ser chamado de Wolf",
                             "Gosta de ser chamado de Wolf",
@@ -178,9 +223,12 @@ def autoteste():
     esperar("gostos parecidos mas diferentes ficam",
             len(mesclar(["Gosta de jogos de tiro"],
                         ["Gosta de jogos de RPG"])[0]), 2)
-    esperar("onde mora: o mais novo vence",
-            mesclar(["Mora no Sul do Brasil"],
-                    ["Mora em Santa Maria"])[0], ["Mora em Santa Maria"])
+    # "Mora no Sul" e "Mora em Santa Maria": o novo nao apaga o velho
+    # (o antigo e mais geral, e um dia pode ser o unico que vale).
+    onde = mesclar(["Mora no Sul do Brasil"], ["Mora em Santa Maria"])[0]
+    esperar("onde mora: fica um so fato", len(onde), 1)
+    esperar("onde mora: nao perde a regiao",
+            "Brasil" in onde[0], True)
     esperar("fato de outra pessoa nao some na gaveta do nome",
             len(mesclar(["A irma dele se chama Ana"],
                         ["Prefere ser chamado de Wolf"])[0]), 2)
@@ -190,6 +238,45 @@ def autoteste():
             mesclar(["Gosta de RPG"], ["gosta de rpg."])[1], False)
     esperar("fato curto demais e ignorado",
             mesclar([], ["ok"])[0], [])
+
+    # --- o modelo respondendo "NADA" nao pode virar lembrança --------------
+    esperar('resposta "NADA" do modelo e descartada',
+            mesclar(["Gosta de RPG"], ["NADA"])[0], ["Gosta de RPG"])
+    esperar('"NADA" dentro de uma memoria antiga e limpo',
+            "NADA" in consolidar(["Gosta de RPG", "NADA"])[0], False)
+
+    # --- REGRA DE OURO: organizar NUNCA pode perder informacao -------------
+    # Antes de tidy-up, a memoria do Wolf guardava o nome verdadeiro E o
+    # apelido em fatos separados. A versao antiga da gaveta trocava um pelo
+    # outro e o nome "Igor" sumia para sempre. Este teste barra isso.
+    antes = [
+        "Nome: Igor (pode ser chamado de Wolf)",
+        "Quer ser chamado pelo apelido Wolf",
+        "Nome ou como quer ser chamado: Wolf",
+        "Nome ou apelido: Wolf",
+        "Fez 30 anos em 2 de outubro de 2026",
+        "Idade: mais de 30 anos",
+        "Mora em Santa Maria",
+        "Natural de Santa Maria, Rio Grande do Sul",
+        "Gosta de jogar videogame",
+    ]
+    depois, _ = consolidar(antes)
+    perdido = _informacoes(antes) - _informacoes(depois)
+    if perdido:
+        erros.append(
+            "organizar perdeu informacao: %s" % ", ".join(sorted(perdido)))
+    # o mesmo vale quando chega fato novo (e nao so quando limpa a memoria)
+    perdido2 = _informacoes(antes) - _informacoes(
+        mesclar(antes, ["Prefere ser chamado de Jorge"])[0])
+    if perdido2:
+        erros.append(
+            "mesclar perdeu informacao: %s" % ", ".join(sorted(perdido2)))
+    if not any("Igor" in f for f in depois):
+        erros.append("organizar esqueceu o nome verdadeiro (Igor)")
+    if not any("2 de outubro" in f for f in depois):
+        erros.append("organizar esqueceu a data de nascimento")
+    if not any("Igor" in f and "Wolf" in f for f in depois):
+        erros.append("o nome e o apelido deviam ficar juntos no mesmo fato")
     return erros
 
 

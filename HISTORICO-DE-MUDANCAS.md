@@ -35,6 +35,49 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Revisão do trabalho do Claude (memória) + 2 defeitos corrigidos
+
+- **Situação encontrada:** o Claude trabalhou até os tokens acabarem. Deixou
+  **dois commits** (`46a8fd4`, `cecabef`) com a `memoria.py` ligada ao
+  programa, e começou uma experiência nova (`pasta web/`) que ficou
+  **pela metade e sem commit**. O `verificar.py` passava (TUDO CERTO).
+- **Defeito 1 (grave): organizar a memória APAGAVA informação do Wolf.**
+  A regra das "gavetas" (nome, onde mora, idade: um lugar só) **trocava**
+  o fato antigo pelo novo. Simulando com a memória real do Wolf:
+  - `"Nome: Igor (pode ser chamado de Wolf)"` era **substituído** por
+    `"Nome ou apelido: Wolf"` → o programa **esquecia o nome Igor**.
+  - `"Fez 30 anos em 2 de outubro de 2026"` era **substituído** por
+    `"Idade: mais de 30 anos"` → **perdia a data de nascimento**.
+  - Pior: os 4 fatos repetidos de "Dragon's Dogma" **continuavam lá**.
+  Ou seja: apagava o que era único e guardava a repetição. Como
+  `organizar_memoria()` roda **toda vez que o programa abre**, isso ia
+  acontecer no primeiro uso do `.exe` novo.
+- **Defeito 2:** o fato `"NADA"` estava guardado na memória. Ele é a
+  resposta que o modelo dá quando não há fato novo (o prompt novo manda
+  responder "NADA"), ou seja, ia virar "lembre do programa" para sempre.
+- **Correção 1 — nunca perder informação** (`memoria.juntar`): quando dois
+  fatos são da mesma gaveta, eles agora são **JUNTADOS** num só
+  (`"Nome: Igor (...) | Quer ser chamado de Wolf | Nome ou apelido: Wolf"`)
+  em vez de um substituir o outro. Se não couberem em 200 caracteres, os
+  dois ficam guardados separados — é melhor do que cortar a ponta de um
+  deles.
+- **Correção 2 — `"NADA"` e afins** (`memoria.tem_informacao`) não entram
+  mais na memória, nem quando o modelo devolve isso agora, nem quando a
+  memória antiga tem isso guardado.
+- **Teste que barra a regressão:** `memoria.autoteste()` ganhou a regra de
+  ouro — depois de organizar, **nenhuma palavra da memória antiga pode ter
+  desaparecido**. O teste usa exatamente o caso do Wolf (o nome Igor, o
+  apelido Wolf, a data de 2 de outubro) e falha se voltar a perder.
+- **Resultado da simulação (com a memória real, só leitura, nada gravado):**
+  23 fatos → 12, e a única "palavra perdida" foi a do `"NADA"`, que é
+  lixo. Ficaram guardados: o nome Igor junto com o apelido Wolf, a data
+  de nascimento completa, a cidade e a região.
+- **A pasta `web/` foi guardada** (estava sem commit, podia se perder),
+  com um `LEIA-ME.md` avisando que é só um protótipo: falta a ponte
+  `app_web.py` e falta instalar o `pywebview`. Não é o programa.
+
+---
+
 ## 2026-10-15 — Salvar a resposta em arquivo (.txt)
 
 - **Pedido do Wolf:** item 2 da lista ("hoje só dá pra copiar").

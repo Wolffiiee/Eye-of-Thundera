@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pesquisa IA</title>
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-lupa" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2M11 8.5v5M8.5 11h5"/></symbol>
+  <symbol id="i-mais" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-engrenagem" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-recolher" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-enviar" viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+  <symbol id="i-copiar" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/></symbol>
+  <symbol id="i-salvar" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/></symbol>
+  <symbol id="i-pontos" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="i-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-lixo" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
+  <symbol id="i-globo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 2.6 15.4 0 18M12 3c-2.6 2.6-2.6 15.4 0 18"/></symbol>
+</svg>
+
+<div id="app">
+  <aside id="lateral">
+    <div class="topo-lateral">
+      <div class="marca"><span class="logo"><svg><use href="#i-lupa"/></svg></span><span>Pesquisa IA</span></div>
+      <button id="btn-recolher" class="icone" title="Recolher a barra"><svg><use href="#i-recolher"/></svg></button>
+    </div>
+    <button id="btn-nova" class="item-menu"><svg><use href="#i-mais"/></svg><span>Nova conversa</span></button>
+    <div class="titulo-secao">Conversas</div>
+    <nav id="lista-conversas"></nav>
+    <div class="rodape-lateral">
+      <button id="btn-config" class="item-menu"><svg><use href="#i-engrenagem"/></svg><span>Configurações</span></button>
+    </div>
+  </aside>
+
+  <main id="principal">
+    <header id="cabecalho">
+      <button id="btn-abrir-lateral" class="icone oculto" title="Mostrar a barra"><svg><use href="#i-menu"/></svg></button>
+      <div id="titulo-conversa"></div>
+    </header>
+    <section id="rolagem">
+      <div id="coluna">
+        <div id="vazio">
+          <h1>Olá! No que posso ajudar?</h1>
+          <p>Converso como um amigo e pesquiso na web só quando for preciso.</p>
+          <div class="sugestoes" id="sugestoes">
+            <button class="sugestao">Me conta uma curiosidade legal sobre o espaço</button>
+            <button class="sugestao">Pesquisa as notícias de tecnologia de hoje</button>
+            <button class="sugestao">Me dá dicas para começar um jogo de RPG</button>
+            <button class="sugestao">Me ajuda a escrever uma mensagem educada</button>
+          </div>
+        </div>
+        <div id="mensagens"></div>
+        <div id="digitando" class="oculto"><span class="avatar"><svg><use href="#i-lupa"/></svg></span>
+          <span class="pontos"><i></i><i></i><i></i></span><span id="etapa"></span></div>
+      </div>
+    </section>
+    <footer id="rodape">
+      <div id="compositor">
+        <textarea id="entrada" rows="1" placeholder="Pergunte qualquer coisa..." spellcheck="true" lang="pt-BR" autofocus></textarea>
+        <div class="barra-compositor">
+          <button id="btn-web" class="pilula" title="Quando pesquisar na web (clique para trocar)"><svg style="width:15px;height:15px"><use href="#i-globo"/></svg><span id="rotulo-web">Web: automática</span></button>
+          <span class="espaco"></span>
+          <button id="btn-mic" class="icone" title="Falar (ainda não ligado na tela nova)" disabled><svg><use href="#i-mic"/></svg></button>
+          <button id="btn-enviar" class="enviar" title="Enviar (Enter)" disabled><svg><use href="#i-enviar"/></svg></button>
+        </div>
+      </div>
+      <div id="dica">Enter envia · Shift+Enter quebra a linha</div>
+    </footer>
+  </main>
+</div>
+
+<div id="modal" class="oculto">
+  <div class="janela" role="dialog" aria-label="Configurações">
+    <div class="janela-topo"><h2>Configurações</h2>
+      <button id="btn-fechar-config" class="icone" title="Fechar"><svg><use href="#i-fechar"/></svg></button></div>
+    <div class="abas" id="abas">
+      <button class="aba" data-aba="memoria">Memória</button>
+      <button class="aba" data-aba="conversa">Conversa</button>
+      <button class="aba" data-aba="chaves">Chaves</button>
+      <button class="aba" data-aba="ajuda">Ajuda</button>
+    </div>
+    <div class="janela-corpo" id="corpo-config"></div>
+    <div class="janela-rodape"><span id="config-aviso"></span><button id="btn-salvar-config" class="btn primario">Salvar</button></div>
+  </div>
+</div>
+<div id="aviso" class="oculto"></div>
+<script src="app.js"></script>
+</body>
+</html>
