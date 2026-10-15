@@ -5,6 +5,39 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Cantos da caixa: conserto do quadrado (relato do Wolf)
+
+- **Relato do Wolf:** "os cantos da caixa de pergunta não estão
+  arredondados mas sim com quadrados pretos", com print.
+- **Causa:** a imagem do canto era pintada com a parte de FORA da curva em
+  COR_FUNDO e o resto **transparente**, contando que o que está embaixo
+  (a caixa) apareceria por baixo. Só que o `tkinter` não tem widget
+  transparente: o `bg` de um `Label` preenche o quadrado INTEIRO. Então o
+  "transparente" da curva virava COR_FUNDO também, e o canto saía como um
+  quadrado de 12x12 em vez de uma curva. Nos prints que eu tirei com
+  `PrintWindow` o antialiasing fazia parecer curva; na tela do Wolf
+  apareceu o quadrado.
+- **Correção:** `_foto_canto` virou `_imagem_canto` (devolve a imagem PIL,
+  para o `verificar.py` poder conferir os pixels) + `_foto_canto` (a
+  transforma em foto do Tk). A imagem agora é **inteiramente pintada**:
+  dentro da curva fica a cor da caixa e fora a cor de fundo. Sem
+  transparência, sem quadrado, sem depender do que está embaixo.
+- **Testes novos no `verificar.py`:** a imagem do canto não pode ter
+  nenhum pixel transparente, e tem que ter as duas cores.
+- **Conferido no `.exe`:** pixel a pixel, a curva do canto agora é uma
+  curva de verdade (a borda da caixa vai entrando 1 px por linha, até
+  completar 12 px, dos dois lados).
+- **JUNTO VEIO:** o Wolf avisou que **a voz para texto não funcionou**.
+  Não é bug do programa: a chave de API do Google **está sendo recusada com
+  erro 401 "API key not valid"**, em qualquer chamada (até só para listar
+  modelos). A chave funcionava mais cedo no mesmo dia (uma transcrição de
+  teste deu certo), então o Google passou a recusá-la. Isso afeta **tudo**
+  que usa a IA: perguntar, pesquisar e falar. Enquanto o Wolf não trocar a
+  chave em <https://aistudio.google.com/apikey>, nenhuma resposta vai
+  aparecer.
+
+---
+
 ## 2026-10-15 — Tarefa C: interface mais limpa (estilo Claude)
 
 - **Pedido do Wolf:** executar a `PLANO-NOVAS-FUNCOES.md`, Tarefa C.

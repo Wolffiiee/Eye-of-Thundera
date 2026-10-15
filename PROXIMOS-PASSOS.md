@@ -21,7 +21,13 @@ Claude em outra conversa): leia isto depois do PASSO-A-PASSO.md.
   Intocados. Nunca mexer.
 
 ## O que ainda NÃO foi testado (fazer primeiro, com o Wolf)
-1. **Uma pergunta real à IA** (precisa de internet e da chave dele). Peça ao
+0. **A chave de API do Google parou de valer (erro 401) em 15/10/2026.**
+   O Google está recusando a chave em qualquer chamada. Isso trava
+   **tudo** que usa a IA (perguntar, pesquisar e falar). O Wolf precisa
+   criar uma chave nova em <https://aistudio.google.com/apikey> e colar
+   em Configurações. **Enquanto isso não for feito, nenhuma resposta vai
+   aparecer** — e não é bug do programa.
+1. **Uma pergunta real à IA** (precisa de internet e da chave nova). Peça ao
    Wolf para fazer uma pergunta e dizer se a resposta apareceu.
 2. **Falar de verdade**: pedir para ele clicar no microfone, falar uma
    pergunta, clicar de novo e ver se o texto aparece na caixa. O botão já

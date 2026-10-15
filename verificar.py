@@ -1116,6 +1116,43 @@ try:
     else:
         falha("os cantos cortaram a medida errada: %.1f%% do miolo "
               "(esperado entre 75%% e 90%%)" % proporcao)
+
+    # A imagem do canto tem que vir PINTAADA (dentro = cor da caixa, fora =
+    # cor de fundo) e sem buraco transparente: o tkinter nao tem widget
+    # transparente, e o fundo de um Label cobre o quadrado todo — com
+    # buraco, o canto saia como um QUADRADO preto em vez de uma curva.
+    _p2._FOTOS_CANTO.clear()
+    imagem = _p2._imagem_canto(_p2.RAIO_CANTO, _p2.COR_BARRA,
+                               _p2.COR_FUNDO, "nw")
+    if imagem is None:
+        falha("não consegui desenhar a imagem do canto arredondado")
+    else:
+        da_caixa = de_fundo = transparentes = outros = 0
+        for y in range(imagem.height):
+            for x in range(imagem.width):
+                cor = imagem.getpixel((x, y))
+                if cor[3] < 128:
+                    transparentes += 1
+                elif cor[:3] == _p2._rgba(_p2.COR_BARRA)[:3]:
+                    da_caixa += 1
+                elif cor[:3] == _p2._rgba(_p2.COR_FUNDO)[:3]:
+                    de_fundo += 1
+                else:
+                    outros += 1
+        if transparentes == 0:
+            ok("imagem do canto sem buraco transparente (ela pinta as "
+               "duas cores)")
+        else:
+            falha("a imagem do canto tem %d pixel(is) transparente(s): "
+                  "o fundo do Label vai aparecer e o canto vira "
+                  "quadrado" % transparentes)
+        if da_caixa and de_fundo and outros < (da_caixa + de_fundo):
+            ok("imagem do canto tem as duas cores (%d da caixa, %d de "
+               "fundo, %d de borda/antialising)" % (da_caixa, de_fundo,
+                                                     outros))
+        else:
+            falha("a imagem do canto ficou errada (%d caixa / %d fundo / "
+                  "%d borda)" % (da_caixa, de_fundo, outros))
 except Exception as erro:
     falha("os testes dos cantos quebraram: %r" % (erro,))
 

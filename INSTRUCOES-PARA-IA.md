@@ -101,10 +101,18 @@ trabalhando.
   âncora, não do centro). Use só `relx/rely` + `anchor`.
 - **A curva do canto tem o centro no canto OPOSTO** (`_dentro_do_canto`):
   o bico do canto fica FORA (é o que a tampinha pinta) e o miolo fica
-  DENTRO (é o que fica transparente). Invertido, a tampinha come o miolo
-  da caixa em vez de arredondar. **Confira conferindo os pixels do print**
-  (a cor de cada canto), não só olhando a tela de longe — foi assim que os
-  dois bugs acima apareceram.
+  DENTRO. Invertido, a tampinha come o miolo da caixa em vez de arredondar.
+- **`tkinter` NÃO tem widget transparente.** O `bg` de um `Label`
+  preenche o retângulo inteiro, então uma imagem com "buraco"
+  (alpha=0) não deixa ver o que está embaixo: o buraco sai com a cor do
+  `bg`. Por isso `_imagem_canto` pinta a imagem **inteira** (dentro = cor
+  da caixa, fora = cor de fundo) e não usa transparência. Tem teste que
+  falha se aparecer qualquer pixel transparente.
+- **`PrintWindow` engana com antialiasing:** nos meus prints o canto
+  "parecia" curva mesmo estando quadrado. **O que vale é a tela de verdade
+  do Wolf.** Quando ele reclamar de algo visual, ache o pixel exato no
+  print que ele mandou e confira os valores RGB — foi assim que o quadrado
+  apareceu.
 - **Mudar a altura da caixa de digitar redesenha a conversa:** o `Text`
   encolhe/engrandece, o rodapé muda de tamanho, o Canvas recebe
   `<Configure>` e agenda `_agendar_redesenho`, que **recria todas as

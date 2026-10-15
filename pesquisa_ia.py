@@ -1770,26 +1770,43 @@ def _dentro_do_canto(x, y, lado, canto):
     return (dx * dx + dy * dy) <= lado * lado
 
 
-def _foto_canto(raio, cor_fora, canto, escala=4):
-    """Imagem que apaga um canto, deixando a caixa de digitar arredondada.
+def _imagem_canto(raio, cor_dentro, cor_fora, canto, escala=4):
+    """Desenha o cantinho arredondado e devolve a imagem PIL (ou None).
 
-    Devolve None sem o Pillow (aí a caixa fica quadrada, e funciona igual).
+    A imagem é pintada INTEIRA, sem transparência: dentro da curva fica a
+    cor da caixa e fora fica a cor de fundo. Isso é de propósito — o
+    `tkinter` não tem widget transparente, e o fundo de um `Label` preenche
+    o quadrado todo; se a imagem tivesse "buracos", o buraco viraria a cor
+    de fundo e o canto sairia como um QUADRADO preto em vez de uma curva.
     """
-    if not TEM_PIL or ImageTk is None:
+    if not TEM_PIL or Image is None:
         return None
-    chave = (int(raio), cor_fora, canto)
-    if chave in _FOTOS_CANTO:
-        return _FOTOS_CANTO[chave]
     try:
         lado = max(2, int(raio)) * escala
-        imagem = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
+        imagem = Image.new("RGBA", (lado, lado), _rgba(cor_dentro))
         pincel = imagem.load()
+        fora = _rgba(cor_fora)
         for y in range(lado):
             for x in range(lado):
                 if not _dentro_do_canto(x, y, lado, canto):
-                    pincel[x, y] = _rgba(cor_fora)
-        foto = ImageTk.PhotoImage(imagem.resize((int(raio), int(raio)),
-                                                Image.LANCZOS))
+                    pincel[x, y] = fora
+        return imagem.resize((int(raio), int(raio)), Image.LANCZOS)
+    except Exception:
+        return None
+
+
+def _foto_canto(raio, cor_dentro, cor_fora, canto, escala=4):
+    """A mesma imagem do canto, pronta para um `Label` do tkinter."""
+    if not TEM_PIL or ImageTk is None:
+        return None
+    chave = (int(raio), cor_dentro, cor_fora, canto)
+    if chave in _FOTOS_CANTO:
+        return _FOTOS_CANTO[chave]
+    imagem = _imagem_canto(raio, cor_dentro, cor_fora, canto, escala)
+    if imagem is None:
+        return None
+    try:
+        foto = ImageTk.PhotoImage(imagem)
     except Exception:
         return None
     _FOTOS_CANTO[chave] = foto
@@ -3253,7 +3270,7 @@ class Aplicativo:
             cantos = self._cantos_ativo
             for chave, canto in (("ne", "ne"), ("nw", "nw"),
                                  ("se", "se"), ("sw", "sw")):
-                foto = _foto_canto(raio, COR_FUNDO, canto)
+                foto = _foto_canto(raio, COR_BARRA, COR_FUNDO, canto)
                 if foto is None:
                     for etiqueta in cantos.values():
                         etiqueta.place_forget()
