@@ -225,6 +225,7 @@ function abrirMenuConversa(botao, c) {
   pedir.append(ico("i-lixo"), el("span", "", "Excluir"));
   pedir.addEventListener("click", () => {
     pop.replaceChildren(el("div", "texto", "Excluir esta conversa?"));
+    pop.append(el("div", "nota", "O que o assistente aprendeu sobre você continua guardado."));
     const linha = el("div", "linha");
     const nao = el("button", "", "Cancelar");
     const sim = el("button", "perigo", "Excluir");

@@ -68,8 +68,14 @@ rodando pelo código: na pasta do projeto) e siga o PASSO-A-PASSO.md.
         algo devolvem um aviso dizendo em qual passo serão feitas, para
         nenhum teste mexer nos dados do Wolf. Entrou também o
         `5 - Ver a tela nova.bat` e o spec separado da tela nova.
-     2. lista de conversas e conversa de verdade (gravar e excluir);
-     3. enviar pergunta e mostrar a resposta aparecendo por partes;
+     2. ~~lista de conversas e conversa de verdade~~ **FEITO em
+        15/10/2026**: abrir, criar nova e excluir funcionam; a conversa
+        aberta mora na ponte e o `_gravar_conversa()` (que grava no
+        arquivo quando há mensagem nova) já está pronto. 18 testes.
+        Falta a **IA** (passo 3), que é o que vai usar esse gravação.
+     3. enviar pergunta e mostrar a resposta aparecendo por partes
+        (aqui entra `p.perguntar(...)` e o `window.PIA.evento(...)`
+        mandando `etapa`, `resposta` e `erro` para a tela);
      4. caixa de digitar, microfone, botão enviar, modo web;
      5. janela de Configurações com as 4 abas gravando de verdade
         (a Tarefa D entra aqui, para não ser feita duas vezes);

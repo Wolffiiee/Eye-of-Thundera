@@ -35,6 +35,52 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Tela nova: PASSO 2 (as conversas de verdade)
+
+O Wolf aprovou a tela nova ("curti demais mesmo") e mandou seguir o
+plano. Passo 2: a lista de conversas passa a funcionar de verdade.
+
+- **`nova_conversa()`**: limpa a conversa aberta e devolve a lista nova.
+  **Não grava nada** — conversa sem pergunta não tem o que salvar. É a
+  mesma regra do programa antigo (`_nova_conversa` só limpa e zera o id).
+- **`excluir_conversa(id)`**: apaga a conversa escolhida do arquivo e, se
+  era a que estava aberta, volta para a tela inicial (para a conversa não
+  "voltar sozinha" na lista). Faz o que o programa antigo faz, e o que a
+  IA aprendeu continua guardado de propósito.
+- **A conversa aberta passa a morar dentro da ponte**
+  (`Ponte.mensagens` e `Ponte.id_atual`), igual ao programa antigo, que
+  também guarda a conversa aberta em `self.mensagens` e só grava no
+  arquivo quando há mensagem nova. O `_gravar_conversa()` faz essa
+  gravação e já está pronto para o passo 3 usar.
+- **A lista da tela agora vem na ordem certa.** A primeira versão ordenava
+  pelo texto do horário, e o **teste pegou o defeito**: o horário só tem
+  minuto de precisão, então duas conversas no mesmo minuto ficavam em
+  ordem aleatória. Agora usa o mesmo critério do programa antigo — o
+  arquivo guarda da mais antiga para a mais nova e a lista mostra ao
+  contrário (`reversed`).
+- **A confirmação de excluir ficou igual à do programa antigo:** o aviso
+  agora diz também *"O que o assistente aprendeu sobre você continua
+  guardado"*, para ninguém achar que apagar a conversa apaga o que ele
+  ensinou.
+- **`enviar` continua avisando** que a IA ainda não está ligada (passo 3).
+  Nada de fingir que funciona.
+- **18 testes novos** no `verificar.py` (seção 5d), todos com os arquivos
+  de histórico e memória apontados para uma pasta de teste e restaurados
+  no fim: começar vazio sem quebrar, conversa vazia não ser gravada,
+  gravação com as 2 mensagens, título = primeira pergunta, ordem da
+  lista, abrir conversa, conversa inexistente, nova conversa (limpa a
+  tela e não apaga o arquivo), excluir (a certa, devolvendo a lista
+  atualizada, limpando a tela se era a aberta, e avisando se não
+  existe), aba Memória ler sem mudar nada, e o modo exemplo não tocar em
+  nada. O teste confere no fim que **não sobrou conversa no disco**.
+- **Conferido com prints:** as duas conversas aparecem na lista (mais nova
+  primeiro), o menu "…" abre o Excluir, e o clique na conversa abre as
+  duas bolhas com o título no topo e a conversa destacada.
+- **`.exe` do programa de sempre:** não precisou ser regerado (o
+  `pesquisa_ia.py` não foi tocado neste passo).
+
+---
+
 ## 2026-10-15 — Tela nova: PASSO 1 pronto (dá para ver e tocar)
 
 O Wolf pediu para ver a tela nova antes de decidir. Feito o passo 1.

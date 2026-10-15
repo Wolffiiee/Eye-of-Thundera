@@ -840,7 +840,17 @@ def testes_de_tela():
             except Exception:
                 pass
             raiz.update()
-            if raiz.focus_get() is not None:
+            # O foco no Windows leva alguns milissegundos para assentar,
+            # e checar na hora dava FALHA de vez em quando (teste
+            # instável). Aqui esperamos o foco chegar antes de julgar.
+            focado = False
+            for _ in range(20):
+                raiz.update()
+                time.sleep(0.05)
+                if raiz.focus_get() is app.entrada:
+                    focado = True
+                    break
+            if focado:
                 ok("clicar no texto de apoio põe o foco na caixa de digitar")
             else:
                 falha("clicar no texto de apoio não focou a caixa")
@@ -1221,6 +1231,175 @@ if not falhas:
         testes_memoria()
     except Exception as erro:
         falha("os testes da memoria quebraram: %r" % (erro,))
+
+# --- 5d. tela nova (HTML): a ponte e as conversas ----------------------------
+
+
+def testes_tela_nova(p):
+    """Confere a ponte da tela nova (app_web.py) SEM tocar nos dados do
+    Wolf: os arquivos de historico e memoria sao apontados para uma pasta
+    de teste e restaurados no fim.
+    """
+    import shutil
+    import app_web
+
+    pasta = Path(PASTA) / "_tmp" / "teste-tela-nova"
+    shutil.rmtree(pasta, ignore_errors=True)
+    pasta.mkdir(parents=True, exist_ok=True)
+    historico_original = p.ARQUIVO_HISTORICO
+    memoria_original = p.ARQUIVO_MEMORIA
+    demo_original = app_web.DEMO
+    try:
+        # ---- os dados do Wolf sao "escondidos" durante o teste ----
+        p.ARQUIVO_HISTORICO = pasta / "historico.json"
+        p.ARQUIVO_MEMORIA = pasta / "memoria.json"
+        app_web.DEMO = False
+
+        # 1. comeca vazio, sem quebrar
+        ponte = app_web.Ponte()
+        inicio = ponte.iniciar()
+        if inicio["conversas"] == [] and inicio["mensagens"] == []:
+            ok("tela nova: começa sem conversa nenhuma, sem erro")
+        else:
+            falha("tela nova: começou com %r" % (inicio["conversas"],))
+
+        # 2. a conversa so e gravada quando tem mensagem de verdade
+        ponte.nova_conversa()
+        ponte._gravar_conversa()
+        if p.carregar_conversas() == []:
+            ok("tela nova: conversa vazia NÃO é gravada (nada a salvar)")
+        else:
+            falha("tela nova: gravou uma conversa sem mensagem")
+
+        # 3. conversa com pergunta e resposta e gravada e aparece na lista
+        ponte.mensagens = [
+            {"role": "user", "text": "Oi, tudo bem?"},
+            {"role": "model", "text": "Tudo ótimo! Como vai?"},
+        ]
+        ponte._gravar_conversa()
+        salvas = p.carregar_conversas()
+        if len(salvas) == 1 and len(salvas[0]["mensagens"]) == 2:
+            ok("tela nova: conversa gravada e com as 2 mensagens")
+        else:
+            falha("tela nova: gravação ficou %r" % (salvas,))
+        if salvas and salvas[0].get("titulo") == "Oi, tudo bem?":
+            ok("tela nova: o título da conversa é a primeira pergunta")
+        else:
+            falha("tela nova: título ficou %r" % (salvas[0].get("titulo"),))
+
+        # 4. a lista que a tela recebe vem da mais nova para a mais antiga
+        ponte2 = app_web.Ponte()
+        ponte2.iniciar()
+        ponte2.mensagens = [
+            {"role": "user", "text": "Segunda conversa"},
+            {"role": "model", "text": "Oi de novo"},
+        ]
+        ponte2.id_atual = None
+        ponte2._gravar_conversa()
+        lista = ponte2.iniciar()["conversas"]
+        if [c["titulo"] for c in lista] == ["Segunda conversa", "Oi, tudo bem?"]:
+            ok("tela nova: a lista vem da mais nova para a mais antiga")
+        else:
+            falha("tela nova: ordem da lista ficou %r"
+                  % [c["titulo"] for c in lista])
+
+        # 5. abrir uma conversa traz as mensagens de volta
+        alvo = [c for c in lista if c["titulo"] == "Oi, tudo bem?"][0]
+        ponte2.id_atual = None
+        ponte2.mensagens = []
+        aberta = ponte2.abrir_conversa(alvo["id"])
+        if len(aberta["mensagens"]) == 2 and aberta["atual"] == alvo["id"]:
+            ok("tela nova: abrir a conversa traz as 2 mensagens")
+        else:
+            falha("tela nova: abrir a conversa devolveu %r" % (aberta,))
+        if ponte2.abrir_conversa("conversa-que-nao-existe").get("erro"):
+            ok("tela nova: conversa inexistente avisa em vez de quebrar")
+        else:
+            falha("tela nova: conversa inexistente devolveu algo")
+
+        # 6. NOVA CONVERSA limpa a conversa aberta e nao apaga nada do arquivo
+        antes = len(p.carregar_conversas())
+        nova = ponte2.nova_conversa()
+        if nova.get("atual") is None and ponte2.mensagens == []:
+            ok("tela nova: 'Nova conversa' limpa a conversa aberta")
+        else:
+            falha("tela nova: 'Nova conversa' devolveu %r" % (nova,))
+        if len(p.carregar_conversas()) == antes:
+            ok("tela nova: 'Nova conversa' não apaga as conversas guardadas")
+        else:
+            falha("tela nova: 'Nova conversa' mexeu no arquivo")
+
+        # 7. EXCLUIR apaga so a escolhida e devolve a lista nova
+        alvo2 = [c for c in p.carregar_conversas()
+                 if c.get("titulo") == "Oi, tudo bem?"][0]
+        r = ponte2.excluir_conversa(alvo2["id"])
+        restantes = [c.get("titulo") for c in p.carregar_conversas()]
+        if restantes == ["Segunda conversa"]:
+            ok("tela nova: excluir apaga só a conversa escolhida")
+        else:
+            falha("tela nova: depois de excluir sobrou %r" % (restantes,))
+        if [c["titulo"] for c in r.get("conversas", [])] == ["Segunda conversa"]:
+            ok("tela nova: excluir devolve a lista já atualizada")
+        else:
+            falha("tela nova: excluir devolveu lista %r" % (r.get("conversas"),))
+
+        # 8. excluir a conversa que estava aberta limpa a tela
+        alvo3 = p.carregar_conversas()[0]
+        ponte2.abrir_conversa(alvo3["id"])
+        r2 = ponte2.excluir_conversa(alvo3["id"])
+        if r2.get("era_atual") and r2.get("atual") is None and not ponte2.mensagens:
+            ok("tela nova: excluir a conversa aberta limpa a tela")
+        else:
+            falha("tela nova: excluir a aberta devolveu %r" % (r2,))
+        if ponte2.excluir_conversa("nao-existe").get("erro"):
+            ok("tela nova: excluir o que não existe avisa em vez de quebrar")
+        else:
+            falha("tela nova: excluir o que não existe devolveu algo")
+
+        # 9. a memoria que a tela mostra vem do arquivo, sem mudar nada
+        p.salvar_memoria(["Gosta de RPG", "Mora em Santa Maria"])
+        antes_mem = p.carregar_memoria()
+        if app_web.Ponte().memoria_listar()["fatos"] == antes_mem:
+            ok("tela nova: a aba Memória mostra o que está guardado")
+        else:
+            falha("tela nova: a aba Memória devolveu coisa diferente")
+        if p.carregar_memoria() == antes_mem:
+            ok("tela nova: só ler a Memória não muda nada")
+        else:
+            falha("tela nova: ler a Memória alterou o arquivo")
+
+        # 10. no modo DEMO nada é lido do Wolf e nada é gravado
+        app_web.DEMO = True
+        demo = app_web.Ponte()
+        inicial = demo.iniciar()
+        if len(inicial["conversas"]) == 3 and inicial["mensagens"]:
+            ok("tela nova: o modo exemplo mostra 3 conversas de exemplo")
+        else:
+            falha("tela nova: o modo exemplo mostrou %d conversa(s)"
+                  % len(inicial["conversas"]))
+        if demo.nova_conversa().get("erro") and \
+                demo.excluir_conversa("demo-1").get("erro"):
+            ok("tela nova: no modo exemplo, alterar conversa avisa e não faz")
+        else:
+            falha("tela nova: o modo exemplo respondeu que alterou conversa")
+        if p.carregar_conversas() == []:
+            ok("tela nova: o teste todo não deixou conversa nenhuma no disco")
+        else:
+            falha("tela nova: sobrou conversa no arquivo: %r"
+                  % (p.carregar_conversas(),))
+    finally:
+        p.ARQUIVO_HISTORICO = historico_original
+        p.ARQUIVO_MEMORIA = memoria_original
+        app_web.DEMO = demo_original
+        shutil.rmtree(pasta, ignore_errors=True)
+
+
+if not falhas:
+    try:
+        testes_tela_nova(importlib.import_module("pesquisa_ia"))
+    except Exception as erro:
+        falha("os testes da tela nova quebraram: %r" % (erro,))
+
 
 # --- 6. roteador: papo ou pesquisa (sem internet) --------------------------
 try:

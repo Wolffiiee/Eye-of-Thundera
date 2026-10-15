@@ -34,16 +34,32 @@ de graça (no Tk ele só sai de uma cor).
 ## O que falta (ordem de trabalho)
 1. ~~`app_web.py` mínimo~~ **FEITO (passo 1)**: a ponte existe, a janela
    abre no 2º monitor, mostra as conversas do Wolf (ou as de exemplo, com
-   `--demo`) e abre as 4 abas de Configurações. As funções que só leem
-   funcionam; as que mudam algo avisam em qual passo serão feitas, para
-   nenhum teste mexer nos dados do Wolf.
-2. Ligar a lista de conversas e a conversa de verdade (ler do Python).
-3. Enviar pergunta e mostrar a resposta aparecendo aos poucos.
+   `--demo`) e abre as 4 abas de Configurações.
+2. ~~Conversas de verdade~~ **FEITO (passo 2)**: abrir conversa, criar nova
+   e excluir funcionam. A conversa aberta mora na ponte
+   (`Ponte.mensagens` / `Ponte.id_atual`) e `_gravar_conversa()` grava no
+   arquivo quando há mensagem nova — igual ao programa antigo.
+3. **O que falta agora: a IA.** `enviar()` ainda responde "passo 3".
+   É aqui que entra `p.perguntar(...)` e o `window.PIA.evento(...)`
+   mandando `etapa` (o que ele está fazendo), `resposta` e `erro`.
 4. Caixa de digitar, microfone, botão enviar, modo web.
 5. Janela de Configurações com as 4 abas funcionando de verdade (gravar).
 6. Salvar em .txt, copiar, pesquisar.
 7. Atalhos de teclado, cantos arredondados da caixa, borda escura da janela.
 8. `verificar.bat` cobrindo a tela nova e `.exe` gerado e testado.
+
+## Como a tela conversa com o Python
+- O JavaScript chama com `window.pywebview.api.nomeDaFuncao(...)`.
+- A ponte do pywebview é **assíncrona**: a chamada devolve uma Promise, e
+  o `app.js` já usa `await` (`async function chamar`). Do lado do Python,
+  tudo pode ser normal.
+- Para o Python **falar com a tela** (usado no passo 3, para a resposta
+  ir aparecendo), é `janela.evaluate_js("window.PIA.evento(" + json +
+  ")")`. O `json.dumps(..., ensure_ascii=False)` evita que acento e emoji
+  virem lixo.
+- Todo teste do `verificar.py` que mexe em conversa ou memória aponta os
+  arquivos para `_tmp\teste-tela-nova` e restaura no fim. Nunca teste
+  contra os dados do Wolf.
 
 ## Como abrir
 - **Para o Wolf:** duplo clique em `5 - Ver a tela nova.bat` (abre no 2º

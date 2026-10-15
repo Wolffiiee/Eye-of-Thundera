@@ -36,6 +36,7 @@ Como rodar (esta e' a forma normal, o que o Wolf vai usar):
 """
 
 import sys
+import time
 import webbrowser
 from pathlib import Path
 
@@ -207,15 +208,17 @@ def _cfg_tela_demo():
 
 
 def _conversas_para_a_tela():
-    """A lista da barra esquerda. Ordena da mais nova para a mais antiga."""
+    """A lista da barra esquerda, da mais nova para a mais antiga.
+
+    Mesmo criterio do programa antigo: o arquivo guarda as conversas na
+    ordem em que foram salvas (a mais antiga primeiro) e a lista mostra
+    ao contrario. Nao ordenar pelo texto do horario de propósito: ele so
+    tem minuto de precisao, e duas conversas no mesmo minuto ficariam em
+    ordem aleatoria.
+    """
     if DEMO:
         return list(CONVERSAS_DEMO)
-    lista = p.carregar_conversas()
-    return sorted(
-        lista,
-        key=lambda c: str(c.get("quando", "")),
-        reverse=True,
-    )
+    return list(reversed(p.carregar_conversas()))
 
 
 def _mensagens_de(conversa):
@@ -227,14 +230,18 @@ def _mensagens_de(conversa):
 class Ponte:
     """Tudo que a tela nova pode pedir ao Python.
 
-    REGRA DESTE PASSO: so as funcoes de LEITURA fazem o que pedem. As
-    outras devolvem um aviso dizendo em qual passo serao feitas. Assim
-    nenhum teste pode mexer nas conversas, na memoria ou nas chaves do
-    Wolf.
+    REGRA DESTE PASSO (2): as conversas de verdade. Abrir, criar nova e
+    excluir funcionam; o resto ainda avisa em qual passo sera feito. O
+    espelho da conversa aberta fica AQUI (em `self.mensagens` e
+    `self.id_atual`), igual ao programa antigo, que tambem guarda a
+    conversa aberta dentro dele e so grava no arquivo quando ha algo
+    novo.
     """
 
     def __init__(self, janela=None):
         self.janela = janela
+        self.id_atual = None        # conversa aberta (igual ao app antigo)
+        self.mensagens = []
 
     # --- 1. o que a tela precisa para comecar ---
 
@@ -246,14 +253,16 @@ class Ponte:
             cfg = {}
         else:
             cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+        self.id_atual = (atual or {}).get("id")
+        self.mensagens = _mensagens_de(atual)
         return {
             "cfg": {
                 "modo_pesquisa": cfg.get("modo_pesquisa", "auto"),
                 "corretor": bool(cfg.get("corretor", True)),
             },
             "conversas": conversas,
-            "mensagens": _mensagens_de(atual),
-            "atual": (atual or {}).get("id"),
+            "mensagens": list(self.mensagens),
+            "atual": self.id_atual,
             "tem_chave": bool(cfg.get("api_key")),
         }
 
@@ -261,9 +270,11 @@ class Ponte:
         """Clique numa conversa da barra esquerda."""
         for c in _conversas_para_a_tela():
             if str(c.get("id")) == str(identificador):
+                self.id_atual = c.get("id")
+                self.mensagens = _mensagens_de(c)
                 return {
-                    "mensagens": _mensagens_de(c),
-                    "atual": c.get("id"),
+                    "mensagens": list(self.mensagens),
+                    "atual": self.id_atual,
                 }
         return {"erro": "Não achei essa conversa."}
 
@@ -283,7 +294,62 @@ class Ponte:
             ]}
         return {"fatos": p.carregar_memoria()}
 
-    # --- 2. o que ja dá para usar de verdade ---
+    # --- 2. as conversas de verdade (este passo) ---
+
+    def nova_conversa(self):
+        """Botão 'Nova conversa' (também F5 no programa antigo).
+
+        NAO grava nada: conversa sem pergunta nao tem o que salvar. O
+        arquivo só é escrito quando houver mensagem nova (passo 3).
+        """
+        if DEMO:
+            return aviso_honesto("enviar")
+        self.id_atual = None
+        self.mensagens = []
+        return {"atual": None, "conversas": _conversas_para_a_tela()}
+
+    def excluir_conversa(self, identificador):
+        """Apaga uma conversa da lista.
+
+        Faz exatamente o que o programa antigo faz: tira a conversa do
+        arquivo e, se era a que estava aberta, abre a tela inicial. O
+        que a IA aprendeu sobre o Wolf continua guardado de proposito
+        (apagar a conversa nao e apagar o que ele ensinou).
+        """
+        if DEMO:
+            return aviso_honesto("excluir")
+        alvo = str(identificador)
+        restantes = [c for c in p.carregar_conversas()
+                     if str(c.get("id")) != alvo]
+        apagada = len(restantes) != len(p.carregar_conversas())
+        if not apagada:
+            return {"erro": "Não achei essa conversa."}
+        p.salvar_conversas(restantes)
+        era_atual = str(self.id_atual) == alvo
+        if era_atual:
+            self.id_atual = None
+            self.mensagens = []
+        return {
+            "conversas": _conversas_para_a_tela(),
+            "era_atual": era_atual,
+            "atual": self.id_atual,
+        }
+
+    # --- o que já dá para usar de verdade (desde o passo 1) ---
+
+    def _gravar_conversa(self):
+        """Guarda a conversa aberta no arquivo (usado no passo 3).
+
+        Mesma regra do programa antigo: a conversa só ganha id (e só vai
+        para o arquivo) quando tem mensagem de verdade.
+        """
+        if DEMO:
+            return None
+        if not self.mensagens:
+            return None
+        if self.id_atual is None:
+            self.id_atual = str(time.time())
+        return p.guardar_conversa(self.id_atual, self.mensagens)
 
     def salvar_texto(self, texto):
         """Salvar a resposta num .txt. Este funciona mesmo."""
@@ -331,15 +397,7 @@ class Ponte:
     # --- 3. o que ainda falta (avisa, sem quebrar) ---
 
     def enviar(self, texto):
-        if DEMO:
-            return {}
         return aviso_honesto("enviar")
-
-    def nova_conversa(self):
-        return aviso_honesto("enviar")
-
-    def excluir_conversa(self, identificador):
-        return aviso_honesto("excluir")
 
     def definir_modo(self, modo):
         return aviso_honesto("config")
