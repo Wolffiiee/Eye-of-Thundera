@@ -24,21 +24,31 @@ ANTES DE QUALQUER COISA, LEIA (nesta ordem), na pasta do projeto:
 4. PROXIMOS-PASSOS.md         -> o que ainda falta e o que NÃO foi testado
 Depois rode `git status` e `git log --oneline -5`.
 
-RESUMO DO QUE O CLAUDE JÁ FEZ (você continua de onde ele parou)
+RESUMO DO QUE JÁ FOI FEITO (você continua de onde ele parou)
 - Projeto movido para fora do OneDrive; .venv recriado do zero (Python 3.12).
 - Bibliotecas com versão fixa: requirements.txt (programa),
   requirements-dev.txt (pyinstaller e pyflakes) e requirements-lock.txt
-  (lista completa de tudo que está instalado). httpx foi incluído.
+  (lista completa de tudo que está instalado). httpx e sounddevice
+  incluídos.
 - Bug da seleção de texto corrigido: clicar em qualquer lugar desfaz a
   seleção. Duplo clique seleciona a palavra e triplo clique seleciona o texto
   inteiro da bolha (novidade de 15/10).
 - Cliques globais agora passam por um sistema único (_despachar_clique,
   _registrar_clique_global, _remover_clique_global). É PROIBIDO usar
   unbind_all("<Button-1>") ou criar novos bind_all de clique.
+- TAREFA A: roteador.py (decide papo x pesquisa), botão "Web: automática"
+  e prompt de amigo separado.
+- TAREFA B: voz.py + botão de microfone (Ctrl+M), com sounddevice e as
+  DLLs do PortAudio embutidas no .exe.
+- TAREFA C: caixa de digitar com cantos arredondados, texto de apoio,
+  menu do botão direito (Recortar/Copiar/Colar/Selecionar tudo + correções)
+  e Ctrl+A/Z/Y; coluna centralizada com 820 px.
 - Criados verificar.bat/verificar.py (testes de tela automáticos + pyflakes)
   e "3 - Gerar EXE.bat" (gera o .exe).
-- .exe novo gerado em dist\ e copiado para a Área de Trabalho do Wolf; o
-  antigo foi para _arquivo_morto\ (nada foi apagado do projeto, só movido).
+- Os prints e scripts de teste ficam em `_tmp\` (ignorada pelo Git).
+- Regra: janela de teste SEMPRE no segundo monitor (X >= 1950).
+- .exe novo gerado em dist\ e copiado para a Área de Trabalho do Wolf; os
+  antigos foram para _arquivo_morto\ (nada foi apagado do projeto, só movido).
 - Sobras antigas (_run*.py, backups, logs) estão em _arquivo_morto\ (ignoradas
   pelo Git; não use nem apague).
 - Tudo está commitado no Git. Última verificação: TUDO CERTO.
@@ -63,6 +73,10 @@ COMO VOCÊ DEVE TRABALHAR (detalhes no PASSO-A-PASSO.md)
 9. Se instalar ou remover uma biblioteca: fixe a versão exata em
    requirements.txt (ou requirements-dev.txt), atualize o
    requirements-lock.txt e registre no histórico.
+10. NUNCA abra janela de teste no meu monitor principal: o segundo monitor
+   começa em X=1920. Use geometria "+2000+100" (o verificar.py já faz
+   isso) e, para printar, use PrintWindow (o ImageGrab no segundo monitor
+   devolve preto).
 
 AO TERMINAR, ME RESPONDA ASSIM (curto e simples)
 - O que estava errado.
@@ -73,5 +87,6 @@ AO TERMINAR, ME RESPONDA ASSIM (curto e simples)
 PRIMEIRA TAREFA
 Confirme que leu os 4 arquivos, rode o verificar.bat e me diga o resultado.
 Depois me peça para fazer uma pergunta real no programa (o Claude não
-conseguiu testar isso) e pergunte o que eu quero corrigir ou criar.
+conseguiu testar isso), me peça para falar uma pergunta no microfone, e
+pergunte o que eu quero corrigir ou criar.
 ```

@@ -88,7 +88,30 @@ trabalhando.
 - **`PIL.ImageGrab` em tela com dois monitores:** para conferir o desenho
   de um botão, é mais seguro gerar o PNG direto com o Pillow (mesma arte
   da função `_foto_*`) do que tentar capturar a tela — `ImageGrab` no
-  segundo monitor devolveu imagem preta.
+  segundo monitor devolveu imagem preta. Para capturar a janela de verdade
+  use `PrintWindow` (veja `_tmp`/histórico): janela de Tk no Windows ->
+  `GetAncestor(winfo_id(), GA_ROOT)` dá o HWND certo.
+- **Canto arredondado "por cima" e o que fica embaixo:** as tampinhas de
+  canto são `Label` criadas **depois** da entrada e dos botões, então
+  ficam na frente. Se o respiro do botão for menor que `RAIO_CANTO`, a
+  tampinha come um pedaço do botão. Regra: respiro do botão >= raio.
+- **`place` + `anchor`: não some deslocamento.** O `anchor` JÁ põe o canto
+  do widget no ponto indicado. Escrever `place(relx=1.0, x=-raio,
+  anchor="ne")` empurra a coisa 12 px para dentro (o `x` é do canto da
+  âncora, não do centro). Use só `relx/rely` + `anchor`.
+- **A curva do canto tem o centro no canto OPOSTO** (`_dentro_do_canto`):
+  o bico do canto fica FORA (é o que a tampinha pinta) e o miolo fica
+  DENTRO (é o que fica transparente). Invertido, a tampinha come o miolo
+  da caixa em vez de arredondar. **Confira conferindo os pixels do print**
+  (a cor de cada canto), não só olhando a tela de longe — foi assim que os
+  dois bugs acima apareceram.
+- **Mudar a altura da caixa de digitar redesenha a conversa:** o `Text`
+  encolhe/engrandece, o rodapé muda de tamanho, o Canvas recebe
+  `<Configure>` e agenda `_agendar_redesenho`, que **recria todas as
+  bolhas**. Nos testes, pegue `app._telas_bolha` de novo depois de mexer
+  na caixa, senão o teste vai mexer em widget já destruído.
+- **`undo=True` no `tk.Text`:** sem isso `edit_undo()`/`edit_redo()` não
+  fazem nada e o Ctrl+Z parece quebrado.
 - **Erros escondidos:** erro dentro de botão/evento não derruba o programa;
   vai para o `erro.log`. O `verificar.py` captura esses erros durante o
   teste (`report_callback_exception`).

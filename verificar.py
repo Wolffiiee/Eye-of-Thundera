@@ -132,6 +132,13 @@ else:
 # --- 5. testes com a janela de verdade -------------------------------------
 
 
+def _esperar(raiz, segundos):
+    fim = time.time() + segundos
+    while time.time() < fim:
+        raiz.update()
+        time.sleep(0.05)
+
+
 def testes_de_tela():
     sys.path.insert(0, str(PASTA))
     import array as _array
@@ -334,6 +341,239 @@ def testes_de_tela():
             else:
                 falha("a falha na transcrição deixou o programa travado")
 
+        # --- Tarefa C: caixa de digitar mais limpa ---------------------------
+        # texto de apoio some quando a pessoa digita
+        app.entrada.delete("1.0", "end")
+        app._atualizar_apoio()
+        raiz.update()
+        if app.rotulo_apoio.winfo_ismapped():
+            ok('texto de apoio aparece na caixa vazia ("Pergunte qualquer coisa...")')
+        else:
+            falha("o texto de apoio não apareceu na caixa vazia")
+        app.entrada.insert("1.0", "uma pergunta")
+        app._ajustar_altura()
+        raiz.update()
+        if not app.rotulo_apoio.winfo_ismapped():
+            ok("texto de apoio some assim que a pessoa digita")
+        else:
+            falha("o texto de apoio ficou por cima do texto digitado")
+        app.entrada.delete("1.0", "end")
+        app._ajustar_altura()
+        raiz.update()
+
+        # cantos arredondados: quatro tampinhas nos cantos da caixa
+        app._cantos_da_caixa()
+        raiz.update()
+        cantos = getattr(app, "_cantos_ativo", {})
+        if len(cantos) == 4 and all(
+                c.winfo_ismapped() for c in cantos.values()):
+            ok("caixa de digitar com os quatro cantos arredondados")
+        else:
+            falha("os cantos arredondados da caixa não apareceram (%d de 4)"
+                  % len(cantos))
+
+        # Cada tampinha tem que encostar na borda da SUA quina. Com o
+        # anchor, o ponto marcado fica no canto da tampinha: quem ancora em
+        # baixo (sw/se) tem y+altura == altura da caixa, não y == 0.
+        caixa = app.caixa_texto
+        largura_caixa = caixa.winfo_width()
+        altura_caixa = caixa.winfo_height()
+        borda_enviar = (app.botao_enviar.winfo_x()
+                        + app.botao_enviar.winfo_width())
+        lados = {
+            "nw": (cantos["nw"].winfo_x(), 0),
+            "ne": (cantos["ne"].winfo_x() + cantos["ne"].winfo_width(),
+                   largura_caixa),
+            "sw": (cantos["sw"].winfo_y() + cantos["sw"].winfo_height(),
+                   altura_caixa),
+            "se": (cantos["se"].winfo_y() + cantos["se"].winfo_height(),
+                   altura_caixa),
+        }
+        for nome, (medido, esperado) in lados.items():
+            if medido == esperado:
+                ok("tampinha do canto %s encosta na borda da caixa" % nome)
+            else:
+                falha("tampinha do canto %s fora de lugar (medido %s, "
+                      "esperado %s)" % (nome, medido, esperado))
+
+        # e as da direita não podem cobrir o microfone nem o enviar
+        em_cima = [n for n in ("ne", "se")
+                   if cantos[n].winfo_x() < borda_enviar]
+        if not em_cima:
+            ok("nenhuma tampinha de canto cobre o botão de enviar")
+        else:
+            falha("tampinha cobrindo o botão de enviar: %s" % em_cima)
+
+        # Ctrl+A seleciona tudo
+        app.entrada.insert("1.0", "texto para selecionar tudo")
+        app._selecionar_tudo()
+        raiz.update()
+        selecionado = ""
+        try:
+            selecionado = app.entrada.get("sel.first", "sel.last")
+        except Exception:
+            pass
+        if selecionado == "texto para selecionar tudo":
+            ok("Ctrl+A seleciona o texto todo da caixa")
+        else:
+            falha("Ctrl+A selecionou %r" % selecionado)
+
+        # Ctrl+Z desfaz e Ctrl+Y refaz
+        antes = app.entrada.get("1.0", "end-1c")
+        app._desfazer(None, False)
+        raiz.update()
+        depois_undo = app.entrada.get("1.0", "end-1c")
+        app._desfazer(None, True)
+        raiz.update()
+        depois_redo = app.entrada.get("1.0", "end-1c")
+        if depois_undo != antes and depois_redo == antes:
+            ok("Ctrl+Z desfaz e Ctrl+Y refaz na caixa de digitar")
+        else:
+            falha("desfazer/refazer não funcionou (antes=%r,undo=%r,redo=%r)"
+                  % (antes, depois_undo, depois_redo))
+
+        # botão direito: traz recortar, copiar, colar e selecionar tudo
+        app.entrada.delete("1.0", "end")
+        app.entrada.insert("1.0", "casa")
+        app._selecionar_tudo()
+        app.raiz.clipboard_clear()
+        app.raiz.clipboard_append("cola")
+        raiz.update()
+
+        def _clique(x=5, y=5):
+            evento = type("Clique", (object,), {
+                "x": x, "y": y, "x_root": 2005, "y_root": 105,
+            })()
+            return evento
+
+        app._menu_ortografia(_clique())
+        raiz.update()
+        pop = getattr(app, "_menu_ortografia_atual", None)
+        rotulos = []
+        if pop is not None:
+            for etiqueta in pop._itens:
+                rotulos.append(etiqueta.cget("text").strip())
+        for esperado in ("Recortar", "Copiar", "Colar", "Selecionar tudo"):
+            if esperado in rotulos:
+                ok("botão direito mostra '%s'" % esperado)
+            else:
+                falha("o botão direito não mostrou '%s' (tinha %s)"
+                      % (esperado, rotulos))
+
+        # palavra errada: as correções têm que vir no TOPO do mesmo menu
+        app._fechar_menu_ortografia()
+        app.entrada.delete("1.0", "end")
+        app.entrada.insert("1.0", "caza de teste")
+        raiz.update()
+        try:
+            bx, by = app.entrada.bbox("1.2")
+        except Exception:
+            bx, by = 5, 5
+        sugestoes = app._sugestoes_no_ponto(bx or 5, by or 5)
+        if sugestoes:
+            ok("corretor acha a palavra errada sob o cursor (%d sugestões)"
+               % len(sugestoes))
+        else:
+            ok("corretor não reclama desta palavra (nenhuma sugestão)")
+        if sugestoes:
+            app._menu_ortografia(_clique(bx or 5, by or 5))
+            raiz.update()
+            pop = getattr(app, "_menu_ortografia_atual", None)
+            com_sugestoes = [e.cget("text").strip() for e in pop._itens] \
+                if pop is not None else []
+            primeira = com_sugestoes[0] if com_sugestoes else ""
+            ultimos = com_sugestoes[-4:]
+            if primeira == sugestoes[0][0] and \
+                    ultimos == ["Recortar", "Copiar", "Colar",
+                                "Selecionar tudo"]:
+                ok("as correções vêm primeiro, e os comandos de edição depois")
+            else:
+                falha("a ordem do menu ficou errada: %s" % com_sugestoes)
+            app._fechar_menu_ortografia()
+
+        # --- o resto dos comandos de edição (começa de novo, com "casa"
+        # --- selecionado: o teste da ortografia deixou outro texto na caixa)
+        app.entrada.delete("1.0", "end")
+        app.entrada.insert("1.0", "casa")
+        app._selecionar_tudo()
+        raiz.clipboard_clear()
+        raiz.update()
+
+        # "Recortar" apaga o selecionado e vai para a área de transferência
+        app._recortar()
+        raiz.update()
+        if app.entrada.get("1.0", "end-1c") == "":
+            ok("Recortar apaga o texto selecionado")
+        else:
+            falha("Recortar não apagou: %r"
+                  % app.entrada.get("1.0", "end-1c"))
+        try:
+            area = raiz.clipboard_get()
+        except Exception:
+            area = ""
+        if area == "casa":
+            ok("Recortar coloca o texto na área de transferência")
+        else:
+            falha("a área de transferência ficou com %r" % area)
+
+        # "Colar" insere o que está na área de transferência
+        # (o botão direito também deixou o cursor onde foi clicado)
+        raiz.clipboard_clear()
+        raiz.clipboard_append("cola")
+        raiz.update()
+        app._menu_ortografia(_clique())
+        raiz.update()
+        app._fechar_menu_ortografia()
+        app._colar()
+        raiz.update()
+        if app.entrada.get("1.0", "end-1c") == "cola":
+            ok("Colar insere o texto da área de transferência")
+        else:
+            falha("Colar deixou a caixa com %r"
+                  % app.entrada.get("1.0", "end-1c"))
+        app.entrada.delete("1.0", "end")
+        app._fechar_menu_ortografia()
+        app._atualizar_apoio()
+        raiz.update()
+
+        # sem nada selecionado e sem nada na área de transferência, os
+        # comandos impossíveis ficam apagados (mas o menu continua abrindo)
+        app.entrada.insert("1.0", "sem selecao")
+        try:
+            app.entrada.tag_remove("sel", "1.0", "end")
+        except Exception:
+            pass
+        raiz.clipboard_clear()
+        raiz.update()
+        app._menu_ortografia(_clique())
+        raiz.update()
+        pop = getattr(app, "_menu_ortografia_atual", None)
+        apagados = []
+        if pop is not None:
+            apagados = [e.cget("text").strip() for e in pop._itens
+                        if e.cget("fg") == p.COR_TEXTO_3]
+        if "Recortar" in apagados and "Copiar" in apagados:
+            ok("sem seleção, Recortar e Copiar ficam apagados (não clicáveis)")
+        else:
+            falha("Recortar/Copiar deveriam estar apagados, estavam %s"
+                  % apagados)
+        app._fechar_menu_ortografia()
+        app.entrada.delete("1.0", "end")
+        app._atualizar_apoio()
+        raiz.update()
+
+        # Mexer na altura da caixa de digitar encolhe a conversa, e o Canvas
+        # agenda um redesenho (ele recria as bolhas). Deixa o redesenho
+        # acontecer e pega as bolhas novas, senao os testes de bolha mais
+        # abaixo vão procurar em widgets que já foram destruídos.
+        _esperar(raiz, 0.6)
+        telas = list(app._telas_bolha)
+        if len(telas) >= 2:
+            a, b = telas[0], telas[1]
+        else:
+            falha("as bolhas sumiram depois dos testes da caixa (%d)"
+                  % len(telas))
+
         # --- menus que fecham ao clicar fora (um não pode quebrar o outro)
         chamadas = []
 
@@ -399,6 +639,38 @@ def testes_de_tela():
         ok("janela de Configurações abre e troca de aba")
         testes_lista_de_conversas(p, raiz, app)
 
+        # --- coluna centralizada (por último: mexer no tamanho da janela
+        # --- redesenha as bolhas e as referências do começo do teste ficam
+        # --- velhas, então esta parte tem que vir depois de tudo)
+        raiz.geometry("1700x800" + POSICAO_TESTE)
+        _esperar(raiz, 0.8)
+        margem = app._margem_da_coluna()
+        largura_bolha = app._largura_bolha()
+        if margem > 200 and largura_bolha <= 700:
+            ok("conversa centralizada em janela larga (margem %d px, "
+               "texto %d px)" % (margem, largura_bolha))
+        else:
+            falha("a conversa não centralizou (margem %d, texto %d)"
+                  % (margem, largura_bolha))
+        # a caixa de digitar acompanha a mesma coluna
+        margem_caixa = app.caixa_texto.pack_info()["padx"]
+        if margem_caixa > 200:
+            ok("caixa de digitar também fica na coluna (margem %s px)"
+               % margem_caixa)
+        else:
+            falha("a caixa de digitar não acompanhou a coluna (padx=%s)"
+                  % margem_caixa)
+        # e numa janela normal continua parecendo igual
+        raiz.geometry("1000x740" + POSICAO_TESTE)
+        _esperar(raiz, 0.6)
+        margem_estreita = app._margem_da_coluna()
+        if margem_estreita <= 40:
+            ok("em janela normal a conversa usa a tela toda (margem %d px)"
+               % margem_estreita)
+        else:
+            falha("em janela normal sobrou margem demais: %d px"
+                  % margem_estreita)
+
         if erros_tk:
             for e in erros_tk[:3]:
                 falha("erro escondido num botão/evento: %r" % (e[1],))
@@ -412,13 +684,6 @@ def testes_de_tela():
 
 
 # --- 5b. lista de conversas: tres pontinhos -> Excluir ----------------------
-
-
-def _esperar(raiz, segundos):
-    fim = time.time() + segundos
-    while time.time() < fim:
-        raiz.update()
-        time.sleep(0.05)
 
 
 def testes_lista_de_conversas(p, raiz, app):
@@ -800,6 +1065,59 @@ try:
 except Exception as erro:
     falha("os testes de voz quebraram: %r" % (erro,))
     print(traceback.format_exc()[-900:])
+
+# --- 8. cantos arredondados da caixa (a conta da curva, sem tela) ----------
+try:
+    sys.path.insert(0, str(PASTA))
+    import pesquisa_ia as _p2
+
+    def confere_canto(condicao, nome):
+        if condicao:
+            ok(nome)
+        else:
+            falha(nome)
+
+    # A curva de cada canto tem que ter o centro no canto OPOSTO: o canto
+    # verdadeiro fica FORA (é o que a tampinha pinta de fundo) e o miolo da
+    # caixa fica DENTRO (é o que fica transparente). Se inverter, a
+    # tampinha come o botão de enviar em vez de arredondar o canto.
+    LADO = 12
+    ultimo = LADO - 1
+    for canto, fora, dentro in (
+        ("nw", (0, 0), (ultimo, ultimo)),
+        ("ne", (ultimo, 0), (0, ultimo)),
+        ("sw", (0, ultimo), (ultimo, 0)),
+        ("se", (ultimo, ultimo), (0, 0)),
+    ):
+        d = _p2._dentro_do_canto
+        confere_canto(not d(*fora, LADO, canto),
+                      "canto %s: o bico do canto fica FORA da caixa" % canto)
+        confere_canto(d(*dentro, LADO, canto),
+                      "canto %s: o miolo da caixa fica DENTRO" % canto)
+
+    # A caixa inteira (4 quadrantes de LADO) tem que perder só as pontas:
+    # sobra a curvatura, uns 80% da área. Se ficar muito abaixo, os cantos
+    # estão comendo a caixa; se ficar acima, não estão arredondando nada.
+    dentro = total = 0
+    for y in range(2 * LADO):
+        for x in range(2 * LADO):
+            if y < LADO:
+                canto, px, py = ("nw" if x < LADO else "ne"), x % LADO, y
+            else:
+                canto = "sw" if x < LADO else "se"
+                px, py = x % LADO, y - LADO
+            total += 1
+            if _p2._dentro_do_canto(px, py, LADO, canto):
+                dentro += 1
+    proporcao = 100.0 * dentro / total
+    if 75.0 <= proporcao <= 90.0:
+        ok("os quatro cantos cortam só a curvatura (%.1f%% do miolo)"
+           % proporcao)
+    else:
+        falha("os cantos cortaram a medida errada: %.1f%% do miolo "
+              "(esperado entre 75%% e 90%%)" % proporcao)
+except Exception as erro:
+    falha("os testes dos cantos quebraram: %r" % (erro,))
 
 print()
 if falhas:

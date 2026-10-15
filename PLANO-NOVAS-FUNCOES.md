@@ -192,6 +192,21 @@ A paleta escura já é boa; não trocar as cores. Melhorar:
   largas.
 - Tudo sem biblioteca nova de interface (continuar em tkinter, leve).
 
+### C — FEITA em 15/10/2026
+Tudo acima foi feito (veja o `HISTORICO-DE-MUDANCAS.md`). Três coisas que
+o texto original não dizia e foram necessárias:
+- **Cantos arredondados no tkinter não existem.** A solução foi desenhar
+  quatro "tampinhas" (uma por canto) por cima da caixa, pintando de fundo
+  o que fica fora da curva. Por isso o botão de enviar precisa de um
+  respiro da direita **igual ao raio do canto** (`RAIO_CANTO`), senão a
+  tampinha passa por cima do botão.
+- **Ctrl+Z não funciona sozinho:** o `tk.Text` nasce com o histórico
+  desligado. Tem que criar com `undo=True`.
+- **A coluna centralizada tem que arrastar a caixa de digitar junto.** Se
+  só a conversa centralizar, a caixa continua cruzando a tela toda e fica
+  torto. E a linha do "Web: automática" precisa ser guardada como
+  `self.linha_modo`, senão ela não acompanha.
+
 ## 5. TAREFA D: Configurações reorganizadas
 Quatro abas, todas com a mesma margem de 24 px e títulos no mesmo estilo:
 1. Memória: busca no topo; lista com editar (clique no texto) e apagar;

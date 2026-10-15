@@ -213,6 +213,11 @@ COR_MIC_GRAVANDO = (214, 69, 69)
 COR_MIC_GRAVANDO_HOVER = (231, 93, 93)
 COR_MIC_TRACO = (16, 16, 20)
 
+# Canto arredondado da caixa de digitar. O mesmo tamanho que o respiro
+# entre o botao de enviar e a borda da caixa (e o texto comecar em 14),
+# senao a tampinha do canto cai por cima do botao.
+RAIO_CANTO = 12
+
 
 # ----------------------------------------------------------------------------
 # Configuracao (chave da API salva no computador)
@@ -1695,6 +1700,7 @@ def _arquivo_icone():
 _FOTOS_IA = {}
 _FOTOS_ENVIO = {}
 _FOTOS_MIC = {}
+_FOTOS_CANTO = {}
 
 
 def anda(widget):
@@ -1737,6 +1743,56 @@ def _foto_enviar(cor_bolao, tamanho=36):
     except Exception:
         return None
     _FOTOS_ENVIO[chave] = foto
+    return foto
+
+
+def _dentro_do_canto(x, y, lado, canto):
+    """Diz se o ponto (x, y) pertence a uma caixa de cantos arredondados.
+
+    Serve para desenhar as quatro "tampinhas" que deixam a caixa de
+    digitar com canto redondo: elas pintam de fundo o que ficou FORA da
+    curva. `canto` e "ne", "nw", "se" ou "sw"; o quadrado tem `lado` pixels
+    de lado e a curva e um quarto de circulo cujo centro fica no canto
+    OPOSTO ao arredondado (é para onde a caixa continua).
+
+    CUIDADO: se o centro sair no canto errado, a tampinha come o miolo da
+    caixa (e o botão de enviar) em vez de cortar o canto — já aconteceu.
+    """
+    ultimo = lado - 1
+    if canto in ("nw", "ne"):        # cantos de cima: centro embaixo
+        dy = ultimo - y
+    else:                             # cantos de baixo: centro em cima
+        dy = y
+    if canto in ("nw", "sw"):        # cantos da esquerda: centro à direita
+        dx = ultimo - x
+    else:                             # cantos da direita: centro à esquerda
+        dx = x
+    return (dx * dx + dy * dy) <= lado * lado
+
+
+def _foto_canto(raio, cor_fora, canto, escala=4):
+    """Imagem que apaga um canto, deixando a caixa de digitar arredondada.
+
+    Devolve None sem o Pillow (aí a caixa fica quadrada, e funciona igual).
+    """
+    if not TEM_PIL or ImageTk is None:
+        return None
+    chave = (int(raio), cor_fora, canto)
+    if chave in _FOTOS_CANTO:
+        return _FOTOS_CANTO[chave]
+    try:
+        lado = max(2, int(raio)) * escala
+        imagem = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
+        pincel = imagem.load()
+        for y in range(lado):
+            for x in range(lado):
+                if not _dentro_do_canto(x, y, lado, canto):
+                    pincel[x, y] = _rgba(cor_fora)
+        foto = ImageTk.PhotoImage(imagem.resize((int(raio), int(raio)),
+                                                Image.LANCZOS))
+    except Exception:
+        return None
+    _FOTOS_CANTO[chave] = foto
     return foto
 
 
@@ -2483,6 +2539,7 @@ class Aplicativo:
         self.gravando = False
         self._gravador = None
         self._mic_id = None
+        self._margem_rodape = 16
         self.animacao_id = None
         self.animacao_passo = 0
         self._pontos_digitando = []
@@ -2730,13 +2787,18 @@ class Aplicativo:
         rodape.pack(fill="x", padx=16, pady=(8, 6))
 
         caixa = tk.Frame(
-            rodape, bg=COR_BARRA, highlightthickness=1,
-            highlightbackground=COR_BORDA, highlightcolor=COR_BORDA,
+            rodape, bg=COR_BARRA, highlightthickness=0,
         )
         caixa.pack(fill="x")
+        self.caixa_texto = caixa
+        self._cantos_ativo = {}
+        caixa.bind("<Configure>", lambda _e: self._cantos_da_caixa())
+        self.raiz.bind("<Configure>", lambda _e: (
+            self._cantos_da_caixa(), self._alinhar_rodape()))
 
         linha_modo = tk.Frame(rodape, bg=COR_FUNDO)
         linha_modo.pack(fill="x", pady=(6, 0))
+        self.linha_modo = linha_modo
         self.rotulo_modo_web = tk.Label(
             linha_modo, text="", bg=COR_FUNDO, fg=COR_TEXTO_3,
             font=(FONTE, 9), cursor="hand2",
@@ -2754,7 +2816,18 @@ class Aplicativo:
             caixa, height=1, wrap="word", font=(FONTE, 11),
             bg=COR_BARRA, fg=COR_TEXTO, insertbackground=COR_ACCENT,
             relief="flat", borderwidth=0, padx=14, pady=11,
+            # undo=True liga o historico do Ctrl+Z / Ctrl+Y (o Tk deixa
+            # desligado por padrao).
+            undo=True, autoseparators=True, maxundo=-1,
         )
+        # Texto de apoio dentro da caixa: some assim que a pessoa digita.
+        self.rotulo_apoio = tk.Label(
+            caixa, text="Pergunte qualquer coisa...", bg=COR_BARRA,
+            fg=COR_TEXTO_3, font=(FONTE, 11),
+        )
+        self.rotulo_apoio.place(x=15, y=11)
+        self.entrada.bind("<FocusIn>", lambda _e: self._atualizar_apoio())
+        self.entrada.bind("<FocusOut>", lambda _e: self._atualizar_apoio())
         self.botao_enviar = tk.Canvas(
             caixa, width=36, height=36, bg=COR_BARRA,
             highlightthickness=0, bd=0, cursor="hand2",
@@ -2762,7 +2835,9 @@ class Aplicativo:
         self._desenhar_enviar(COR_ENVIAR)
         # pacote botao ANTES da entrada, assim o Tk reserva espaço para ele
         # e não o encolhe quando a janela encurta ao mínimo
-        self.botao_enviar.pack(side="right", padx=(0, 4), pady=7)
+        # O padx da direita do enviar é do tamanho do canto arredondado: se
+        # for menor, a tampinha do canto passa por cima do botão.
+        self.botao_enviar.pack(side="right", padx=(0, RAIO_CANTO), pady=7)
         self.botao_mic = tk.Canvas(
             caixa, width=36, height=36, bg=COR_BARRA,
             highlightthickness=0, bd=0, cursor="hand2",
@@ -2770,8 +2845,11 @@ class Aplicativo:
         self._desenhar_mic(COR_MIC)
         # Mesmo truque do enviar: o pacote ANTES da entrada, para o Tk
         # reservar a largura dele e nao encolher a caixa ao encolher.
-        self.botao_mic.pack(side="right", padx=(0, 8), pady=7)
+        self.botao_mic.pack(side="right", padx=(0, 4), pady=7)
         self.entrada.pack(side="left", fill="both", expand=True)
+        self._cantos_da_caixa()
+        self._alinhar_rodape()
+        self._atualizar_apoio()
 
         self.botao_mic.bind("<Enter>", lambda e: self._desenhar_mic(
             COR_MIC_GRAVANDO_HOVER if self.gravando else COR_MIC_HOVER))
@@ -2784,6 +2862,15 @@ class Aplicativo:
         self.entrada.bind("<Return>", self._ao_enter)
         self.entrada.bind("<KeyRelease>", self._ao_digitar)
         self.entrada.bind("<Button-3>", self._menu_ortografia)
+        # Atalhos de edição que o Windows espera dentro de uma caixa de
+        # texto: selecionar tudo, desfazer e refazer.
+        self.entrada.bind("<Control-a>", self._selecionar_tudo)
+        self.entrada.bind("<Control-A>", self._selecionar_tudo)
+        self.entrada.bind("<Control-z>", lambda e: self._desfazer(e, False))
+        self.entrada.bind("<Control-Z>", lambda e: self._desfazer(e, False))
+        self.entrada.bind("<Control-y>", lambda e: self._desfazer(e, True))
+        self.entrada.bind("<Control-Y>", lambda e: self._desfazer(e, True))
+        self.entrada.bind("<<Paste>>", self._depois_de_colar)
         # Palavra errada fica com a cor normal e ganha SO um sublinhado
         # vermelho (sem deixar o texto vermelho, que atrapalha a leitura).
         try:
@@ -3070,11 +3157,45 @@ class Aplicativo:
                 pass
         self._redim_id = self.raiz.after(150, self._renderizar)
 
-    def _largura_bolha(self):
-        largura = self.canvas.winfo_width()
+    # A coluna da conversa fica centralizada e com largura maxima: em janela
+    # larga o texto nao corre de ponta a ponta (o olho cansa menos).
+    LARGURA_MAX_COLUNA = 820
+
+    def _margem_da_coluna(self):
+        """ quanto de branco sobra de cada lado da conversa."""
+        try:
+            largura = self.canvas.winfo_width()
+        except Exception:
+            largura = 0
         if largura <= 1:
-            largura = 900
-        return max(240, min(680, largura - 150))
+            return 16
+        return max(16, int((largura - self.LARGURA_MAX_COLUNA) / 2) + 16)
+
+    def _alinhar_rodape(self):
+        """Deixa a caixa de digitar com a mesma largura da conversa.
+
+        Sem isso, numa janela larga o texto fica no meio mas a caixa de
+        digitar continua cruzando a tela toda de ponta a ponta.
+        """
+        try:
+            largura = self.principal.winfo_width()
+            if largura <= 1:
+                return
+            margem = max(16, int((largura - self.LARGURA_MAX_COLUNA) / 2) + 16)
+            self._margem_rodape = margem
+            self.caixa_texto.pack_configure(padx=margem)
+            self.linha_modo.pack_configure(padx=margem)
+            if getattr(self, "_status_visivel", False):
+                self.linha_status.pack_configure(padx=margem)
+        except Exception:
+            pass
+
+    def _largura_bolha(self):
+        margem = self._margem_da_coluna()
+        largura = self.canvas.winfo_width() - 2 * margem
+        if largura <= 1:
+            largura = 780
+        return max(240, min(700, largura - 40))
 
     def _rolar_fim(self):
         try:
@@ -3097,11 +3218,72 @@ class Aplicativo:
         self._status_visivel = visivel
         if visivel:
             self.rotulo_status.pack(side="left")
-            self.linha_status.pack(fill="x", padx=18, pady=(0, 10))
+            self.linha_status.pack(fill="x",
+                                   padx=getattr(self, "_margem_rodape", 18),
+                                   pady=(0, 10))
         else:
             self.linha_status.pack_forget()
 
+    def _atualizar_apoio(self):
+        """Mostra o texto de apoio ("Pergunte qualquer coisa...") só quando a
+        caixa está vazia. Se a pessoa já escreveu (ou colou), ele some."""
+        try:
+            vazio = not self.entrada.get("1.0", "end-1c").strip()
+            if vazio and not self.rotulo_apoio.winfo_ismapped():
+                self.rotulo_apoio.place(x=15, y=11)
+            elif not vazio and self.rotulo_apoio.winfo_ismapped():
+                self.rotulo_apoio.place_forget()
+        except Exception:
+            pass
+
+    def _cantos_da_caixa(self):
+        """Desenha as quatro tampinhas que deixam a caixa arredondada.
+
+        O tkinter não sabe arredondar um `tk.Text`, então a gente desenha
+        quatro quadradinhos com o fundo do programa por cima dos cantos.
+        Eles acompanham o tamanho da caixa quando a janela muda de tamanho.
+        """
+        try:
+            caixa = self.caixa_texto
+            largura = caixa.winfo_width()
+            altura = caixa.winfo_height()
+            if largura <= 1 or altura <= 1:
+                return
+            raio = RAIO_CANTO
+            cantos = self._cantos_ativo
+            for chave, canto in (("ne", "ne"), ("nw", "nw"),
+                                 ("se", "se"), ("sw", "sw")):
+                foto = _foto_canto(raio, COR_FUNDO, canto)
+                if foto is None:
+                    for etiqueta in cantos.values():
+                        etiqueta.place_forget()
+                    return
+                etiqueta = cantos.get(chave)
+                if etiqueta is None:
+                    etiqueta = tk.Label(
+                        caixa, image=foto, bg=COR_FUNDO, bd=0,
+                        highlightthickness=0,
+                    )
+                    cantos[chave] = etiqueta
+                else:
+                    etiqueta.configure(image=foto)
+                etiqueta._foto_canto = foto
+                # Com o anchor, a tampinha JA fica com o canto no ponto
+                # indicado; somar -raio aqui a empurrava 12 px para dentro
+                # da caixa (e ela cobria o botão de enviar).
+                if canto == "ne":
+                    etiqueta.place(relx=1.0, y=0, anchor="ne")
+                elif canto == "nw":
+                    etiqueta.place(x=0, y=0, anchor="nw")
+                elif canto == "se":
+                    etiqueta.place(relx=1.0, rely=1.0, anchor="se")
+                else:
+                    etiqueta.place(x=0, rely=1.0, anchor="sw")
+        except Exception:
+            pass
+
     def _ajustar_altura(self, _e=None):
+        self._atualizar_apoio()
         texto = self.entrada.get("1.0", "end-1c")
         if not texto.strip():
             self.entrada.configure(height=1)
@@ -3116,6 +3298,38 @@ class Aplicativo:
     def _ao_digitar(self, evento=None):
         self._ajustar_altura()
         self._agendar_correcao()
+
+    # -- edicao basica da caixa de digitar ---------------------------------
+
+    def _selecionar_tudo(self, _evento=None):
+        """Ctrl+A: seleciona tudo que esta escrito na caixa."""
+        try:
+            self.entrada.tag_add("sel", "1.0", "end-1c")
+            self.entrada.mark_set("insert", "end-1c")
+            self.entrada.see("end-1c")
+        except Exception:
+            pass
+        return "break"
+
+    def _desfazer(self, _evento=None, refazer=False):
+        """Ctrl+Z desfaz e Ctrl+Y refaz, como no Windows."""
+        try:
+            if refazer:
+                self.entrada.edit_redo()
+            else:
+                self.entrada.edit_undo()
+        except Exception:
+            pass
+        self._ajustar_altura()
+        self._agendar_correcao()
+        return "break"
+
+    def _depois_de_colar(self, evento=None):
+        """Depois de colar, o texto de apoio tem que sumir e a caixa
+        precisa crescer junto."""
+        self.raiz.after_idle(self._ajustar_altura)
+        self._agendar_correcao()
+        return None
 
     # -- corretor ortografico ----------------------------------------------
 
@@ -3186,27 +3400,33 @@ class Aplicativo:
                     "1.0 + %dc" % fim,
                 )
 
-    def _menu_ortografia(self, evento):
+    def _sugestoes_no_ponto(self, x, y):
+        """Sugestões de correção da palavra que está sob o cursor.
+
+        Devolve uma lista vazia quando não há palavra errada ali (ou quando
+        o corretor está desligado). Cada item é (palavra, início, fim), para
+        o clique direito e para o `verificar.py` (que testa sem clicar).
+        """
         if not self._corretor_ativo():
-            return
+            return []
         corretor = self._obter_corretor()
         if not corretor:
-            return
+            return []
         try:
-            indice = self.entrada.index("@%d,%d" % (evento.x, evento.y))
+            indice = self.entrada.index("@%d,%d" % (x, y))
             inicio = self.entrada.index("%s wordstart" % indice)
             fim = self.entrada.index("%s wordend" % indice)
         except Exception:
-            return
+            return []
         palavra = self.entrada.get(inicio, fim).strip()
         if not palavra or not re.fullmatch(r"[^\W\d_]{2,}", palavra, re.UNICODE):
-            return
+            return []
         if palavra.lower() not in corretor.unknown({palavra.lower()}):
-            return
+            return []
         corretor_en = self._obter_corretor_en()
         # termo válido em inglês não sugere nada
         if corretor_en and not corretor_en.unknown({palavra.lower()}):
-            return
+            return []
         cands_pt = list(corretor.candidates(palavra.lower()) or [])
         cands_en = []
         if (corretor_en and corretor_en is not False
@@ -3228,14 +3448,44 @@ class Aplicativo:
         else:
             sugestoes = cands_en or cands_pt
         if not sugestoes:
-            return
-        sugestoes = sorted(sugestoes)[:6]
+            return []
+        return [(s, inicio, fim) for s in sorted(sugestoes)[:6]]
 
-        if self._menu_ortografia_atual is not None:
-            try:
-                self._menu_ortografia_atual.destroy()
-            except Exception:
-                pass
+    def _tem_selecao(self):
+        try:
+            return bool(self.entrada.tag_ranges("sel"))
+        except Exception:
+            return False
+
+    def _menu_ortografia(self, evento):
+        """Clique direito na caixa de digitar.
+
+        Mostra as correções da palavra sob o cursor (quando houver) e
+        sempre os comandos de edição: recortar, copiar, colar e selecionar
+        tudo. O que não dá para usar naquele momento fica apagado.
+        """
+        sugestoes = self._sugestoes_no_ponto(evento.x, evento.y)
+        # clicar com o botão direito também coloca o cursor onde foi clicado
+        # (senão "Colar" entraria sempre no fim do texto).
+        try:
+            self.entrada.mark_set("insert", "@%d,%d" % (evento.x, evento.y))
+        except Exception:
+            pass
+        tem_selecao = self._tem_selecao()
+        try:
+            tem_na_area = bool(self.entrada.clipboard_get())
+        except Exception:
+            tem_na_area = False
+
+        # Recortar/Copiar só fazem sentido com algo selecionado; Colar só
+        # com algo na área de transferência.
+        comandos = [
+            ("   Recortar", self._recortar, tem_selecao),
+            ("   Copiar", self._copiar_selecionado, tem_selecao),
+            ("   Colar", self._colar, tem_na_area),
+            ("   Selecionar tudo", self._selecionar_tudo, True),
+        ]
+
         if self._menu_ortografia_atual is not None:
             try:
                 self._menu_ortografia_atual.destroy()
@@ -3251,32 +3501,44 @@ class Aplicativo:
                          highlightbackground=COR_BORDA)
         caixa.pack(padx=2, pady=2)
 
-        def item(rotulo, comando=None, negrito=False):
+        def item(rotulo, comando=None, negrito=False, ativo=True):
             etiqueta = tk.Label(
-                caixa, text=rotulo, bg=COR_BARRA, fg=COR_TEXTO,
-                font=(FONTE, 9, "bold" if negrito else "normal"), cursor="hand2",
+                caixa, text=rotulo, bg=COR_BARRA,
+                fg=COR_TEXTO if ativo else COR_TEXTO_3,
+                font=(FONTE, 9, "bold" if negrito else "normal"),
+                cursor="hand2" if ativo else "arrow",
                 anchor="w", padx=16, pady=6,
             )
             etiqueta.pack(fill="x")
-            etiqueta.bind("<Enter>", lambda _e: etiqueta.configure(
-                bg=COR_BARRA_MAIS))
-            etiqueta.bind("<Leave>", lambda _e: etiqueta.configure(
-                bg=COR_BARRA, fg=COR_TEXTO))
-            etiqueta.bind("<Button-1>", lambda _e: comando())
+            if ativo:
+                etiqueta.bind("<Enter>", lambda _e: etiqueta.configure(
+                    bg=COR_BARRA_MAIS))
+                etiqueta.bind("<Leave>", lambda _e: etiqueta.configure(
+                    bg=COR_BARRA, fg=COR_TEXTO))
+                etiqueta.bind("<Button-1>", lambda _e: comando())
             pop._itens.append(etiqueta)
             return etiqueta
 
-        for sugestao in sugestoes:
+        def separador():
+            tk.Frame(caixa, bg=COR_BORDA, height=1).pack(fill="x", padx=8,
+                                                          pady=2)
+
+        # 1) as correções da palavra (só quando a palavra está mesmo errada)
+        for sugestao, inicio, fim in sugestoes:
             item(
                 "   " + sugestao,
-                lambda s=sugestao: (
-                    self._trocar_palavra(inicio, fim, s),
+                lambda s=sugestao, i=inicio, f=fim: (
+                    self._trocar_palavra(i, f, s),
                     self._fechar_menu_ortografia(),
                 ),
             )
-        # separador
-        tk.Frame(caixa, bg=COR_BORDA, height=1).pack(fill="x", padx=8, pady=2)
-        item("   Ignorar", lambda: self._fechar_menu_ortografia())
+        if sugestoes:
+            item("   Ignorar", lambda: self._fechar_menu_ortografia())
+            separador()
+
+        # 2) os comandos de edição de sempre
+        for rotulo, comando, ativo in comandos:
+            item(rotulo, comando, ativo=ativo)
 
         self._menu_ortografia_atual = pop
         pop.update_idletasks()
@@ -3309,6 +3571,50 @@ class Aplicativo:
         pop.bind("<Escape>", lambda _e: self._fechar_menu_ortografia())
         self._registrar_clique_global(fora)
         pop.after(6000, self._fechar_menu_ortografia)
+
+    def _recortar(self):
+        """Ação "Recortar": apaga o selecionado depois de colocá-lo na área
+        de transferência."""
+        try:
+            texto = self.entrada.get("sel.first", "sel.last")
+        except Exception:
+            texto = ""
+        if texto:
+            self._copiar_texto(texto)
+            try:
+                self.entrada.delete("sel.first", "sel.last")
+            except Exception:
+                pass
+        self._fechar_menu_ortografia()
+        self._ajustar_altura()
+        self._agendar_correcao()
+
+    def _copiar_selecionado(self):
+        try:
+            texto = self.entrada.get("sel.first", "sel.last")
+        except Exception:
+            texto = ""
+        if texto:
+            self._copiar_texto(texto)
+        self._fechar_menu_ortografia()
+
+    def _colar(self):
+        try:
+            texto = self.entrada.clipboard_get()
+        except Exception:
+            texto = ""
+        if texto:
+            try:
+                self.entrada.delete("sel.first", "sel.last")
+            except Exception:
+                pass
+            try:
+                self.entrada.insert("insert", texto)
+            except Exception:
+                self.entrada.insert("end", texto)
+        self._fechar_menu_ortografia()
+        self._ajustar_altura()
+        self._agendar_correcao()
 
     def _fechar_menu_ortografia(self):
         pop = getattr(self, "_menu_ortografia_atual", None)
@@ -3392,7 +3698,8 @@ class Aplicativo:
 
     def _montar_boas_vindas(self):
         bloco = tk.Frame(self.interno, bg=COR_FUNDO)
-        bloco.pack(fill="x", pady=(46, 24), padx=24)
+        bloco.pack(fill="x", pady=(46, 24),
+                   padx=max(24, self._largura_bolha() // 3))
 
         tk.Label(
             bloco, text="Olá!", bg=COR_FUNDO, fg=COR_TEXTO,
@@ -3557,7 +3864,7 @@ class Aplicativo:
             texto_completo = texto
 
         linha = tk.Frame(self.interno, bg=COR_FUNDO)
-        linha.pack(fill="x", padx=16, pady=6)
+        linha.pack(fill="x", padx=self._margem_da_coluna(), pady=6)
 
         coluna = tk.Frame(linha, bg=COR_FUNDO)
         largura = self._largura_bolha()
@@ -3792,7 +4099,7 @@ class Aplicativo:
 
     def _criar_digitando(self):
         linha = tk.Frame(self.interno, bg=COR_FUNDO)
-        linha.pack(fill="x", padx=16, pady=6)
+        linha.pack(fill="x", padx=self._margem_da_coluna(), pady=6)
         avatar_ia(linha).pack(side="left", padx=(0, 10), anchor="n")
 
         tela = tk.Canvas(linha, width=76, height=44, bg=COR_FUNDO, highlightthickness=0, bd=0)
@@ -3819,7 +4126,7 @@ class Aplicativo:
     def _criar_galeria(self, msg):
         """Desenha a grade de miniaturas das imagens pedidas na conversa."""
         linha = tk.Frame(self.interno, bg=COR_FUNDO)
-        linha.pack(fill="x", padx=16, pady=6)
+        linha.pack(fill="x", padx=self._margem_da_coluna(), pady=6)
         avatar_ia(linha).pack(side="left", padx=(0, 10), anchor="n")
 
         coluna = tk.Frame(linha, bg=COR_FUNDO)
@@ -5083,7 +5390,22 @@ class Aplicativo:
             "Shift+Enter quebra a linha sem enviar.\n"
             "F5 começa uma conversa nova.\n"
             "Ctrl+B mostra ou esconde a barra da esquerda.\n"
-            "Ctrl+M liga e desliga a gravação do microfone.",
+            "Ctrl+M liga e desliga a gravação do microfone.\n"
+            "Ctrl+A seleciona tudo o que está na caixa de digitar.\n"
+            "Ctrl+Z desfaz e Ctrl+Y refaz.",
+        )
+        bloco(
+            "Cores e tamanho",
+            "Numa janela muito larga o programa deixa as bordas em branco "
+            "e segura a conversa numa faixa de 820 pixels, para o texto não "
+            "ficar comprido demais de lado a lado. A caixa de digitar "
+            "acompanha a mesma largura.\n\n"
+            "A caixa de digitar mostra um texto de apoio cinza "
+            "(\"Pergunte qualquer coisa...\") enquanto está vazia.\n\n"
+            "Botão direito dentro da caixa de digitar mostra Recortar, "
+            "Copiar, Colar e Selecionar tudo. Se a palavra em que você "
+            "clicou estiver errada, as correções vêm em cima. O que não dá "
+            "para usar naquele momento fica apagado.",
         )
         bloco(
             "Tudo é gratuito",

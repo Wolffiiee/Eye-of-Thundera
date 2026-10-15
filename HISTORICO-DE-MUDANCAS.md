@@ -5,6 +5,78 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Tarefa C: interface mais limpa (estilo Claude)
+
+- **Pedido do Wolf:** executar a `PLANO-NOVAS-FUNCOES.md`, Tarefa C.
+- **Modificado:** `pesquisa_ia.py`:
+  - **caixa de digitar com cantos arredondados.** O tkinter não sabe
+    arredondar um `tk.Text`, então foram desenhadas quatro "tampinhas"
+    (uma por canto) com o Pillow, que pintam de fundo o que sobrou fora da
+    curva: `_dentro_do_canto()` (a conta da curva, testável) e
+    `_foto_canto()` (a imagem). Elas acompanham a caixa quando a janela
+    muda de tamanho (`_cantos_da_caixa`).
+  - **texto de apoio** "Pergunte qualquer coisa..." dentro da caixa, que
+    some assim que a pessoa digita, cola ou fala (`_atualizar_apoio`).
+  - a borda reta da caixa foi tirada (`highlightthickness=0`), porque
+    quadrado por cima de canto redondo ficava torto.
+  - **botão direito completo** na caixa de digitar: Recortar, Copiar, Colar
+    e Selecionar tudo, com as correções de ortografia no topo quando a
+    palavra sob o cursor está errada. O que não pode ser usado naquele
+    momento (Recortar/Copiar sem seleção, Colar sem nada na área de
+    transferência) fica apagado e sem clique. O clique direito também
+    coloca o cursor onde foi clicado, para o "Colar" entrar no lugar certo.
+  - a lógica das sugestões saiu de `_menu_ortografia` para
+    `_sugestoes_no_ponto(x, y)`, que o `verificar.py` consegue testar sem
+    clicar.
+  - **Ctrl+A, Ctrl+Z e Ctrl+Y** funcionando na caixa. Foi preciso criar o
+    `tk.Text` com `undo=True` (o Tk deixa o histórico desligado por
+    padrão, então o `edit_undo()` não fazia nada).
+  - **coluna centralizada**: a conversa (e a caixa de digitar) passam a ter
+    largura máxima de 820 px e ficam no meio da janela; em janela normal
+    continua igual, usando a tela toda (`_margem_da_coluna`,
+    `_alinhar_rodape`, `LARGURA_MAX_COLUNA`).
+- **Modificado:** `verificar.py`: 20 testes novos da Tarefa C (texto de
+  apoio, cantos, Ctrl+A/Z/Y, o menu do botão direito com os quatro
+  comandos, ordem das correções, comandos apagados, recortar/copiar/colar de
+  verdade, coluna e caixa centralizadas).
+- **Bugs encontrados no caminho (e corrigidos):**
+  - `_foto_canto` pintava uma cor de 5 valores e o Pillow recusava
+    (`_rgba` já devolve RGBA inteiro);
+  - **o mais chato:** `_dentro_do_canto` punha o centro da curva no canto
+    errado (estava girado 90°). Aí a tampinha comia um pedaço do botão de
+    enviar em vez de arredondar o canto. Só apareceu olhando os pixels do
+    print. Agora a função tem um teste que confere, para os quatro cantos,
+    que o bico fica FORA da caixa e o miolo fica DENTRO, e que os quatro
+    juntos só cortam uns 20% (a curvatura);
+  - **e depois:** no `place`, o `anchor` JÁ põe o canto do widget no ponto
+    indicado. Somar `-raio` empurrava as tampinhas 12 px para dentro da
+    caixa, e elas cobriam o botão de enviar — inclusive o microfone, que
+    parou de responder ao clique no `.exe`. Agora é só `anchor` + `relx`/
+    `rely`. Tem teste conferindo que cada tampinha encosta na borda da
+    sua quina e que nenhuma cobre o botão de enviar;
+  - o `padx` do botão de enviar era menor que o raio do canto, e a
+    tampinha do canto passava por cima do botão. Agora o respiro é
+    `RAIO_CANTO` (12 px);
+  - `linha_modo` (o "Web: automática") nunca foi salva como atributo, então
+    a linha não acompanhava a coluna — e o erro era engolido pelo
+    `except: pass`.
+- **Testado com os olhos:** janela normal e janela de 1700 px, com a
+  caixa vazia (texto de apoio + cantos), com texto escrito, com palavra
+  errada sublinhada e com a coluna centralizada. Print tirado com
+  `PrintWindow` na janela do segundo monitor (o `ImageGrab` no segundo
+  monitor devolve preto). Também conferido pixel por pixel: sem o
+  `_dentro_do_canto` e o `anchor` certainos, o canto comia o botão.
+- **Testado no `.exe` novo:** janela no segundo monitor, microfone fica
+  vermelho e volta ao cinza (clicando nele), e a coluna centraliza na
+  janela de 1700 px. `erro.log` não apareceu.
+- **Não testado:** o visual do menu do botão direito na tela (é uma janela
+  separada e o `PrintWindow` não a pega; os itens foram conferidos pelos
+  testes) e o canto arredondado com o mouse passando em cima.
+- **Testado:** `verificar.py` = TUDO CERTO (110 linhas de conferência).
+  `.exe` novo gerado e copiado para a Área de Trabalho.
+
+---
+
 ## 2026-10-15 — Tarefa B: falar a pergunta (botão de microfone)
 
 - **Pedido do Wolf:** executar a `PLANO-NOVAS-FUNCOES.md`, Tarefa B.

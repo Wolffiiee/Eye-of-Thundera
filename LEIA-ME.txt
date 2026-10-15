@@ -135,6 +135,21 @@ dentro para afinar. Os títulos se ajustam sozinhos ao novo tamanho. Assim a con
 A resposta aparece letra a letra, com um cursor piscando no fim,
 igual aos aplicativos de conversa modernos.
 
+A caixa de digitar tem os cantos redondinhos e, quando está vazia, mostra
+um texto de apoio cinza ("Pergunte qualquer coisa...") que some assim que
+você começa a digitar. O botão do microfone e o de enviar ficam dentro
+da caixa, no canto direito.
+
+Clicando com o botão do DIREITO dentro da caixa aparece o menu de edição
+de sempre (Recortar, Copiar, Colar, Selecionar tudo). Se a palavra em que
+você clicou estiver escrita errada, as correções aparecem em cima desse
+menu. O que não dá para usar naquele momento (Recortar/Copiar sem nada
+selecionado, Colar sem nada copiado) aparece apagado.
+
+Numa janela muito larga, o programa se ocupa com a largura máxima de
+820 pixels e deixa as bordas em branco, para o texto não ficar comprido
+demais de lado a lado. A caixa de digitar acompanha a mesma largura.
+
 Falar em vez de digitar:
 
 Tem um botão de microfone ao lado do botão de enviar. Clique nele para
@@ -158,6 +173,9 @@ Atalhos de teclado:
   - F5             -> começa uma conversa nova.
   - Ctrl + B       -> mostra/esconde a barra da esquerda.
   - Ctrl + M       -> liga/desliga a gravação do microfone.
+  - Ctrl + A       -> seleciona tudo o que está na caixa de digitar.
+  - Ctrl + Z       -> desfaz o que foi escrito.
+  - Ctrl + Y       -> refaz.
 
 
 ========================================================
