@@ -79,10 +79,7 @@ chaves) ficam em `%LOCALAPPDATA%\PesquisaIA\` e NUNCA entram no projeto.
   .exe pelo `Pesquisa IA.spec`. Trocou a imagem? Gere o .exe de novo.
 
 ## Ainda não resolvido / ideias
-- Texto das bolhas é item de Canvas: só seleção simples (sem duplo clique
-  para palavra, sem triplo para linha). Trocar por `tk.Text` somente leitura
-  é o caminho de menor esforço. Alternativa maior: interface em HTML com
-  `pywebview` (ver conversa sobre alternativas ao tkinter).
+- Texto das bolhas: duplo clique (palavra) e triplo clique (texto todo) ja funcionam desde 15/10/2026. Faltam seleção por parágrafo e arrastar mantendo a palavra. Trocar por `tk.Text` somente leitura é o caminho de menor esforço; alternativa maior: interface em HTML com `pywebview` (ver PROXIMOS-PASSOS.md).
 - Não há backup do código fora deste computador. Sugerir ao Wolf um
   repositório privado (GitHub) ou cópia periódica da pasta.
 - Nomes de modelos Gemini em `MODELOS_RESERVA` não foram conferidos na
