@@ -244,6 +244,7 @@ def carregar_config():
     cfg.setdefault("modo_pesquisa", "auto")
     cfg.setdefault("aprender", True)
     cfg.setdefault("voz_enviar", False)
+    cfg.setdefault("api_key_reserva", "")
     for _servico in SERVICOS_RESERVA:
         cfg.setdefault(_servico["campo_chave"], "")
 
@@ -981,6 +982,25 @@ def _com_setas(imagem, alpha=70):
         return Image.alpha_composite(base, camada).convert("RGB")
     except Exception:
         return imagem
+
+
+# Trechos de erro que significam "esta chave foi recusada" (e não, por
+# exemplo, "acabou a cota do dia", que se resolve sozinha).
+CHAVE_RECUSADA = (
+    "api key not valid",
+    "api key invalid",
+    "invalid authentication",
+    "unauthenticated",
+    "no auth credentials",
+    "permission_denied",
+    "401",
+)
+
+
+def _falha_de_chave(erro):
+    """True quando o erro é "a chave foi recusada" (e dá para trocar)."""
+    texto = ("%s %s" % (type(erro).__name__, erro)).lower()
+    return any(trecho in texto for trecho in CHAVE_RECUSADA)
 
 
 def _criar_cliente(api_key):
@@ -2557,6 +2577,9 @@ class Aplicativo:
         self._gravador = None
         self._mic_id = None
         self._margem_rodape = 16
+        # A chave principal do Google parou de ser recusada? Vira True e o
+        # programa passa a usar a chave reserva (ver _tentar_com_reserva).
+        self._falhou_principal = False
         self.animacao_id = None
         self.animacao_passo = 0
         self._pontos_digitando = []
@@ -2983,6 +3006,62 @@ class Aplicativo:
             AVIAO_XY, fill=cor_aviao, outline="",
         )
 
+    # -- chave de API: principal, reserva e troca automatica ----------------
+
+    def _chave_reserva(self):
+        return (self.cfg.get("api_key_reserva") or "").strip()
+
+    def _chave_ativa(self):
+        """A chave que o programa deve usar agora."""
+        if self._falhou_principal and self._chave_reserva():
+            return self._chave_reserva()
+        return (self.cfg.get("api_key") or "").strip()
+
+    def _usar_reserva(self, erro):
+        """O Google recusou a chave: tem outra para tentar?
+
+        Devolve True quando o programa deve repetir a chamada com a chave
+        reserva. A troca vale só nesta sessão (se a principal voltar a
+        funcionar, ela é usada de novo no próximo dia).
+        """
+        if self._falhou_principal:
+            return False                    # ja estamos na reserva
+        if not self._chave_reserva():
+            return False                    # nao ha reserva: avisa o usuario
+        if not _falha_de_chave(erro):
+            return False                    # e outro erro (cota, internet)
+        self._falhou_principal = True
+        try:
+            self._definir_status(
+                "A chave principal do Google parou de valer. Estou usando a "
+                "chave reserva.", COR_OK)
+        except Exception:
+            pass
+        return True
+
+    def _tentar_com_reserva(self, chamar):
+        """Executa `chamar(chave)`. Se o Google recusar a chave principal,
+        repete com a chave reserva (uma vez só)."""
+        for tentativa in range(2):
+            chave = self._chave_ativa()
+            try:
+                return chamar(chave)
+            except Exception as erro:
+                if tentativa == 0 and self._usar_reserva(erro):
+                    continue
+                raise
+        raise RuntimeError("não foi possível falar com a IA")
+
+    def _aviso_chave_morta(self, erro):
+        """A chave principal morreu e não há reserva: mostra a janelinha
+        explicando, com um botão que abre a página do Google."""
+        self._definir_ocupado(False)
+        try:
+            self._definir_status("", COR_TEXTO_3)
+        except Exception:
+            pass
+        self.fila.put(("chave_ruim", self._traduzir_erro(erro)))
+
     # -- microfone: gravar e transcrever ------------------------------------
 
     def _desenhar_mic(self, cor):
@@ -3116,17 +3195,22 @@ class Aplicativo:
         self._definir_ocupado(True)
         self._definir_status("Ouvindo... transcrevendo o que você falou...")
 
-        chave = self.cfg.get("api_key", "").strip()
         modelo = self.cfg.get("modelo", MODELO_PADRAO)
         modelos = [modelo] + [m for m in MODELOS_RESERVA if m != modelo]
 
         def tarefa():
             try:
-                cliente = _criar_cliente(chave)
-                texto = voz.transcrever(cliente, modelos, wav)
+                texto = self._tentar_com_reserva(
+                    lambda chave: voz.transcrever(
+                        _criar_cliente(chave), modelos, wav)
+                )
                 self.fila.put(("voz", texto))
             except Exception as erro:
-                self.fila.put(("voz_erro", self._traduzir_erro(erro)))
+                if _falha_de_chave(erro) and not self._chave_reserva():
+                    self._definir_ocupado(False)
+                    self.fila.put(("chave_ruim", self._traduzir_erro(erro)))
+                else:
+                    self.fila.put(("voz_erro", self._traduzir_erro(erro)))
 
         threading.Thread(target=tarefa, daemon=True).start()
 
@@ -4698,21 +4782,28 @@ class Aplicativo:
                     consulta = pergunta
                 if modo == "amigo":
                     avisar_progresso("Conversando com você...")
-                    texto, fontes, buscas, origem = conversar(
-                        chave, modelo, historico, pergunta, usar_contexto,
-                        progresso=avisar_progresso, cfg=self.cfg,
-                        id_atual=self._id_conversa,
+                    texto, fontes, buscas, origem = self._tentar_com_reserva(
+                        lambda chave: conversar(
+                            chave, modelo, historico, pergunta, usar_contexto,
+                            progresso=avisar_progresso, cfg=self.cfg,
+                            id_atual=self._id_conversa,
+                        )
                     )
                 else:
                     avisar_progresso("Pesquisando na web...")
-                    texto, fontes, buscas, origem = perguntar(
-                        chave, modelo, historico, pergunta, usar_contexto,
-                        progresso=avisar_progresso, cfg=self.cfg,
-                        id_atual=self._id_conversa, consulta=consulta,
+                    texto, fontes, buscas, origem = self._tentar_com_reserva(
+                        lambda chave: perguntar(
+                            chave, modelo, historico, pergunta, usar_contexto,
+                            progresso=avisar_progresso, cfg=self.cfg,
+                            id_atual=self._id_conversa, consulta=consulta,
+                        )
                     )
                 self.fila.put(("ok", pergunta, texto, fontes, buscas, origem))
             except Exception as erro:
-                self.fila.put(("erro", pergunta, self._traduzir_erro(erro)))
+                if _falha_de_chave(erro) and not self._chave_reserva():
+                    self.fila.put(("chave_ruim", self._traduzir_erro(erro)))
+                else:
+                    self.fila.put(("erro", pergunta, self._traduzir_erro(erro)))
 
         threading.Thread(target=tarefa, daemon=True).start()
 
@@ -4905,11 +4996,57 @@ class Aplicativo:
             font=(FONTE, 9), highlightthickness=0, bd=0,
         ).pack(anchor="w", pady=(6, 0))
 
+        # ---- chave reserva (rede de segurança) ----
+        tk.Label(
+            corpo, text="Chave reserva (opcional)", bg=COR_FUNDO,
+            fg=COR_TEXTO_2, font=(FONTE, 10, "bold"),
+        ).pack(anchor="w", pady=(20, 6))
+        tk.Label(
+            corpo,
+            text="Cole aqui uma segunda chave do Google. Se um dia a chave de "
+                 "cima parar de valer (o Google às vezes recusa uma chave "
+                 "do nada), o programa usa esta automaticamente e avisa que "
+                 "trocou.",
+            bg=COR_FUNDO, fg=COR_TEXTO_2, font=(FONTE, 9), wraplength=540,
+            justify="left",
+        ).pack(anchor="w")
+        moldura_reserva = tk.Frame(
+            corpo, bg=COR_BARRA, highlightthickness=1,
+            highlightbackground=COR_BORDA,
+        )
+        moldura_reserva.pack(fill="x", pady=(8, 0))
+        var_chave_reserva = tk.StringVar(
+            value=self.cfg.get("api_key_reserva", ""))
+        entrada_reserva = tk.Entry(
+            moldura_reserva, textvariable=var_chave_reserva, show="•",
+            font=(FONTE, 11), bg=COR_BARRA, fg=COR_TEXTO,
+            insertbackground=COR_ACCENT, relief="flat", borderwidth=0,
+        )
+        entrada_reserva.pack(side="left", fill="x", expand=True, padx=12,
+                             pady=10)
+        var_mostrar_reserva = tk.BooleanVar(value=False)
+
+        def alternar_reserva():
+            entrada_reserva.configure(
+                show="" if var_mostrar_reserva.get() else "•")
+
+        tk.Checkbutton(
+            corpo, text="mostrar a chave reserva",
+            variable=var_mostrar_reserva, command=alternar_reserva,
+            bg=COR_FUNDO, fg=COR_TEXTO_2, selectcolor=COR_BARRA,
+            activebackground=COR_FUNDO, activeforeground=COR_TEXTO,
+            font=(FONTE, 9), highlightthickness=0, bd=0,
+        ).pack(anchor="w", pady=(6, 0))
+
         botoes = tk.Frame(corpo, bg=COR_FUNDO)
         botoes.pack(fill="x", pady=(14, 0))
 
         def salvar():
             self.cfg["api_key"] = var_chave.get().strip()
+            self.cfg["api_key_reserva"] = var_chave_reserva.get().strip()
+            # Se o Wolf trocou a chave na principal, a reserva de antes
+            # deixa de fazer sentido como "reserva".
+            self._falhou_principal = False
             self.cfg["usar_contexto"] = bool(self.var_contexto.get())
             self.cfg["corretor"] = bool(self.var_corretor.get())
             self.cfg["usar_plano_b"] = bool(self.var_plano_b.get())
@@ -5148,7 +5285,10 @@ class Aplicativo:
         # agora que o conteudo inteiro existe, liga a rolagem em tudo
         _ligar_todos(aba_chave)
 
-        mostrar_aba("memoria")
+        # A aba pedida só pode ser mostrada DEPOIS que as abas existem
+        # (antes disso o `mostrar_aba` não acha nada, e a janela abriria
+        # sempre na Memória, ignorando o pedido).
+        mostrar_aba(aba if aba in dict(quadros) else "memoria")
         jan.bind("<Escape>", lambda _e: jan.destroy())
         entrada.focus_set()
 
@@ -5385,6 +5525,22 @@ class Aplicativo:
             "'Nova conversa' limpa a tela e 'Conversas' mostra as anteriores "
             "para reabrir. Ao excluir uma conversa, o que a IA aprendeu sobre "
             "você continua guardado (veja a aba Memória).",
+        )
+        bloco(
+            "Chave reserva (rede de segurança)",
+            "Chaves do Google às vezes param de funcionar sem aviso: o "
+            "programa simplesmente deixa de receber respostas.\n\n"
+            "Na aba Chave das Configurações tem um campo de chave reserva. "
+            "Cole ali uma segunda chave (é só criar outra de graça na mesma "
+            "página). Se um dia a chave principal for recusada, o programa "
+            "usa a reserva sozinho e avisa embaixo da conversa:\n\n"
+            "\"A chave principal do Google parou de valer. Estou usando a "
+            "chave reserva.\"\n\n"
+            "Se não houver chave reserva, aparece uma janelinha explicando e "
+            "com um botão que abre a página do Google direto no navegador. "
+            "Essa troca vale só enquanto o programa estiver aberto; no dia "
+            "seguinte ele tenta a principal de novo (se ela voltou, volta "
+            "a ser usada).",
         )
         bloco(
             "Falar em vez de digitar",
@@ -5695,6 +5851,61 @@ class Aplicativo:
         self.raiz.wait_window(pop)
         return resultado["ok"]
 
+    def _janela_chave_ruim(self, texto):
+        """Janelinha avisando que a chave do Google parou de valer.
+
+        Tem um botão que abre a página da chave direto no navegador, para
+        não obrigar o Wolf a procurar o endereço na memória.
+        """
+        try:
+            self._fechar_menu_ortografia()
+        except Exception:
+            pass
+        pop = tk.Toplevel(self.raiz)
+        pop.overrideredirect(True)
+        pop.configure(bg=COR_PAINEL)
+        caixa = tk.Frame(pop, bg=COR_BARRA, highlightthickness=1,
+                         highlightbackground=COR_BORDA)
+        caixa.pack(fill="both", padx=1, pady=1)
+
+        tk.Label(
+            caixa, text="A chave do Google parou de valer", bg=COR_BARRA,
+            fg=COR_TEXTO, font=(FONTE, 11, "bold"), anchor="w", wraplength=340,
+            justify="left",
+        ).pack(fill="x", padx=16, pady=(16, 6))
+        tk.Label(
+            caixa, text=texto + "\n\nEnquanto isso, nenhuma resposta vai "
+            "aparecer — nem digitando, nem falando.", bg=COR_BARRA,
+            fg=COR_TEXTO_2, font=(FONTE, 9), wraplength=340, justify="left",
+            anchor="w",
+        ).pack(fill="x", padx=16, pady=(0, 4))
+
+        def abrir():
+            webbrowser.open(URL_CHAVE)
+            pop.destroy()
+
+        def depois():
+            pop.destroy()
+            self._abrir_config("chave")
+
+        botoes = tk.Frame(caixa, bg=COR_BARRA)
+        botoes.pack(fill="x", padx=16, pady=(8, 16))
+        Botao(botoes, "Criar chave nova", abrir, destaque=True).pack(
+            side="left")
+        Botao(botoes, "Colar chave nova", depois).pack(side="left", padx=(8, 0))
+
+        pop.bind("<Escape>", lambda _e: pop.destroy())
+        pop.update_idletasks()
+        largura = pop.winfo_width()
+        altura = pop.winfo_height()
+        centro_x = (self.raiz.winfo_rootx()
+                    + (self.raiz.winfo_width() - largura) // 2)
+        centro_y = (self.raiz.winfo_rooty()
+                    + (self.raiz.winfo_height() - altura) // 2)
+        pop.geometry("+%d+%d" % (centro_x, centro_y))
+        pop.grab_set()
+        self.raiz.wait_window(pop)
+
     def _abrir_conversa_da_lista(self, conversa):
         """Abre a conversa escolhida (quando se clica no titulo)."""
         self._carregar_conversa(conversa)
@@ -5910,6 +6121,10 @@ class Aplicativo:
             self._definir_ocupado(False)
             self._definir_status(item[1] or "Não consegui transcrever o áudio.",
                                  COR_ERRO_TX)
+            return
+
+        if tipo == "chave_ruim":
+            self._janela_chave_ruim(item[1])
             return
 
         self._parar_digitando()

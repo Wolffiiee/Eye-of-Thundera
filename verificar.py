@@ -574,6 +574,114 @@ def testes_de_tela():
             falha("as bolhas sumiram depois dos testes da caixa (%d)"
                   % len(telas))
 
+        # --- chave reserva: troca automatica quando o Google recusa a chave
+        app.cfg["api_key"] = "AIza-principal-falsa"
+        app.cfg["api_key_reserva"] = "AIza-reserva-falsa"
+        app._falhou_principal = False
+        if app._chave_ativa() == app.cfg["api_key"]:
+            ok("começa usando a chave principal")
+        else:
+            falha("não começou pela chave principal")
+
+        chamadas = []
+
+        def morre_401(_chave):
+            chamadas.append("recusada")
+            raise RuntimeError("401 UNAUTHENTICATED. API key not valid.")
+
+        app._falhou_principal = False
+        try:
+            app._tentar_com_reserva(morre_401)
+            falha("deveria ter avisado que o erro é de chave")
+        except RuntimeError:
+            ok("erro de chave é reconhecido (401 / API key not valid)")
+
+        # sem reserva: o erro sobe (a janela de aviso é quem mostra)
+        app.cfg["api_key_reserva"] = ""
+        app._falhou_principal = False
+        try:
+            app._tentar_com_reserva(morre_401)
+            falha("sem reserva o erro deveria subir")
+        except RuntimeError:
+            ok("sem chave reserva, o erro sobe para o programa avisar")
+
+        # com reserva: repete com a reserva e dá certo
+        app.cfg["api_key_reserva"] = "AIza-reserva-falsa"
+        app._falhou_principal = False
+        chamadas.clear()
+
+        def so_a_reserva(chave):
+            chamadas.append(chave)
+            if chave == "AIza-principal-falsa":
+                raise RuntimeError("401 UNAUTHENTICATED. API key not valid.")
+            return "resposta pela reserva"
+
+        try:
+            r = app._tentar_com_reserva(so_a_reserva)
+            ok("troca sozinho para a chave reserva quando a principal é "
+               "recusada")
+            if r == "resposta pela reserva" and chamadas == [
+                    "AIza-principal-falsa", "AIza-reserva-falsa"]:
+                ok("a reserva é usada na segunda tentativa (na ordem certa)")
+            else:
+                falha("a troca ficou errada: %s -> %r" % (chamadas, r))
+        except Exception as erro:
+            falha("a troca para a reserva quebrou: %r" % (erro,))
+        if app._falhou_principal:
+            ok("o programa fica marcado como 'principal caiu' na sessão")
+        else:
+            falha("o programa não marcou que a principal caiu")
+
+        # já na reserva, não fica tentando trocar de novo (sem laço)
+        chamadas.clear()
+        try:
+            app._tentar_com_reserva(morre_401)
+        except RuntimeError:
+            pass
+        if chamadas == ["recusada"]:
+            ok("na reserva ele não fica tentando trocar de chave para sempre")
+        else:
+            falha("a reserva foi chamada %d vezes" % len(chamadas))
+
+        # erro que NÃO é de chave (cota, internet) não troca a chave
+        app._falhou_principal = False
+        trocou = []
+
+        def cota(_chave):
+            trocou.append(1)
+            raise RuntimeError("RESOURCE_EXHAUSTED: quota exceeded")
+
+        try:
+            app._tentar_com_reserva(cota)
+        except RuntimeError:
+            pass
+        if trocou == [1] and not app._falhou_principal:
+            ok("erro de cota/internet NÃO troca de chave (só erro de chave "
+               "troca)")
+        else:
+            falha("troca de chave na hora errada (%d tentativas)"
+                  % len(trocou))
+
+        app._falhou_principal = False
+        app.cfg["api_key_reserva"] = ""
+
+        # a janelinha de "chave inválida" tem que abrir sem estourar erro
+        # (o teste fecha ela sozinha depois de um instante)
+        def fecha_janela():
+            for w in raiz.winfo_children():
+                if isinstance(w, tk.Toplevel):
+                    w.destroy()
+
+        raiz.after(500, fecha_janela)
+        try:
+            app._janela_chave_ruim(
+                "Uma das chaves de API parece inválida. Abra Configurações.")
+            raiz.update()
+            ok("janela de 'chave inválida' abre e fecha sem erro")
+        except Exception as erro:
+            falha("a janela de chave inválida quebrou: %r" % (erro,))
+        raiz.update()
+
         # --- menus que fecham ao clicar fora (um não pode quebrar o outro)
         chamadas = []
 
@@ -637,6 +745,28 @@ def testes_de_tela():
             pass
         raiz.update()
         ok("janela de Configurações abre e troca de aba")
+
+        # abrir Configurações já pedindo uma aba tem que FUNCIONAR de
+        # primeira (o botão "Colar chave nova" da janela de chave inválida
+        # depende disso: se abrisse na Memória, o Wolf não acharia o campo)
+        try:
+            app._janela_config.destroy()
+        except Exception:
+            pass
+        raiz.update()
+        app._abrir_config("chave")
+        raiz.update()
+        _esperar(raiz, 0.4)
+        if getattr(app, "_aba_config", "") == "chave":
+            ok("abrir Configurações pedindo a aba 'Chave' já abre nela")
+        else:
+            falha("pediu a aba 'Chave' e abriu na '%s'"
+                  % getattr(app, "_aba_config", "?"))
+        try:
+            app._janela_config.destroy()
+        except Exception:
+            pass
+        raiz.update()
         testes_lista_de_conversas(p, raiz, app)
 
         # --- coluna centralizada (por último: mexer no tamanho da janela

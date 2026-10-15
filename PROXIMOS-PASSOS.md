@@ -24,9 +24,11 @@ Claude em outra conversa): leia isto depois do PASSO-A-PASSO.md.
 - **A chave de API foi trocada em 15/10/2026 e está funcionando.** A chave
   antiga (que o Google passou a recusar com erro 401 "API key not valid" no
   meio do dia) foi substituída; o Wolf colou a nova em Configurações,
-  testou e **o reconhecimento de voz funcionou de verdade**. Se um dia
-  aparecer erro de chave de novo, o caminho é o mesmo:
-  <https://aistudio.google.com/apikey> → Configurações → Salvar → Testar.
+  testou e **o reconhecimento de voz funcionou de verdade**. Além disso,
+  o programa agora tem **chave reserva com troca automática** (campo na
+  aba Chave) e uma janelinha de aviso com botão para criar chave nova.
+  Se um dia a principal cair de novo, a reserva cobre sozinha; sem
+  reserva, o botão abre a página do Google.
 1. **Uma pergunta real** com a chave nova (as respostas normais ainda não
    foram testadas de ponta a ponta). Peça ao Wolf para fazer uma pergunta
    e dizer se a resposta apareceu.

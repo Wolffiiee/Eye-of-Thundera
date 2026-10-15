@@ -5,6 +5,45 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Chave reserva com troca automática + aviso com botão
+
+- **Pedido do Wolf:** "consegue atualizar a chave sempre que acontecer
+  algo parecido? criar uma nova e atualizar no app?"
+- **Resposta honesta (registrada aqui para não repetir):** **não dá para
+  criar a chave sozinho.** O Google não oferece nenhuma API pública para o
+  AI Studio criar chaves; só dá pela página, logado na conta. Um programa
+  que fizesse isso teria que guardar a senha do Google do Wolf — o que
+  ninguém, nem uma IA, deve fazer. O que dá para fazer é evitar o susto.
+- **O que foi feito:**
+  - **Chave reserva** (nova opção `cfg["api_key_reserva"]`) com campo
+    próprio na aba Chave das Configurações.
+  - **Troca automática**: `_falha_de_chave()` reconhece recusa de chave
+    (401 / "API key not valid" / "unauthenticated" etc.) e
+    `_tentar_com_reserva()` repete a chamada **uma vez** com a reserva.
+    Erros que NÃO são de chave (cota do dia, internet caída) não trocam
+    nada, e já na reserva ele não fica tentando trocar de novo.
+  - aviso discreto embaixo da conversa: "A chave principal do Google parou
+    de valer. Estou usando a chave reserva."
+  - **janela de chave inválida** (`_janela_chave_ruim`) com dois botões:
+    "Criar chave nova" (abre a página do Google) e "Colar chave nova"
+    (abre as Configurações). Só aparece quando **não há** chave reserva.
+  - a ajuda e o `LEIA-ME.txt` explicam o mecanismo.
+- **Bug achado no caminho:** `_abrir_config(aba)` chamava
+  `_mostrar_aba_config(aba)` **antes** das abas serem montadas, então
+  `_abrir_config("chave")` numa janela nova abria na aba Memória e o botão
+  "Colar chave nova" não levaria o Wolf ao campo da chave. Agora a aba pedida
+  é mostrada depois que tudo existe. Tem teste.
+- **Testado:** 9 testes novos no `verificar.py` (reconhece erro de chave,
+  troca para a reserva na ordem certa, não entra em laço, cota não troca,
+  janela de aviso abre sem erro, Configurações abre na aba pedida).
+  A janelinha de aviso e a aba Chave com o campo da reserva foram
+  conferidas no print (segundo monitor). O `.exe` novo foi gerado, aberto
+  no segundo monitor (microfone vermelho -> cinza, cantos da caixa
+  certos), sem `erro.log`, e copiado para a Área de Trabalho.
+  `verificar.py` = TUDO CERTO.
+
+---
+
 ## 2026-10-15 — Cantos da caixa: conserto do quadrado (relato do Wolf)
 
 - **Relato do Wolf:** "os cantos da caixa de pergunta não estão

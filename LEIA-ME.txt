@@ -294,6 +294,20 @@ Atalhos de teclado:
   É normal: o programa procura na web, abre algumas páginas e só
   depois pede a resposta para a IA. Costuma levar de 10 a 30 segundos.
 
+"A chave do Google parou de funcionar"
+  Acontece sem aviso: o Google começa a recusar uma chave que funcionava
+  ontem. Aí o programa abre uma janelinha explicando, com dois botões:
+    - "Criar chave nova": abre a página do Google no navegador;
+    - "Colar chave nova": abre as Configurações já na aba certaina.
+
+  Tem uma rede de segurança melhor: na aba Chave das Configurações existe
+  o campo "Chave reserva (opcional)". Cole ali uma segunda chave (é só
+  criar outra de graça na mesma página do Google). Se um dia a chave
+  principal for recusada, o programa usa a reserva sozinho e avisa embaixo
+  da conversa: "A chave principal do Google parou de valer. Estou usando a
+  chave reserva." Você nem percebe. A troca vale enquanto o programa
+  estiver aberto; no dia seguinte ele tenta a principal de novo.
+
 "A chave fica salva onde?"
   Fica salva apenas no seu usuário do Windows, no arquivo:
     %LOCALAPPDATA%\PesquisaIA\config.json

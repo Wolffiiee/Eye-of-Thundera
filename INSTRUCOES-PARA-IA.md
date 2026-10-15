@@ -42,6 +42,10 @@ trabalhando.
   TÍTULO ("Pesquisa IA") em todos os processos e mova com `SetWindowPos`.
 
 ## Regras de trabalho (obrigatórias)
+0. **Nunca** tente criar, adivinhar ou "consertar" a chave de API do
+   Google por conta própria. O Google não tem API pública para criar
+   chaves no AI Studio, e qualquer contorno exigiria a senha do Wolf.
+   O que o programa faz é avisar com clareza e oferecer a chave reserva.
 1. Leia `git status` e `git log --oneline -5` antes de começar. Se houver
    mudança solta, pergunte ao Wolf ou faça commit dela separado.
 2. Mudanças pequenas, uma de cada vez. Nada de reescrever o arquivo inteiro
@@ -81,6 +85,12 @@ trabalhando.
   `_despachar_clique(event)` à mão.
 - **Opção `fg` em Canvas:** Canvas não aceita `fg` (`unknown option "-fg"`
   já aconteceu). Em Canvas use `itemconfigure`.
+- **Texto de `Label` sem `anchor` fica CENTRADO:** um `tk.Label` com
+  várias linhas e sem `anchor="w"` centraliza o bloco, mesmo com
+  `justify="left"` (o `justify` alinha as linhas entre si, não o bloco).
+- **Janela com `grab_set`/`wait_window` trava a chamada:** para printar
+  uma dessas janelinhas, agende o print com `after()` de dentro — depois
+  que a função voltar, a janela já foi destruída.
 - **Nome de parâmetro tem que ser igual:** o Python 3 aceita acento em
   identificadores, então um `cor_bolao` escrito `cor_bolão` passa ileso
   na hora de compilar, mas o `pyflakes` acusa "undefined name" e o
