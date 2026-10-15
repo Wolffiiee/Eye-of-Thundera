@@ -30,6 +30,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog
 
+import memoria
 import roteador
 import voz
 
@@ -338,7 +339,7 @@ def salvar_memoria(fatos):
     global _memoria_cache
     _memoria_cache = [
         str(f).strip() for f in fatos if str(f).strip()
-    ][:MAX_MEMORIAS]
+    ][-MAX_MEMORIAS:]
     _gravar_json(ARQUIVO_MEMORIA, _memoria_cache)
     return list(_memoria_cache)
 
@@ -354,22 +355,28 @@ def esquecer_memoria(fragmento=None):
 
 
 def _mesclar_memoria(novos):
-    """Junta fatos novos, sem repetir os que ja estavam guardados."""
+    """Junta fatos novos sem repetir (regras no arquivo memoria.py)."""
     atuais = carregar_memoria()
-    chaves = {_sem_acento(f) for f in atuais}
-    mudou = False
-    for fato in novos:
-        chave = _sem_acento(fato)
-        if not chave or chave in chaves:
-            continue
-        if any(chave in dentro or dentro in chave for dentro in chaves):
-            continue
-        atuais.append(fato)
-        chaves.add(chave)
-        mudou = True
+    nova, mudou = memoria.mesclar(atuais, novos)
     if mudou:
-        salvar_memoria(atuais)
-    return atuais
+        salvar_memoria(nova)
+    return nova
+
+
+def organizar_memoria():
+    """Tira os fatos repetidos da memoria que ja existe.
+
+    Antes da primeira limpeza guarda uma copia de seguranca
+    (memoria_antes_de_organizar.json). Devolve True se algo mudou."""
+    atuais = carregar_memoria()
+    nova, mudou = memoria.consolidar(atuais)
+    if not mudou:
+        return False
+    copia = ARQUIVO_MEMORIA.with_name("memoria_antes_de_organizar.json")
+    if not copia.exists():
+        _gravar_json(copia, atuais)
+    salvar_memoria(nova)
+    return True
 
 
 def carregar_conversas():
@@ -522,10 +529,15 @@ def aprender_com_o_usuario(api_key, pergunta, resposta):
         resultado = cliente.models.generate_content(
             model=MODELO_MEMORIA,
             contents=(
-                "Conversa:\nPESSOA: %s\nASSISTENTE: %s\n\n%s"
+                "Conversa:\nPESSOA: %s\nASSISTENTE: %s\n\n"
+                "JA GUARDADO (nao repita nem reescreva de outro jeito; "
+                "devolva so o que for NOVO ou uma CORRECAO; se nao houver, "
+                "responda NADA):\n%s\n\n%s"
                 % (
                     (pergunta or "")[:1500],
                     (resposta or "")[:2500],
+                    "\n".join("- " + f[:120] for f in carregar_memoria()[-60:])
+                    or "(nada ainda)",
                     INSTRUCOES_APRENDER,
                 )
             ),
@@ -5299,10 +5311,12 @@ class Aplicativo:
         corpo.bind("<Configure>", lambda _e: tela.configure(
             scrollregion=tela.bbox("all")
         ))
-        corpo_id = tela.create_window((0, 0), window=corpo, anchor="nw")
+        corpo_id = tela.create_window((24, 0), window=corpo, anchor="nw")
 
         def _acertar_largura(_evento=None):
-            tela.itemconfigure(corpo_id, width=tela.winfo_width())
+            # margem de 24 px dos dois lados, como a aba Memoria
+            tela.itemconfigure(
+                corpo_id, width=max(320, tela.winfo_width() - 48))
 
         tela.bind("<Configure>", _acertar_largura)
 
@@ -6454,6 +6468,11 @@ def main():
         from ctypes import windll
 
         windll.shcore.SetProcessDpiAwareness(1)
+    except Exception:
+        pass
+
+    try:
+        organizar_memoria()
     except Exception:
         pass
 

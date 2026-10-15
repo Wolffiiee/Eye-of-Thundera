@@ -1137,6 +1137,41 @@ if not falhas:
 else:
     aviso("testes de tela pulados porque houve falha acima")
 
+# --- 5c. memoria sem repeticao ----------------------------------------------
+
+
+def testes_memoria():
+    import memoria
+    import pesquisa_ia as p
+
+    problemas = memoria.autoteste()
+    for problema in problemas:
+        falha("memoria: %s" % problema)
+    if not problemas:
+        ok("memoria: sem repeticao (casos do memoria.autoteste)")
+    # a ligacao com o programa: apelido repetido de outro jeito = 1 fato
+    guardado = ["Prefere ser chamado de Wolf"]
+    originais = (p.carregar_memoria, p.salvar_memoria)
+    p.carregar_memoria = lambda: list(guardado)
+    p.salvar_memoria = lambda lista: (
+        guardado.__setitem__(slice(None), list(lista)) or list(lista))
+    try:
+        p._mesclar_memoria(["O apelido do usuario e Wolf"])
+        p._mesclar_memoria(["Gosta de ser chamado de Wolf"])
+        if len(guardado) == 1:
+            ok("memoria: o programa nao guarda o apelido varias vezes")
+        else:
+            falha("memoria: apelido repetido ficou %r" % (guardado,))
+    finally:
+        p.carregar_memoria, p.salvar_memoria = originais
+
+
+if not falhas:
+    try:
+        testes_memoria()
+    except Exception as erro:
+        falha("os testes da memoria quebraram: %r" % (erro,))
+
 # --- 6. roteador: papo ou pesquisa (sem internet) --------------------------
 try:
     sys.path.insert(0, str(PASTA))
