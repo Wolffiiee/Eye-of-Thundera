@@ -18,6 +18,7 @@ Para criar um teste novo: copie um dos "caso(...)" ou "ok(...)" abaixo.
 """
 
 import importlib.util
+import io
 import py_compile
 import re
 import subprocess
@@ -34,6 +35,12 @@ except Exception:
 
 PASTA = Path(__file__).resolve().parent
 ARQUIVO = PASTA / "pesquisa_ia.py"
+
+# Onde a janela de teste aparece. O segundo monitor do Wolf comeca em
+# X=1920; usar +2000+100 joga a janela para la e deixa a tela principal
+# dele livre. Se um dia o monitor mudar, e so mexer aqui.
+POSICAO_TESTE = "+2000+100"
+
 falhas = []
 avisos = []
 
@@ -127,9 +134,19 @@ else:
 
 def testes_de_tela():
     sys.path.insert(0, str(PASTA))
+    import array as _array
     import pesquisa_ia as p
+    import voz as voz_mod
+
+    _GravadorOriginal = p.voz.Gravador
 
     raiz = tk.Tk()
+    # A janela de teste nasce no SEGUNDO MONITOR (que comeca em X=1920),
+    # para nunca cobrir a tela que o Wolf esta usando.
+    try:
+        raiz.geometry(POSICAO_TESTE)
+    except Exception:
+        pass
     erros_tk = []
     # Erros que acontecem dentro de botões/eventos não derrubam o programa:
     # ficam escondidos. Aqui eles viram falha.
@@ -239,6 +256,83 @@ def testes_de_tela():
                 ok("triplo clique seleciona o texto todo da bolha")
             else:
                 falha("triplo clique selecionou %r (esperado o texto todo)" % tudo)
+
+        # --- botao do microfone: existe, fica gravando e volta ao normal
+        if getattr(app, "botao_mic", None) is None:
+            falha("não achei o botão do microfone ao lado do enviar")
+        else:
+            ok("botão do microfone existe ao lado do enviar")
+            # Um gravador falso no lugar do microfone de verdade: assim o
+            # teste não grava a voz de quem está com o programa aberto.
+            class _GravadorDeMentira(object):
+                def __init__(self):
+                    self.parado = False
+                    self.wav = None
+
+                def iniciar(self):
+                    pass
+
+                def parar(self):
+                    self.parado = True
+                    return self.wav
+
+                def nivel(self):
+                    return 0.0
+
+            mentiroso = _GravadorDeMentira()
+            # áudio com som de verdade (senão o programa diz "não ouvi nada")
+            mentiroso.wav = voz_mod._para_wav(
+                _array.array("h", [9000 if i % 2 else -9000
+                                   for i in range(16000)]).tobytes())
+
+            def finge_comecar():
+                app._gravador = mentiroso
+                app.gravando = True
+
+            p.voz.Gravador = lambda *a, **k: mentiroso
+            try:
+                finge_comecar()
+                app._desenhar_mic(p.COR_MIC_GRAVANDO)
+                raiz.update()
+                if app.gravando and app.botao_mic.find_all():
+                    ok("microfone fica vermelho enquanto grava")
+                else:
+                    falha("microfone não mudou ao começar a gravar")
+
+                # Ctrl+M é o mesmo que clicar no botão
+                app._alternar_mic()          # para a gravação
+                raiz.update()
+                if not app.gravando and mentiroso.parado:
+                    ok("Ctrl+M (parar) encerra a gravação")
+                else:
+                    falha("parar não encerrou a gravação")
+            finally:
+                p.voz.Gravador = _GravadorOriginal
+
+            # O texto transcrito entra na caixa, sem mandar sozinho.
+            app.entrada.delete("1.0", "end")
+            app.cfg["voz_enviar"] = False
+            app._definir_ocupado(True)   # como fica durante a transcrição
+            app._tratar_item(("voz", "  qual o seu nome?  "))
+            raiz.update()
+            escrito = app.entrada.get("1.0", "end-1c")
+            if escrito == "qual o seu nome?":
+                ok("texto falado entra na caixa, sem espaços sobrando")
+            else:
+                falha("a caixa ficou com %r" % escrito)
+            if not app.ocupado:
+                ok("caixa de digitar volta a ficar disponível depois da voz")
+            else:
+                falha("a caixa ficou travada depois da voz")
+            app.entrada.delete("1.0", "end")
+
+            # Erro de transcrição não pode derrubar nem travar o programa.
+            app._tratar_item(("voz_erro", "Sem internet."))
+            raiz.update()
+            if not app.ocupado:
+                ok("falha na transcrição não trava o programa")
+            else:
+                falha("a falha na transcrição deixou o programa travado")
 
         # --- menus que fecham ao clicar fora (um não pode quebrar o outro)
         chamadas = []
@@ -518,6 +612,193 @@ try:
             "roteador: prompt de pesquisa continua com o material da web")
 except Exception as erro:
     falha("os testes do roteador quebraram: %r" % (erro,))
+    print(traceback.format_exc()[-900:])
+
+# --- 7. voz: gravador e transcricao (sem internet e sem microfone) ---------
+try:
+    import array
+    import wave as _wave
+    import voz
+
+    def confere_voz(condicao, nome):
+        if condicao:
+            ok(nome)
+        else:
+            falha(nome)
+
+    confere_voz(isinstance(voz.microfone_disponivel(), bool),
+                "voz: microfone_disponivel() responde sem quebrar")
+    confere_voz("microfone" in voz.microfone_erro(
+        PermissionError("Access is denied")).lower(),
+        "voz: erro de permissao vira frase em portugues")
+    confere_voz("microfone" in voz.microfone_erro(
+        RuntimeError("PortAudioError: no default device")).lower(),
+        "voz: erro sem microfone vira frase em portugues")
+
+    # --- Gravador com um fluxo de audio falso (nao mexe no microfone) ------
+    class _FluxoFalso(object):
+        def __init__(self):
+            self.iniciado = False
+            self.fechado = False
+
+        def start(self):
+            self.iniciado = True
+
+        def stop(self):
+            pass
+
+        def close(self):
+            self.fechado = True
+
+    class _GravadorFalso(voz.Gravador):
+        def _criar_fluxo(self, callback):
+            self.callback = callback
+            self.falso = _FluxoFalso()
+            return self.falso
+
+    silencio = array.array("h", [0] * 800)
+    alto = array.array("h", [8000 if i % 2 else -8000 for i in range(800)])
+
+    g = _GravadorFalso()
+    g.iniciar()
+    confere_voz(g.gravando and g.falso.iniciado,
+                "voz: Gravador.iniciar() abre o fluxo e marca gravando")
+    g.callback(silencio, 800, 0, None)
+    confere_voz(g.nivel() == 0.0,
+                "voz: silencio da nivel 0")
+    g.callback(alto, 800, 0, None)
+    confere_voz(g.nivel() > 1000,
+                "voz: audio alto da nivel alto")
+    confere_voz(not g.limite(),
+                "voz: gravacao curta ainda nao chegou no limite")
+    confere_voz(g.segundos > 0, "voz: conta os segundos gravados")
+
+    g.tempo_maximo = 0.001
+    confere_voz(g.limite(),
+                "voz: avisando quando passou do tempo maximo")
+    g.tempo_maximo = 120
+
+    wav = g.parar()
+    confere_voz(not g.gravando and g.falso.fechado,
+                "voz: Gravador.parar() fecha o fluxo e para de gravar")
+
+    # o WAV tem que sair com o cabecalho certo, senao o Gemini recusa
+    try:
+        with _wave.open(io.BytesIO(wav), "rb") as arquivo:
+            canais = arquivo.getnchannels()
+            largura = arquivo.getsampwidth()
+            taxa = arquivo.getframerate()
+            quadros = arquivo.getnframes()
+        cabecalho_ok = (canais == 1 and largura == 2 and taxa == 16000
+                        and quadros > 0)
+    except Exception as erro:
+        cabecalho_ok = False
+        falha("voz: o WAV montado nao abre: %r" % (erro,))
+    confere_voz(cabecalho_ok,
+                "voz: WAV montado com 1 canal, 16 bits e 16 kHz")
+    confere_voz(voz.segundos_do_wav(wav) > 0,
+                "voz: segundos_do_wav() le a duracao")
+    confere_voz(voz.wav_tem_som(wav),
+                "voz: wav_tem_som() reconhece audio com voz")
+    confere_voz(not voz.wav_tem_som(b""),
+                "voz: wav_tem_som() diz que nao ha nada em audio vazio")
+    confere_voz(not voz.wav_tem_som(
+        voz._para_wav(silencio.tobytes())),
+        "voz: wav_tem_som() diz que nao ha nada em silencio")
+
+    # --- transcrever com um cliente falso (nao chama a internet) -----------
+    class _ParteFalsa(object):
+        def __init__(self, texto=None):
+            self.text = texto
+
+    class _RespostaFalsa(object):
+        def __init__(self, texto):
+            self.text = texto
+            self.candidates = []
+
+    class _ModelsFalsos(object):
+        def __init__(self, respostas):
+            self.respostas = dict(respostas)
+            self.chamados = []
+
+        def generate_content(self, model, contents, config=None):
+            self.chamados.append(model)
+            if model not in self.respostas:
+                raise RuntimeError("modelo %s fora do ar" % model)
+            return _RespostaFalsa(self.respostas[model])
+
+    class _ClienteFalso(object):
+        """Mesma forma do cliente do Gemini: cliente.models.generate_content."""
+
+        def __init__(self, respostas):
+            self.models = _ModelsFalsos(respostas)
+
+    cliente_1 = _ClienteFalso({"m1": "qual o seu nome?"})
+    confere_voz(voz.transcrever(cliente_1, ["m1"], wav) == "qual o seu nome?",
+                "voz: transcrever() devolve o texto falado")
+
+    cliente_2 = _ClienteFalso({"m2": "tudo bem"})
+    confere_voz(voz.transcrever(cliente_2, ["m1", "m2"], wav) == "tudo bem",
+                "voz: transcrever() tenta o proximo modelo quando um falha")
+    confere_voz(cliente_2.models.chamados == ["m1", "m2"],
+                "voz: transcrever() guarda a ordem dos modelos")
+
+    try:
+        voz.transcrever(_ClienteFalso({}), ["m1"], wav)
+        confere_voz(False, "voz: transcrever() avisa quando nenhum modelo responde")
+    except RuntimeError:
+        ok("voz: transcrever() avisa quando nenhum modelo responde")
+
+    try:
+        voz.transcrever(_ClienteFalso({"m1": "x"}), ["m1"], b"")
+        confere_voz(False, "voz: transcrever() recusa audio vazio")
+    except RuntimeError:
+        ok("voz: transcrever() recusa audio vazio")
+
+    # O teste de "tem voz?" tem que aceitar voz fraca (pessoa longe do
+    # microfone) e recusar so o ruido de fundo. Montamos os dois casos.
+    def _wav_de(trechos):
+        partes = []
+        for nivel, amostras in trechos:
+            partes.append(array.array(
+                "h", [int(nivel if i % 2 else -nivel)
+                      for i in range(amostras)]).tobytes())
+        return voz._para_wav(b"".join(partes))
+
+    # Niveis tirados da medicao real: microfone parado fica em ~5-20 e a
+    # voz passando por ele passa de 400.
+    voz_fraca = _wav_de([(450, 8000), (18, 8000), (420, 8000)])
+    so_ruido = _wav_de([(12, 8000), (14, 8000), (11, 8000)])
+    confere_voz(voz.wav_tem_som(voz_fraca),
+                "voz: wav_tem_som() aceita voz fraca entre pausas")
+    confere_voz(not voz.wav_tem_som(so_ruido),
+                "voz: wav_tem_som() recusa so ruido de fundo")
+
+    # quando o campo .text vem vazio, tem que remontar pelas partes
+    class _RespostaEmPartes(object):
+        text = ""
+        candidates = []
+
+    class _Conteudo(object):
+        parts = [_ParteFalsa("bom dia")]
+
+    class _Candidato(object):
+        content = _Conteudo()
+
+    _RespostaEmPartes.candidates = [_Candidato()]
+
+    class _ModelsEmPartes(object):
+        def generate_content(self, model, contents, config=None):
+            return _RespostaEmPartes()
+
+    class _ClienteEmPartes(object):
+        models = _ModelsEmPartes()
+
+    confere_voz(
+        voz.transcrever(_ClienteEmPartes(), ["m1"], wav) == "bom dia",
+        "voz: transcrever() remonta o texto quando .text vem vazio")
+except Exception as erro:
+    falha("os testes de voz quebraram: %r" % (erro,))
     print(traceback.format_exc()[-900:])
 
 print()

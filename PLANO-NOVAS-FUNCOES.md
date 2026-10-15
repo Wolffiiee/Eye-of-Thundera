@@ -20,6 +20,13 @@ em português simples.
 - Para ver a tela: rode o app num script, ponha a janela `-topmost` e use
   `PIL.ImageGrab.grab(bbox=...)` com `SetProcessDpiAwareness(1)`. Sem
   `-topmost` o print pega outras janelas.
+- **Janela de teste sempre no SEGUNDO monitor:** ele começa em X=1920 e vai
+  até X=3840. Coloque a janela em `+2000+100` (ou maior) para não cobrir a
+  tela que o Wolf está usando. No `verificar.py` isso já está resolvido:
+  `POSICAO_TESTE = "+2000+100"`. Ao abrir o `.exe` para testar, lembre que
+  o PyInstaller abre um processo filho: procure a janela pelo nome
+  ("Pesquisa IA") em todos os processos, não pelo `MainWindowHandle` do
+  processo que você iniciou.
 
 ## 1. O que existe hoje (e o que está ruim)
 - `_quer_pesquisa(pergunta)` decide por palavras soltas: qualquer "como",
@@ -158,6 +165,17 @@ tem a chave; sem conta nova, sem baixar modelo pesado).
   do WAV (cabeçalho, taxa, duração).
 - Alternativa se algo falhar: o ditado do próprio Windows (Win+H) funciona em
   qualquer caixa de texto, sem código.
+
+### B — FEITA em 15/10/2026
+Tudo acima foi feito (veja o `HISTORICO-DE-MUDANCAS.md`). Duas coisas
+mudaram em relação ao texto original, porque o teste mostrou que eram
+necessárias:
+- **O que conta como "não ouvi nada"** não é só o volume baixo. Medindo o
+  microfone do Wolf, parado ele fica em 5 a 20 (RMS) — e um fone ligado
+  perto dele dá um número parecido. Então `wav_tem_som()` agora exige duas
+  coisas: volume acima de 60 **e** um trecho pelo menos 8x mais forte que
+  o trecho mais fraco da própria gravação (o silêncio entre as palavras).
+- **Falta só o teste do Wolf falando de verdade** dentro do `.exe`.
 
 ## 4. TAREFA C: interface mais limpa (estilo Claude)
 A paleta escura já é boa; não trocar as cores. Melhorar:

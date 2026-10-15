@@ -135,12 +135,29 @@ dentro para afinar. Os títulos se ajustam sozinhos ao novo tamanho. Assim a con
 A resposta aparece letra a letra, com um cursor piscando no fim,
 igual aos aplicativos de conversa modernos.
 
+Falar em vez de digitar:
+
+Tem um botão de microfone ao lado do botão de enviar. Clique nele para
+começar a gravar e clique de novo para parar (o atalho é Ctrl+M).
+
+  - enquanto grava, o botão fica vermelho e o aviso embaixo da conversa
+    diz que está ouvindo;
+  - a gravação para sozinha depois de 2 minutos;
+  - depois de parar, o que você falou aparece escrito na caixa de digitar,
+    para você conferir e corrigir antes de apertar Enter. Não é enviado
+    sozinho (se quiser assim, ligue a opção em Configurações);
+  - se você só respirou e não falou nada, o programa avisa "Não ouvi nada"
+    e não gasta nenhuma chamada de IA;
+  - se o Windows reclamar do microfone, vá em Configurações > Privacidade
+    e ative o acesso ao microfone para aplicativos de desktop.
+
 Atalhos de teclado:
 
   - Enter          -> envia a pergunta.
   - Shift + Enter  -> quebra a linha sem enviar.
   - F5             -> começa uma conversa nova.
   - Ctrl + B       -> mostra/esconde a barra da esquerda.
+  - Ctrl + M       -> liga/desliga a gravação do microfone.
 
 
 ========================================================
@@ -207,6 +224,13 @@ Atalhos de teclado:
     %LOCALAPPDATA%\PesquisaIA\memoria.json     (o que ela sabe de você)
   Nada é enviado para lugar nenhum além dos serviços de IA (para a IA
   responder, como sempre).
+
+"Preciso falar a pergunta?"
+  Sim. Tem um botão de microfone ao lado do botão de enviar (ou Ctrl+M).
+  Clique para gravar, clique de novo para parar. O que você falou aparece
+  escrito na caixa de digitar para você conferir antes de enviar. Usa a
+  sua chave do Gemini de sempre, sem conta nova e sem baixar nada.
+  A gravação para sozinha depois de 2 minutos.
 
 "Como faço para ver imagens?"
   Escreva o pedido começando por "imagens de..." ou "fotos de...". Por

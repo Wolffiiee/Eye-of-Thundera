@@ -20,12 +20,26 @@ chaves) ficam em `%LOCALAPPDATA%\PesquisaIA\` e NUNCA entram no projeto.
 
 ## Mapa dos arquivos
 - `pesquisa_ia.py` — o programa inteiro.
+- `roteador.py` — decide se a mensagem é papo ou pesquisa (não importa o programa).
+- `voz.py` — grava o microfone e transcreve com o Gemini (não importa o programa).
 - `verificar.py` / `verificar.bat` — a conferência automática (obrigatória).
 - `3 - Gerar EXE.bat` + `Pesquisa IA.spec` — geram `dist\Pesquisa IA.exe`.
 - `1 - Instalar.bat`, `2 - Abrir Pesquisa IA.bat` — instalar e abrir.
 - `requirements.txt` (programa) e `requirements-dev.txt` (ferramentas).
 - `.venv\` — ambiente Python (não editar, não versionar).
 - `_arquivo_morto\` — coisas antigas guardadas; ignorar, não usar.
+- `_tmp\` — sobras dos testes (prints, áudios). Ignorada pelo Git; quando
+  acabar o trabalho, pode esvaziar.
+
+## Tela de teste: sempre no SEGUNDO monitor
+O segundo monitor do Wolf começa em **X=1920** (vai até X=3840). Qualquer
+janela de teste ou `.exe` aberto para conferir precisa nascer em `X >= 1950`
+(ex.: `+2000+100`), **nunca** no monitor principal, que é onde ele está
+trabalhando.
+- No `verificar.py` isso já está pronto: `POSICAO_TESTE = "+2000+100"`.
+- Para abrir o `.exe`: o PyInstaller sobe um processo filho, então o
+  `MainWindowHandle` do processo iniciado fica vazio. procure a janela pelo
+  TÍTULO ("Pesquisa IA") em todos os processos e mova com `SetWindowPos`.
 
 ## Regras de trabalho (obrigatórias)
 1. Leia `git status` e `git log --oneline -5` antes de começar. Se houver
@@ -67,6 +81,14 @@ chaves) ficam em `%LOCALAPPDATA%\PesquisaIA\` e NUNCA entram no projeto.
   `_despachar_clique(event)` à mão.
 - **Opção `fg` em Canvas:** Canvas não aceita `fg` (`unknown option "-fg"`
   já aconteceu). Em Canvas use `itemconfigure`.
+- **Nome de parâmetro tem que ser igual:** o Python 3 aceita acento em
+  identificadores, então um `cor_bolao` escrito `cor_bolão` passa ileso
+  na hora de compilar, mas o `pyflakes` acusa "undefined name" e o
+  `verificar.py` trava. Confira o nome byte a byte.
+- **`PIL.ImageGrab` em tela com dois monitores:** para conferir o desenho
+  de um botão, é mais seguro gerar o PNG direto com o Pillow (mesma arte
+  da função `_foto_*`) do que tentar capturar a tela — `ImageGrab` no
+  segundo monitor devolveu imagem preta.
 - **Erros escondidos:** erro dentro de botão/evento não derruba o programa;
   vai para o `erro.log`. O `verificar.py` captura esses erros durante o
   teste (`report_callback_exception`).

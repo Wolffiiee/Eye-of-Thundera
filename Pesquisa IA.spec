@@ -8,6 +8,13 @@ tmp_ret = collect_all('spellchecker')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 tmp_ret = collect_all('ddgs')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+# O microfone precisa das DLLs do PortAudio que vem dentro da propria
+# biblioteca sounddevice (_sounddevice_data). Sem isso o .exe abre mas o
+# botao de microfone reclama que nao ha som.
+tmp_ret = collect_all('sounddevice')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_ret = collect_all('_sounddevice_data')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(

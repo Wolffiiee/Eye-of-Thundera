@@ -11,6 +11,13 @@ dist/
 # arquivos antigos guardados so por seguranca (scripts de teste velhos, backups)
 _arquivo_morto/
 
+# pasta de sobras dos testes (prints, audios, scripts de teste). O que
+# sobrar aqui e temporario e NAO entra no historico do Git.
+_tmp/
+
+# configuracao de outras IAs que trabalham neste computador (nao e do projeto)
+.codex/
+
 # cache do Python
 __pycache__/
 *.pyc

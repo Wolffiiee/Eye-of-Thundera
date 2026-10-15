@@ -31,6 +31,7 @@ import tkinter.ttk as ttk
 from tkinter import filedialog, messagebox
 
 import roteador
+import voz
 
 # Pillow é usado para mostrar as imagens na conversa. Se ele não estiver
 # instalado, o programa funciona normalmente (só não mostra imagens).
@@ -204,6 +205,14 @@ COR_ENVIAR_HOVER = (156, 156, 162) # um tom acima quando o mouse passa
 COR_ENVIAR_TRACO = (16, 16, 20)    # o aviao, na cor do traco da lupa
 AVIAO_XY = (10, 11, 26, 18, 10, 25, 15.5, 18)
 
+# Botao do microfone: mesma bolha cinza do enviar, so que parada e vermelha
+# enquanto esta gravando.
+COR_MIC = (134, 134, 141)
+COR_MIC_HOVER = (156, 156, 162)
+COR_MIC_GRAVANDO = (214, 69, 69)
+COR_MIC_GRAVANDO_HOVER = (231, 93, 93)
+COR_MIC_TRACO = (16, 16, 20)
+
 
 # ----------------------------------------------------------------------------
 # Configuracao (chave da API salva no computador)
@@ -229,6 +238,7 @@ def carregar_config():
     cfg.setdefault("usar_plano_b", True)
     cfg.setdefault("modo_pesquisa", "auto")
     cfg.setdefault("aprender", True)
+    cfg.setdefault("voz_enviar", False)
     for _servico in SERVICOS_RESERVA:
         cfg.setdefault(_servico["campo_chave"], "")
 
@@ -1684,6 +1694,7 @@ def _arquivo_icone():
 # a cada mensagem (nem apagados pelo "coletor de lixo" do Python).
 _FOTOS_IA = {}
 _FOTOS_ENVIO = {}
+_FOTOS_MIC = {}
 
 
 def anda(widget):
@@ -1726,6 +1737,53 @@ def _foto_enviar(cor_bolao, tamanho=36):
     except Exception:
         return None
     _FOTOS_ENVIO[chave] = foto
+    return foto
+
+
+def _foto_mic(cor_bolhao, tamanho=36):
+    """Imagem do botao do microfone (bolha + microfone de lapis).
+
+    Mesma técnica do botão de enviar: desenhado com o Pillow e reduzido,
+    para a borda não ficar serrilhada. Sem Pillow, devolve None e o botão
+    passa a ser desenhado no Canvas (funciona igual, só fica mais "grosseiro").
+    """
+    if not TEM_PIL or ImageTk is None:
+        return None
+    chave = (tuple(cor_bolhao), int(tamanho))
+    if chave in _FOTOS_MIC:
+        return _FOTOS_MIC[chave]
+    try:
+        n = int(tamanho)
+        ss = n * 4
+        imagem = Image.new("RGBA", (ss, ss), (0, 0, 0, 0))
+        desenho = ImageDraw.Draw(imagem)
+        f = ss / 36.0
+        desenho.ellipse(
+            [2 * f, 2 * f, 34 * f, 34 * f],
+            fill=tuple(cor_bolhao) + (255,),
+        )
+        traco = tuple(COR_MIC_TRACO) + (255,)
+        # a "cabeca" do microfone: uma capsula arredondada
+        desenho.rounded_rectangle(
+            [14.5 * f, 8 * f, 21.5 * f, 20 * f], radius=3.5 * f, fill=traco,
+        )
+        # o suporte: um arco em U, embaixo da cabeca
+        espessura = max(1, int(round(1.6 * f)))
+        desenho.arc(
+            [10.5 * f, 13 * f, 25.5 * f, 25 * f],
+            start=0, end=180, fill=traco, width=espessura,
+        )
+        # a base: uma haste e o pe
+        desenho.line(
+            [18 * f, 25 * f, 18 * f, 28 * f], fill=traco, width=espessura,
+        )
+        desenho.line(
+            [14 * f, 28.5 * f, 22 * f, 28.5 * f], fill=traco, width=espessura,
+        )
+        foto = ImageTk.PhotoImage(imagem.resize((n, n), Image.LANCZOS))
+    except Exception:
+        return None
+    _FOTOS_MIC[chave] = foto
     return foto
 
 
@@ -2421,6 +2479,10 @@ class Aplicativo:
         self.mensagens = []
         self.fila = queue.Queue()
         self.ocupado = False
+        # Microfone: None quando não está gravando.
+        self.gravando = False
+        self._gravador = None
+        self._mic_id = None
         self.animacao_id = None
         self.animacao_passo = 0
         self._pontos_digitando = []
@@ -2661,6 +2723,7 @@ class Aplicativo:
         self.raiz.bind_all("<MouseWheel>", self._rolar)
         self.raiz.bind("<F5>", lambda _e: self._nova_conversa())
         self.raiz.bind("<Control-b>", lambda _e: self._alternar_lateral())
+        self.raiz.bind("<Control-m>", lambda _e: self._alternar_mic())
 
     def _montar_rodape(self):
         rodape = tk.Frame(self.principal, bg=COR_FUNDO)
@@ -2699,8 +2762,24 @@ class Aplicativo:
         self._desenhar_enviar(COR_ENVIAR)
         # pacote botao ANTES da entrada, assim o Tk reserva espaço para ele
         # e não o encolhe quando a janela encurta ao mínimo
-        self.botao_enviar.pack(side="right", padx=8, pady=7)
+        self.botao_enviar.pack(side="right", padx=(0, 4), pady=7)
+        self.botao_mic = tk.Canvas(
+            caixa, width=36, height=36, bg=COR_BARRA,
+            highlightthickness=0, bd=0, cursor="hand2",
+        )
+        self._desenhar_mic(COR_MIC)
+        # Mesmo truque do enviar: o pacote ANTES da entrada, para o Tk
+        # reservar a largura dele e nao encolher a caixa ao encolher.
+        self.botao_mic.pack(side="right", padx=(0, 8), pady=7)
         self.entrada.pack(side="left", fill="both", expand=True)
+
+        self.botao_mic.bind("<Enter>", lambda e: self._desenhar_mic(
+            COR_MIC_GRAVANDO_HOVER if self.gravando else COR_MIC_HOVER))
+        self.botao_mic.bind("<Leave>", lambda e: self._desenhar_mic(
+            COR_MIC_GRAVANDO if self.gravando else COR_MIC))
+        self.botao_mic.bind("<Button-1>", lambda e: self._alternar_mic())
+        self.botao_mic.bind("<Configure>", lambda e: self._desenhar_mic(
+            COR_MIC_GRAVANDO if self.gravando else COR_MIC))
 
         self.entrada.bind("<Return>", self._ao_enter)
         self.entrada.bind("<KeyRelease>", self._ao_digitar)
@@ -2799,6 +2878,153 @@ class Aplicativo:
         self.botao_enviar.create_polygon(
             AVIAO_XY, fill=cor_aviao, outline="",
         )
+
+    # -- microfone: gravar e transcrever ------------------------------------
+
+    def _desenhar_mic(self, cor):
+        """Desenha o botao do microfone (mesma arte do botao de enviar)."""
+        if (getattr(self, "_cor_mic_atual", None) == cor
+                and self.botao_mic.find_all()):
+            return
+        self._cor_mic_atual = cor
+
+        foto = _foto_mic(cor)
+        if foto is not None:
+            self._foto_mic_atual = foto
+            item = getattr(self, "_item_mic", None)
+            if item is not None:
+                try:
+                    self.botao_mic.itemconfigure(item, image=foto)
+                    return
+                except tk.TclError:
+                    pass
+            self.botao_mic.delete("all")
+            self._item_mic = self.botao_mic.create_image(18, 18, image=foto)
+            return
+
+        # Sem Pillow: desenha direto no Canvas (fica serrilhado, mas funciona)
+        self.botao_mic.delete("all")
+        self._item_mic = None
+        traco = "#%02x%02x%02x" % COR_MIC_TRACO
+        self.botao_mic.create_oval(2, 2, 34, 34, fill="#%02x%02x%02x" % cor,
+                                   outline="")
+        self.botao_mic.create_line(18, 8, 18, 20, fill=traco, width=3)
+        self.botao_mic.create_arc(11, 13, 25, 25, start=0, extent=180,
+                                  style="arc", outline=traco, width=2)
+        self.botao_mic.create_line(18, 25, 18, 28, fill=traco, width=2)
+        self.botao_mic.create_line(14, 28, 22, 28, fill=traco, width=2)
+
+    def _parar_pulsar_mic(self):
+        """Cancela a animação de pulsar do botão (usada ao parar de gravar)."""
+        if self._mic_id is not None:
+            try:
+                self.raiz.after_cancel(self._mic_id)
+            except Exception:
+                pass
+            self._mic_id = None
+
+    def _pulsar_mic(self):
+        """Faz a bolha do microfone piscar devagar enquanto grava."""
+        self._mic_id = None
+        if not self.gravando:
+            return
+        atual = getattr(self, "_cor_mic_atual", None)
+        if atual == COR_MIC_GRAVANDO:
+            self._desenhar_mic(COR_MIC_GRAVANDO_HOVER)
+        else:
+            self._desenhar_mic(COR_MIC_GRAVANDO)
+        self._mic_id = self.raiz.after(700, self._pulsar_mic)
+
+    def _alternar_mic(self):
+        """Um clique começa a gravar; o clique seguinte para e transcreve."""
+        if self.ocupado:
+            return
+        if self.gravando:
+            self._parar_gravacao()
+        else:
+            self._comecar_gravacao()
+
+    def _comecar_gravacao(self):
+        """Liga o microfone. Avisa em português qualquer problema."""
+        if not voz.TEM_SOM:
+            self._definir_status(
+                "Este programa foi montado sem a biblioteca de som. Rode "
+                "'1 - Instalar.bat' de novo para o microfone funcionar.",
+                COR_ERRO_TX,
+            )
+            return
+        if not voz.microfone_disponivel():
+            self._definir_status(
+                "Não achei nenhum microfone ligado neste computador.",
+                COR_ERRO_TX,
+            )
+            return
+        chave = self.cfg.get("api_key", "").strip()
+        if not chave:
+            self._definir_status(
+                "Cole a sua chave de API antes de falar a pergunta.",
+                COR_ERRO_TX,
+            )
+            self._abrir_config()
+            return
+
+        gravador = voz.Gravador()
+        try:
+            gravador.iniciar()
+        except Exception as erro:
+            self._definir_status(voz.microfone_erro(erro), COR_ERRO_TX)
+            return
+
+        self._gravador = gravador
+        self.gravando = True
+        self._desenhar_mic(COR_MIC_GRAVANDO)
+        self.botao_mic.configure(cursor="arrow")
+        self._pulsar_mic()
+        self._definir_status(
+            "Ouvindo... clique de novo no microfone (ou Ctrl+M) para parar.",
+            COR_OK,
+        )
+
+    def _parar_gravacao(self):
+        """Para de gravar e manda o áudio para a IA transcrever."""
+        gravador = self._gravador
+        self._gravador = None
+        self.gravando = False
+        self._parar_pulsar_mic()
+        self._desenhar_mic(COR_MIC)
+        self.botao_mic.configure(cursor="hand2")
+
+        if gravador is None:
+            self._definir_status("")
+            return
+
+        try:
+            wav = gravador.parar()
+        except Exception as erro:
+            self._definir_status(voz.microfone_erro(erro), COR_ERRO_TX)
+            return
+
+        if not voz.wav_tem_som(wav):
+            self._definir_status("Não ouvi nada. Tente de novo, mais perto "
+                                 "do microfone.", COR_ERRO_TX)
+            return
+
+        self._definir_ocupado(True)
+        self._definir_status("Ouvindo... transcrevendo o que você falou...")
+
+        chave = self.cfg.get("api_key", "").strip()
+        modelo = self.cfg.get("modelo", MODELO_PADRAO)
+        modelos = [modelo] + [m for m in MODELOS_RESERVA if m != modelo]
+
+        def tarefa():
+            try:
+                cliente = _criar_cliente(chave)
+                texto = voz.transcrever(cliente, modelos, wav)
+                self.fila.put(("voz", texto))
+            except Exception as erro:
+                self.fila.put(("voz_erro", self._traduzir_erro(erro)))
+
+        threading.Thread(target=tarefa, daemon=True).start()
 
     # -- utilidades ---------------------------------------------------------
 
@@ -4060,6 +4286,8 @@ class Aplicativo:
         estado = "disabled" if ocupado else "normal"
         self.entrada.configure(state=estado)
         self.botao_enviar.configure(cursor="arrow" if ocupado else "hand2")
+        self.botao_mic.configure(
+            cursor="arrow" if (ocupado or self.gravando) else "hand2")
         if not ocupado:
             self.entrada.focus_set()
 
@@ -4361,6 +4589,7 @@ class Aplicativo:
             self.cfg["usar_contexto"] = bool(self.var_contexto.get())
             self.cfg["corretor"] = bool(self.var_corretor.get())
             self.cfg["usar_plano_b"] = bool(self.var_plano_b.get())
+            self.cfg["voz_enviar"] = bool(self.var_voz_enviar.get())
             for campo, variavel in vars_reserva.items():
                 self.cfg[campo] = variavel.get().strip()
             try:
@@ -4424,6 +4653,34 @@ class Aplicativo:
             corpo,
             text="Corretor ortográfico do português (sublinha palavras erradas)",
             variable=self.var_corretor, bg=COR_FUNDO, fg=COR_TEXTO_2,
+            selectcolor=COR_BARRA, activebackground=COR_FUNDO,
+            activeforeground=COR_TEXTO, font=(FONTE, 9),
+            highlightthickness=0, bd=0, wraplength=540, justify="left",
+        ).pack(anchor="w", pady=(10, 0))
+
+        # ---- voz: microfone ----
+        tk.Label(
+            corpo, text="Voz (opcional)", bg=COR_FUNDO, fg=COR_TEXTO_2,
+            font=(FONTE, 10, "bold"),
+        ).pack(anchor="w", pady=(24, 6))
+        tk.Label(
+            corpo,
+            text="Fale a pergunta usando o microfone (ao lado do botão de "
+                 "enviar, ou Ctrl+M). O que você falar aparece escrito na "
+                 "caixa para você conferir antes de enviar."
+            + ("" if voz.microfone_disponivel() else
+               "\n\nEste computador não está com microfone disponível, ou a "
+               "biblioteca de som não está instalada."),
+            bg=COR_FUNDO, fg=COR_TEXTO_2, font=(FONTE, 9),
+            wraplength=540, justify="left",
+        ).pack(anchor="w")
+
+        self.var_voz_enviar = tk.BooleanVar(
+            value=bool(self.cfg.get("voz_enviar", False)))
+        tk.Checkbutton(
+            corpo,
+            text="Enviar sozinho depois de falar (sem conferir o texto)",
+            variable=self.var_voz_enviar, bg=COR_FUNDO, fg=COR_TEXTO_2,
             selectcolor=COR_BARRA, activebackground=COR_FUNDO,
             activeforeground=COR_TEXTO, font=(FONTE, 9),
             highlightthickness=0, bd=0, wraplength=540, justify="left",
@@ -4806,11 +5063,27 @@ class Aplicativo:
             "você continua guardado (veja a aba Memória).",
         )
         bloco(
+            "Falar em vez de digitar",
+            "Tem um botão de microfone ao lado do botão de enviar. "
+            "Clique nele para começar a gravar e clique de novo para parar "
+            "(o atalho é Ctrl+M).\n\n"
+            "Enquanto grava, o botão fica vermelho e o aviso embaixo da "
+            "conversa diz que está ouvindo. A gravação para sozinha depois "
+            "de 2 minutos.\n\n"
+            "Depois de parar, o que você falou aparece escrito na caixa de "
+            "digitar, para você conferir e corrigir antes de apertar Enter. "
+            "Se preferir que envie sozinho, ligue a opção nas Configurações.\n\n"
+            "Se o Windows reclamar do microfone, vá em Configurações > "
+            "Privacidade e ative o acesso ao microfone para aplicativos de "
+            "desktop.",
+        )
+        bloco(
             "Atalhos",
             "Enter envia a pergunta.\n"
             "Shift+Enter quebra a linha sem enviar.\n"
             "F5 começa uma conversa nova.\n"
-            "Ctrl+B mostra ou esconde a barra da esquerda.",
+            "Ctrl+B mostra ou esconde a barra da esquerda.\n"
+            "Ctrl+M liga e desliga a gravação do microfone.",
         )
         bloco(
             "Tudo é gratuito",
@@ -5141,6 +5414,10 @@ class Aplicativo:
         self.mensagens = []
         self._id_conversa = None
         self._parar_digitando()
+        # Se a pessoa estava falando quando apertou F5, a gravacao para
+        # (o microfone nao pode ficar ligado em silencio para sempre).
+        if self.gravando:
+            self._parar_gravacao()
         self._definir_ocupado(False)
         self._renderizar()
         self._atualizar_status_chave()
@@ -5266,6 +5543,34 @@ class Aplicativo:
 
         if tipo == "etapa":
             self._definir_status(item[1] + "...")
+            return
+
+        if tipo == "voz":
+            # Texto falado: entra na caixa de digitar NA POSICAO DO CURSOR,
+            # sem mandar sozinho (a pessoa ve antes e pode corrigir).
+            self._definir_ocupado(False)
+            texto = (item[1] or "").strip()
+            if not texto:
+                self._definir_status("Não consegui entender o áudio. Tente "
+                                     "falar mais perto do microfone.",
+                                     COR_ERRO_TX)
+                return
+            try:
+                self.entrada.insert("insert", texto)
+            except Exception:
+                self.entrada.insert("end", texto)
+            self._ajustar_altura()
+            self._ao_digitar()
+            self._definir_status("Pronto! Confira o texto e aperte Enter "
+                                 "para enviar.", COR_OK)
+            if self.cfg.get("voz_enviar", False):
+                self.raiz.after(60, self._enviar)
+            return
+
+        if tipo == "voz_erro":
+            self._definir_ocupado(False)
+            self._definir_status(item[1] or "Não consegui transcrever o áudio.",
+                                 COR_ERRO_TX)
             return
 
         self._parar_digitando()

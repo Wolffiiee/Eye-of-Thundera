@@ -5,6 +5,80 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Tarefa B: falar a pergunta (botão de microfone)
+
+- **Pedido do Wolf:** executar a `PLANO-NOVAS-FUNCOES.md`, Tarefa B.
+- **Baixado:** `sounddevice==0.5.6` (traz o PortAudio junto, sem instalar
+  nada à mão). Versão fixada em `requirements.txt`; `requirements-lock.txt`
+  refeito com `pip freeze`.
+- **Adicionado:** `voz.py` (funções puras, não importa o programa):
+  `microfone_disponivel()`, `microfone_erro()`, `Gravador` (grava 16 kHz
+  mono, monta o WAV, mede o nível, limite de 120 s), `wav_tem_som()`,
+  `segundos_do_wav()` e `transcrever()` (manda o WAV ao Gemini e tenta o
+  próximo modelo se um falhar).
+- **Modificado:** `pesquisa_ia.py`:
+  - novo botão de microfone ao lado do de enviar (mesma arte, feita com
+    Pillow), que fica vermelho pulsando enquanto grava; atalho `Ctrl+M`;
+  - `_comecar_gravacao` / `_parar_gravacao`: avisam em português quando
+    falta a biblioteca, falta microfone, falta a chave ou o Windows
+    bloqueou o acesso; se a gravação não tiver voz, diz "Não ouvi nada"
+    sem gastar chamada da IA;
+  - o texto falado entra na caixa de digitar na posição do cursor e
+    **não** é enviado sozinho (opção `cfg["voz_enviar"]`, padrão
+    desligada, na aba Chave das Configurações);
+  - novos itens de fila `voz` e `voz_erro` tratados em `_tratar_item`;
+  - `_definir_ocupado` cuida também do cursor do microfone, e `F5`
+    (nova conversa) desliga a gravação;
+  - `cfg["voz_enviar"]` com padrão em `carregar_config`;
+  - ajuda atualizada com a nova forma de falar e o atalho `Ctrl+M`.
+- **Modificado:** `Pesquisa IA.spec`: entra `sounddevice` e
+  `_sounddevice_data` (as DLLs do PortAudio), senão o `.exe` abriria sem
+  microfone.
+- **Modificado:** `verificar.py`: 22 testes novos da voz (gravador com
+  fluxo falso, cabeçalho do WAV, "tem voz?" com voz fraca e só ruído,
+  `transcrever` com cliente falso e modelos em queda) e 6 testes de tela
+  (botão existe, fica vermelho, `Ctrl+M` para, texto entra na caixa sem
+  espaço, erro não trava). A janela de teste passou a nascer no **segundo
+  monitor** (`POSICAO_TESTE = "+2000+100"`), para não cobrir a tela do Wolf.
+- **Testado de verdade:** microfone gravado por 4 s (o `sounddevice` achou
+  o aparelho) e um WAV gerado pelo Windows foi transcrito pelo Gemini:
+  "Qual e o melhor jogo de God of War?" virou "Qual é o melhor jogo de
+  God of War?".
+- **Medido no microfone do Wolf:** parado o volume fica em 5 a 20; por
+  isso `wav_tem_som` exige volume acima de 60 **e** um trecho pelo menos
+  8x mais forte que o mais fraco (senão um fone ligado perto do
+  microfone seria confundido com voz).
+- **Não testado:** ouvir a sua voz de verdade e ver o texto transcrito
+  aparecer na caixa (precisa de alguém falando; num teste anterior o
+  microfone do Wolf quase não pegou o áudio do alto-falante, então o
+  volume medido foi baixo). O botão com o mouse passando em cima só foi
+  conferido no desenho, não na tela.
+- **Limpeza:** sobras da Tarefa A (`_tmp\capturar.py`, `_tmp\patch1.py`)
+  foram para `_arquivo_morto\_tmp_sobras\`, e a `_tmp\` agora é ignorada
+  pelo Git.
+- **Testado de verdade no `.exe`:** janela aberta no segundo monitor,
+  clique no microfone -> botão fica vermelho e aparece "Ouvindo... clique
+  de novo no microfone (ou Ctrl+M) para parar"; segundo clique -> botão
+  volta ao cinza e, como ninguém falou, aparece "Não ouvi nada. Tente de
+  novo, mais perto do microfone." (exatamente o comportamento combinado).
+  `erro.log` não apareceu.
+- **Testado:** `verificar.py` = TUDO CERTO. `.exe` novo gerado e copiado
+  para a Área de Trabalho.
+
+---
+
+## 2026-10-15 — .exe atualizado (Tarefa A e correção dos três pontinhos)
+
+- **O que era:** o atalho da Área de Trabalho era de 15/10 03:30, sem a
+  Tarefa A (roteador) e sem a correção dos três pontinhos da lista de
+  conversas.
+- **O que foi feito:** `3 - Gerar EXE.bat` (verificar + PyInstaller),
+  `.exe` aberto por 13 s no segundo monitor sem criar `erro.log`, e o
+  antigo foi para `_arquivo_morto\Pesquisa IA - antes da Tarefa B
+  (15-10 03-30).exe`.
+
+---
+
 ## 2026-10-15 — Tarefa A: amigo que só pesquisa quando precisa
 
 - **Pedido do Wolf:** executar o `PLANO-NOVAS-FUNCOES.md`, Tarefa A.
