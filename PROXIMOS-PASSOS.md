@@ -40,6 +40,43 @@ Se algo falhar, leia o `erro.log` (no `.exe`: `%LOCALAPPDATA%\PesquisaIA\`;
 rodando pelo código: na pasta do projeto) e siga o PASSO-A-PASSO.md.
 
 ## O que ainda falta construir (ordem sugerida pelo Wolf em 15/10/2026)
+
+### ORDEM NOVA (Claude, 15/10 à noite): siga esta; a lista antiga logo abaixo
+### fica só como histórico. Já feitos: backup, salvar .txt, Tarefas A, B e C.
+1. **Memória sem repetição** (pedido do Wolf: "não guardar várias vezes o
+   mesmo tipo de informação, ex. prefere ser chamado de Wolf"). O arquivo
+   `memoria.py` JÁ EXISTE e está testado (`python memoria.py` = TUDO CERTO),
+   só falta ligar no `pesquisa_ia.py` (tudo local, custo de token zero):
+   a. `import memoria`.
+   b. `_mesclar_memoria(novos)`: `nova, mudou = memoria.mesclar(
+      carregar_memoria(), novos)`; se `mudou`, `salvar_memoria(nova)`;
+      devolver `nova`. (Troca a regra antiga, que só pegava texto idêntico
+      ou contido.)
+   c. `salvar_memoria`: guardar as ÚLTIMAS `MAX_MEMORIAS` (`[-MAX_MEMORIAS:]`).
+      Hoje é `[:MAX_MEMORIAS]`: quando enche, o programa para de aprender.
+   d. `aprender_com_o_usuario`: junto com a conversa, mandar ao modelo o que
+      já está guardado (últimos 60 fatos, 120 caracteres cada) com o aviso
+      "JÁ GUARDADO: não repita nem reescreva de outro jeito; devolva só o
+      que for NOVO ou uma CORREÇÃO. Se não houver, responda NADA".
+   e. Ao abrir o programa: `memoria.consolidar(carregar_memoria())`; se mudou,
+      copiar antes o `memoria.json` para `memoria_antes_de_organizar.json`
+      (só se essa cópia ainda não existir) e salvar. Isso limpa a memória que
+      já está cheia de repetição.
+   f. `verificar.py`: chamar `memoria.autoteste()` (lista vazia = [OK]).
+   g. Na Tarefa D, botão "Organizar" na aba Memória (chama `consolidar`).
+2. **TAREFA D** (Configurações em 4 abas; aba Memória com buscar, editar,
+   adicionar, exportar, interruptor "aprender sozinho" e o botão Organizar).
+3. **Fontes citadas na resposta** (confiança).
+4. **TAREFA E: emojis coloridos** (guia completo no `PLANO-NOVAS-FUNCOES.md`,
+   seção 8; vale ler a E0 para não repetir o erro de antes). Fica depois da D
+   e ANTES de "reescrever em HTML"; se o HTML for aprovado logo, pule a E.
+5. Ideias do `IDEIAS.md` (perguntas para continuar, procurar nas conversas,
+   fixar conversa no topo, letra maior/menor, conversa privada...).
+6. "Gavetas" de memória por assunto (hoje é UMA memória; não confundir com
+   os lugares fixos de nome/cidade/idade do `memoria.py`).
+7. Reescrever a tela em HTML (só no fim, e só se o Wolf quiser).
+
+(lista antiga:)
 1. ~~**Backup do código.**~~ **FEITO em 15/10/2026**: existe o
    `4 - Fazer backup.bat`, que grava o projeto (código + histórico do Git)
    num `.zip` na pasta "Backup Pesquisa IA" do OneDrive (que vai para a

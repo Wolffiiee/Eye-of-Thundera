@@ -5,6 +5,36 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 (noite) - Claude: memória sem repetição (módulo novo), guia dos emojis e conferência
+
+- **Pedido do Wolf:** (1) a memória do app parar de guardar o mesmo tipo de
+  informação várias vezes; (2) o menu dos três pontinhos das conversas não
+  excluía; (3) orientação para trazer os emojis coloridos de volta; (4)
+  conferir se o opencode está indo bem.
+- **Conferido às 18:41:** Git limpo, 10 commits do dia (voz, interface,
+  chave reserva, backup, salvar .txt) e `verificar.bat` = TUDO CERTO.
+- **Corrigido mais cedo (commit 2e31086):** três pontinhos. O mesmo clique
+  que abria a caixinha subia até a janela e a fechava na hora; agora o
+  `fora()` de `_menu_da_conversa` ignora o clique no próprio botão. Teste
+  novo: `testes_lista_de_conversas` (abre, fecha ao clicar fora, exclui a
+  conversa certa).
+- **Adicionado:** `memoria.py` (funções puras): `mesclar`, `consolidar`,
+  `autoteste`. Junta fatos sem repetir: palavras iguais = 1 fato; mais
+  completo troca o simples; contradição troca o antigo; nome/apelido, cidade
+  e idade têm lugar fixo (o mais novo vence); fato de outra pessoa nunca
+  sobrescreve. **NÃO está ligado ainda**: os passos estão em
+  `PROXIMOS-PASSOS.md` (ORDEM NOVA, item 1).
+- **Documentação:** Tarefa E (emojis coloridos) no `PLANO-NOVAS-FUNCOES.md`,
+  armadilha nova no `INSTRUCOES-PARA-IA.md`, lista reorganizada no
+  `PROXIMOS-PASSOS.md`.
+- **Teste de bancada (arquivo apagado depois):** Pillow 12.3.0 desenha emoji
+  colorido da fonte Segoe UI Emoji (`embedded_color=True`); dentro de um
+  `tk.Text` a figurinha fica na linha e quebra com a frase. Sem `raqm` e sem
+  bandeiras no Windows, 👨‍💻 e 🇧🇷 não saem completos (ver E3).
+- **Não mexi no `pesquisa_ia.py`** (o opencode estava trabalhando nele).
+
+---
+
 ## 2026-10-15 — Salvar a resposta em arquivo (.txt)
 
 - **Pedido do Wolf:** item 2 da lista ("hoje só dá pra copiar").

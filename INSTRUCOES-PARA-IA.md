@@ -169,3 +169,11 @@ trabalhando.
   repositório privado (GitHub) ou cópia periódica da pasta.
 - Nomes de modelos Gemini em `MODELOS_RESERVA` não foram conferidos na
   documentação oficial; o programa já tenta o próximo se um falhar.
+
+## Emoji colorido no Tk (armadilha conhecida)
+- O Tk no Windows só desenha emoji em UMA cor. Colorido = figurinha (imagem)
+  no meio de um `tk.Text`, NUNCA por cima de um item de texto do Canvas (foi
+  isso que deslocava tudo em 15/10/2026). Guia completo e testado:
+  `PLANO-NOVAS-FUNCOES.md`, Tarefa E. Não religue emoji sem seguir a Tarefa E.
+- A memória do Wolf não deve repetir fatos: use sempre `memoria.mesclar`
+  (arquivo `memoria.py`), nunca `lista.append` direto.

@@ -242,3 +242,132 @@ Remover do projeto qualquer sobra de teste (pasta `_tmp`, scripts de print).
   `_registrar_clique_global`).
 - Não gravar chave de API em arquivo do projeto, nem imprimir chave em log.
 - Não pesquisar na web a cada mensagem "por garantia".
+
+## 8. TAREFA E: emojis coloridos nas respostas (a volta dos emojis)
+
+Pedido do Wolf (15/10/2026): a IA poder usar emojis coloridos de novo, sem
+eles ficarem fora da bolha nem em cima da escrita. Hoje estão desligados de
+propósito (`_remover_emojis` e o prompt "NÃO use emojis"). Sobraram restos da
+tentativa antiga em `pesquisa_ia.py` (perto da linha 48):
+`CACHE_EMOJI_COLORIDO` e `REFERENCIAS_IMG_EMOJI`; aproveite ou apague.
+
+### E0. Por que deu errado antes (o Claude testou neste PC em 15/10)
+- O Tk do Windows (8.6.15) desenha letras com o sistema antigo do Windows,
+  que só conhece emoji de UMA cor. Não tem como consertar por fonte ou
+  configuração. Emoji colorido precisa entrar como figurinha (imagem).
+- A bolha atual é UM item de texto de Canvas, e o Canvas não aceita imagem no
+  meio do texto. A tentativa antiga desenhou as figurinhas por fora, em
+  posições calculadas "no olho". Quando a linha quebrava ou a letra tinha
+  largura diferente da prevista, a figurinha andava: saía da bolha ou ficava
+  em cima da letra.
+- "HTML": o navegador desenha emoji colorido sozinho, por isso o opencode
+  falou em HTML. É a solução grande (item "reescrever a tela em HTML") e NÃO é
+  necessária para os emojis. `tkinterweb` não serve (usa o desenho de texto do
+  Tk, o mesmo problema).
+
+### E1. Caminho recomendado (testado: fica no lugar e quebra linha certo)
+Trocar o texto da bolha por um `tk.Text` somente leitura, dentro do mesmo
+Canvas arredondado (`create_window`), e pôr cada emoji como imagem NO MEIO do
+texto com `image_create`. A imagem vira parte da linha: quebra com a frase,
+sobe e desce com ela e não sai da bolha.
+```python
+from PIL import Image, ImageDraw, ImageFont, ImageTk
+FONTE_EMOJI = r"C:\Windows\Fonts\seguiemj.ttf"   # já vem com o Windows
+
+def figurinha_de_emoji(emoji, altura):
+    chave = (emoji, altura)
+    if chave not in CACHE_EMOJI_COLORIDO:
+        fonte = ImageFont.truetype(FONTE_EMOJI, 109)       # tamanho fixo
+        img = Image.new("RGBA", (200, 160), (0, 0, 0, 0))
+        ImageDraw.Draw(img).text((10, 10), emoji, font=fonte,
+                                 embedded_color=True)      # <- a cor
+        img = img.crop(img.getbbox())
+        lado = max(img.size)                               # quadrado, centrado
+        quadro = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
+        quadro.paste(img, ((lado - img.width) // 2, (lado - img.height) // 2))
+        foto = ImageTk.PhotoImage(quadro.resize((altura, altura), Image.LANCZOS))
+        CACHE_EMOJI_COLORIDO[chave] = foto   # guardar, senão o Tk apaga a imagem
+    return CACHE_EMOJI_COLORIDO[chave]
+
+# no texto:  texto.image_create("end", image=figurinha_de_emoji("\U0001F3AE", 22),
+#                               align="center", padx=1)
+```
+- Medido aqui: Pillow 12.3.0, FreeType 2.14.3, fonte existe. `altura` = a altura
+  de linha da fonte do texto (`tkfont.Font.metrics("linespace")`), +2 no máximo.
+  `align="center"` ficou bom; ajuste a olho se subir ou descer.
+- Opções do `tk.Text`: `state="disabled"` (depois de inserir), `wrap="word"`,
+  `borderwidth=0`, `highlightthickness=0`, `padx=0`, `pady=0`, `insertwidth=0`,
+  mesma cor e fonte da bolha, `spacing1=2`, `spacing3=2`.
+- Altura da bolha: `texto.count("1.0", "end", "displaylines")` depois de fixar a
+  largura em caracteres (ou `winfo_reqheight()`); refazer quando a janela
+  mudar de tamanho (já existe `_redim_id`). A roda do mouse em cima do Text
+  tem que rolar o CHAT, não o Text.
+- A animação de "digitando" hoje mexe no item de texto do Canvas: portar para
+  inserir no `tk.Text` (cuidado, é a parte que mais quebra).
+
+### E2. Achar os emojis no texto
+Emoji pode ter vários caracteres juntos (bandeira, tom de pele, família, 1️⃣).
+Comece por esta expressão e teste com os casos abaixo:
+```python
+EMOJI_RE = re.compile(
+    "(?:[\U0001F1E6-\U0001F1FF]{2}"                       # bandeira
+    "|[0-9#*]\ufe0f?\u20e3"                               # tecla 1️⃣
+    "|[\U0001F300-\U0001FAFF\u2B50\u2B55\u231A\u231B\u23E9-\u23F3]"
+    "[\ufe0f\U0001F3FB-\U0001F3FF]*"                      # emoji comum + tom
+    "|[\u2600-\u27BF\u2190-\u21FF\u2B05-\u2B07]\ufe0f"  # símbolo SÓ se pedir emoji (FE0F)
+    ")(?:\u200d[\U0001F300-\U0001FAFF\u2640\u2642\u2764]\ufe0f?"
+    "[\U0001F3FB-\U0001F3FF]*)*")
+```
+Tem que continuar TEXTO normal: "•", "–", "→", "✓", "©", "™", "°", "R$", "❤"
+(sem FE0F). Tem que contar como UM emoji: "👍🏽", "❤️", "1️⃣", "🇧🇷", "👨‍💻".
+
+### E3. Limites descobertos (não é bug seu)
+Aqui o Pillow não tem `raqm`, e o Windows não traz bandeiras. Resultado do
+teste: 👨‍💻 (sequência com ZWJ) aparece só como 👨, e 🇧🇷 aparece como as letras
+BR. Escolha:
+- (a) começar simples: se for sequência ZWJ ou bandeira, mostrar o primeiro
+  componente ou o texto. Nunca quebrar.
+- (b) só se o Wolf sentir falta: baixar PNGs do Twemoji (fork `jdecked/twemoji`,
+  licença CC-BY 4.0: dar crédito na aba Ajuda e criar `LICENCAS.md`), só os
+  ~300 mais usados, em `emojis\` com nome = códigos em hexadecimal ligados por
+  "-" (ex.: `1f468-200d-1f4bb.png`), e incluir a pasta em `datas` do `.spec`.
+
+### E4. Copiar e selecionar
+O `tk.Text` seleciona sozinho (arrastar, duplo e triplo clique, Ctrl+A). O
+código de seleção do Canvas das bolhas pode sair, MAS os testes de seleção do
+`verificar.py` devem ser ADAPTADOS ao Text (nunca apagados): clique fora
+desfaz, clique em outra bolha desfaz, duplo clique pega a palavra, triplo pega
+tudo, botão direito copia só a seleção da própria bolha.
+A imagem não tem texto: ao copiar, reconstrua o texto com
+`texto.dump(ini, fim, text=True, image=True)` e um dicionário
+nome-da-imagem para emoji. Ctrl+C, botão direito, botão de copiar e Ctrl+S
+precisam devolver os emojis de verdade.
+
+### E5. Prompts e chave
+- `INSTRUCOES` (modo pesquisa): sem emoji, a menos que o Wolf use.
+  `INSTRUCOES_AMIGO`: "pode usar emoji com moderação (0 a 2 por resposta,
+  só quando combinar com o clima)". Continua proibido asterisco.
+- `_remover_emojis` deixa de ser chamado no texto da IA; fica só para os
+  títulos da barra lateral e nomes de arquivo (`_nome_de_resposta`). O .txt
+  salvo mantém os emojis (UTF-8).
+- Chave `cfg["emojis"]` (padrão ligada) na aba Conversa: desligada, o prompt
+  pede sem emoji e `_remover_emojis` volta a valer.
+
+### E6. Testes novos no `verificar.py`
+- A expressão acima: os casos de E2.
+- `figurinha_de_emoji` devolve imagem com a altura pedida e pixels visíveis.
+- Bolha com "Oi 😀 tudo bem? 🎮": a caixa de cada imagem (`texto.bbox`) fica
+  dentro da linha de texto (±3 px) e o Text inteiro dentro do polígono da
+  bolha; repetir com a linha quebrando exatamente no emoji.
+- Selecionar tudo e copiar devolve o texto original com os emojis.
+- Fonte de emoji ausente (trocar `FONTE_EMOJI` por caminho falso): o emoji
+  aparece como texto e nada quebra.
+- Conferência visual com o Wolf (janela de teste em X >= 1950; para tirar
+  print use `PrintWindow`, regra da seção de tela de teste).
+
+### E7. Ordem e cuidados
+Depois da Tarefa D e antes de "reescrever em HTML". Se o Wolf decidir fazer a
+tela em HTML logo, PULE a Tarefa E (lá o emoji colorido vem de graça).
+Trabalhe numa branch do Git e em passos, cada um com commit e verde:
+1. bolha vira `tk.Text` SEM emoji (igual por fora, testes adaptados) -> é o
+   passo arriscado; 2. figurinhas; 3. prompts e chave; 4. gerar o .exe.
