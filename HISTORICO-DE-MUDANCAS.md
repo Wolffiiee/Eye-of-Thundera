@@ -5,6 +5,40 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Backup do código (cópia de segurança)
+
+- **Pedido do Wolf:** "vou deixar isso na tua mão, faz o que tu achar que
+  vai ser melhor caso aconteça uma catastrofe".
+- **O risco:** o projeto inteiro vivia só neste computador (o Git estava
+  dentro dele). Disco queimado, pasta apagada ou Windows reinstalado e ia
+  junto todo o trabalho.
+- **Adicionado:** `fazer_backup.py` + `4 - Fazer backup.bat`. O script
+  grava o projeto num `.zip` com carimbo de data/hora em
+  `OneDrive\Backup Pesquisa IA\` (que o OneDrive sincroniza com a nuvem),
+  guarda só as 10 cópias mais recentes, e **confere o zip depois de
+  escrever** (abre o arquivo, verifica que não está corrompido e que o
+  `.git/HEAD` está dentro).
+- **O que fica de fora (e por quê):** `.venv` (119 MB), `dist`, `build`,
+  `__pycache__`, `_tmp` e `_arquivo_morto` (470 MB de `.exe` antigos).
+  Nenhum disso é o programa — só dá para reinstalar/regerar.
+- **Limpeza no caminho:** o `.git` tinha **48 MB**, sendo 47 MB num único
+  arquivo órfão (um `.exe` que chegou a ser adicionado e nunca entrou em
+  commit). `git reflog expire` + `git gc` derrubou para **0,5 MB**, sem
+  mexer no histórico (os 30 commits continuam lá e o `verificar.py` segue
+  passando).
+- **Testado de verdade:** o zip foi **descompactado numa pasta vazia** e
+  conferido: todos os arquivos presentes, o `git log` mostrando os 30
+  commits, e `pesquisa_ia.py`, `voz.py`, `roteador.py`, `verificar.py` e
+  `fazer_backup.py` compilando sem erro de sintaxe. Ou seja: o backup
+  restaura de verdade.
+- **Ainda dá para melhorar:** um repositório privado no GitHub daria uma
+  segunda cópia em outro servidor. Precisa de uma conta do Wolf — por
+  isso não foi feito sozinho.
+- **Testado:** `verificar.py` = TUDO CERTO (o script novo entra no
+  pyflakes junto com o resto).
+
+---
+
 ## 2026-10-15 — Botão direito na caixa vazia + menu na tela certa
 
 - **Relato do Wolf:** "o botão direito na caixa de digitar, nada acontece

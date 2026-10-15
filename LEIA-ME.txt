@@ -359,6 +359,15 @@ Arquivos novos:
                               "TUDO CERTO".
   3 - Gerar EXE.bat        -> gera o "Pesquisa IA.exe" novo na pasta "dist".
                               Depois copie para a Área de Trabalho.
+  4 - Fazer backup.bat      -> cópia de segurança: salva o código e todo o
+                              histórico do Git num .zip dentro da pasta
+                              "Backup Pesquisa IA" do seu OneDrive (que vai
+                              para a nuvem). Vale a pena rodar de tempos em
+                              tempos (por exemplo, todo fim de semana, ou
+                              depois de cada coisa grande que o programa
+                              ganhar). Se um dia este computador queimar ou a
+                              pasta for apagada, é só descompactar o .zip e o
+                              programa volta inteiro.
   INSTRUCOES-PARA-IA.md,
   PASSO-A-PASSO.md,
   HISTORICO-DE-MUDANCAS.md -> guias para a IA que programa seguir.

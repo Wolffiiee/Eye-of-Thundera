@@ -40,10 +40,15 @@ Se algo falhar, leia o `erro.log` (no `.exe`: `%LOCALAPPDATA%\PesquisaIA\`;
 rodando pelo código: na pasta do projeto) e siga o PASSO-A-PASSO.md.
 
 ## O que ainda falta construir (ordem sugerida pelo Wolf em 15/10/2026)
-1. **Backup do código.** Hoje tudo está só neste computador (o Git está
-   dentro dele). Se o disco queimar, vai junto. O projeto tem menos de
-   1 MB: ou um repositório privado no GitHub, ou uma cópia da pasta em
-   outro lugar.
+1. ~~**Backup do código.**~~ **FEITO em 15/10/2026**: existe o
+   `4 - Fazer backup.bat`, que grava o projeto (código + histórico do Git)
+   num `.zip` na pasta "Backup Pesquisa IA" do OneDrive (que vai para a
+   nuvem). O backup foi **conferido descompactando o zip**: os 30 commits
+   voltaram e todos os arquivos compilam. Ainda dá para colocar um
+   repositório privado no GitHub (uma segunda cópia, em outro servidor) —
+   só precisa de uma conta do Wolf. Enquanto isso, lembrar de rodar o
+   `4 - Fazer backup.bat` de tempos em tempos.
+   (De quebra: o `.git` tinha 48 MB de lixo; limpo, ficou 0,5 MB.)
 2. **Salvar a resposta em .txt** (hoje só dá pra copiar).
 3. **Fontes citadas na resposta** — a IA já pesquisa e sabe de onde tirou
    cada coisa; hoje ela joga esse rastro fora. É o que dá confiança.
