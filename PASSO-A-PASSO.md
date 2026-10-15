@@ -5,7 +5,7 @@ Este arquivo ensina o MÉTODO. Foi escrito a partir de uma correção real
 
 ## O método (sempre igual)
 
-1. **Entender o relato.** O que o Igor viu, em qual tela, o que esperava.
+1. **Entender o relato.** O que o Wolf viu, em qual tela, o que esperava.
    Se faltar informação essencial, faça UMA pergunta curta.
 2. **Achar a causa no código.** Busque palavras-chave no `pesquisa_ia.py`
    (ex.: `select_from`, `bind_all`, `_criar_bolha`). Leia o trecho inteiro.
@@ -14,10 +14,10 @@ Este arquivo ensina o MÉTODO. Foi escrito a partir de uma correção real
    O Git é o backup (não precisa copiar arquivos).
 4. **Escrever o teste que falha** em `verificar.py` (simule cliques com
    `event_generate`). Se não der para testar (algo só visual), anote como o
-   Igor confere com os olhos.
+   Wolf confere com os olhos.
 5. **Corrigir com a menor mudança possível.** Sem refatorar o resto.
 6. **Rodar `verificar.bat`** até a última linha ser `TUDO CERTO`.
-7. **Se o Igor usa o atalho da Área de Trabalho:** `3 - Gerar EXE.bat` e
+7. **Se o Wolf usa o atalho da Área de Trabalho:** `3 - Gerar EXE.bat` e
    copiar `dist\Pesquisa IA.exe` para a Área de Trabalho.
 8. **Commit** com mensagem clara em português (o quê e por quê).
 9. **Relatar** em português simples: o que estava errado, o que mudou,
@@ -67,7 +67,7 @@ problemático. Nunca reescreva o arquivo todo.
 
 **"Mexeu e quebrou"**
 `git stash` ou `git checkout -- pesquisa_ia.py` volta ao último commit.
-Explique ao Igor o que foi desfeito.
+Explique ao Wolf o que foi desfeito.
 
 ## Comandos úteis (PowerShell, na pasta do projeto)
 

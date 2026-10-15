@@ -5,6 +5,33 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-15 — Duplo/triplo clique, .exe novo e pasta antiga apagada
+
+- **Pedido do Wolf:** fazer tudo que desse, trabalhar só com a pasta nova,
+  apagar a antiga e deixar instruções para outra IA continuar.
+- **Modificado:** `pesquisa_ia.py` (`_criar_bolha`): duplo clique seleciona
+  a palavra, triplo clique seleciona o texto todo da bolha. Ambos limpam as
+  outras seleções e avisam os menus abertos (`_despachar_clique`).
+- **Modificado:** `verificar.py`: dois testes novos (duplo e triplo clique).
+- **Adicionado:** `PROXIMOS-PASSOS.md` (o que falta e o que não foi
+  testado) e `requirements-lock.txt` (`pip freeze` completo do .venv).
+- **Reescrito:** `PROMPT-PARA-A-IA.md` (estado atual, sem a pasta antiga).
+- **Textos:** o usuário agora é chamado de Wolf (apelido) nos guias; o nome de
+  usuário do Windows continua Igor (aparece em caminhos).
+- **Gerado:** `dist\Pesquisa IA.exe` de novo (PyInstaller 6.22.3), copiado
+  para a Área de Trabalho. O anterior foi movido para
+  `_arquivo_morto\Pesquisa IA (Area de Trabalho, antes de 15-10).exe.antigo`.
+  O .exe novo abriu e ficou 12 s aberto sem criar `erro.log`.
+- **Apagado:** o conteúdo da pasta antiga
+  `C:\Users\Igor\OneDrive\Documentos\Projeto Padrão` (autorizado pelo
+  Wolf). Só havia de exclusivo um `erro.log` antigo, sem valor. Uma pasta
+  vazia pode ter sobrado (travada por outro programa); ignorar.
+- **Corrigido neste histórico:** a entrada de 14/10 dizia que a pasta antiga
+  tinha sido renomeada para "(ANTIGO - pode apagar)"; na verdade nunca foi
+  renomeada. Agora foi apagada.
+- **Não testado:** pergunta real à IA e uso longo do .exe.
+
+---
 ## 2026-10-14 — Mudança de pasta, correção de cliques e organização
 
 ### Local do projeto
@@ -13,8 +40,7 @@ baixado/instalado, modificado, adicionado, removido ou movido.
   Motivos: o OneDrive sincronizava a pasta `.venv` (centenas de arquivos,
   lento e pode corromper) e o nome antigo tinha acento (`ã`), que já
   causava texto quebrado em scripts.
-- A pasta antiga ficou como cópia de segurança, renomeada para
-  `Projeto Padrão (ANTIGO - pode apagar)`. Não trabalhar nela.
+- A pasta antiga ficou como cópia de segurança até 15/10/2026, quando foi apagada (ver a entrada de 15/10 acima). Não existe mais.
 - O Git veio junto (histórico completo preservado).
 - O ambiente `.venv` foi **recriado** do zero no local novo (venv não é
   movível), com Python 3.12.10.
@@ -78,11 +104,11 @@ foram instaladas junto; não precisam ser listadas.
   `C:\Projetos\PesquisaIA\dist`.
 
 ### Não mexido
-- `%LOCALAPPDATA%\PesquisaIA\` (conversas, memória, chaves do Igor).
+- `%LOCALAPPDATA%\PesquisaIA\` (conversas, memória, chaves do Wolf).
 - `IDEIAS.md`, `PLANO-B.txt`, `avatar_usuario.png`, `icone.ico`.
 
 ### Testado
 - `verificar.py`: TUDO CERTO (3 rodadas seguidas, sem avisos).
 - O .exe novo abriu e ficou aberto 9 s sem criar `erro.log`.
 - NÃO testado: perguntas reais à IA (precisa de internet e da chave do
-  Igor) e o uso do .exe por um período mais longo.
+  Wolf) e o uso do .exe por um período mais longo.

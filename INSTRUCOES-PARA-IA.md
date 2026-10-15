@@ -4,7 +4,7 @@ Leia este arquivo ANTES de mexer em qualquer coisa. Depois leia
 `PASSO-A-PASSO.md` (o método de trabalho) e `HISTORICO-DE-MUDANCAS.md`
 (o que já foi mudado e por quê).
 
-Quem pede as mudanças (o Igor) não programa. O trabalho tem que vir
+Quem pede as mudanças (o Wolf) não programa. O trabalho tem que vir
 pronto, testado e explicado em português simples.
 
 ## Onde fica o projeto
@@ -29,7 +29,7 @@ chaves) ficam em `%LOCALAPPDATA%\PesquisaIA\` e NUNCA entram no projeto.
 
 ## Regras de trabalho (obrigatórias)
 1. Leia `git status` e `git log --oneline -5` antes de começar. Se houver
-   mudança solta, pergunte ao Igor ou faça commit dela separado.
+   mudança solta, pergunte ao Wolf ou faça commit dela separado.
 2. Mudanças pequenas, uma de cada vez. Nada de reescrever o arquivo inteiro
    nem "aproveitar para melhorar" o que não foi pedido.
 3. Depois de TODA alteração: `verificar.bat` (ou
@@ -37,15 +37,15 @@ chaves) ficam em `%LOCALAPPDATA%\PesquisaIA\` e NUNCA entram no projeto.
    última linha for `TUDO CERTO` e não houver `[FALHA]`.
 4. Bug relatado = primeiro ache a CAUSA no código e diga qual é. Não chute.
 5. Bug corrigido de verdade = existe um teste novo no `verificar.py` que
-   falharia sem a correção. Se for só visual, explique como o Igor confere.
+   falharia sem a correção. Se for só visual, explique como o Wolf confere.
 6. Se aparecer erro na tela, leia `%LOCALAPPDATA%\PesquisaIA\erro.log`.
 7. Depois que `verificar.py` passar, faça commit com mensagem clara.
-8. Se a mudança afeta o que o Igor vê ao abrir o programa pelo atalho
+8. Se a mudança afeta o que o Wolf vê ao abrir o programa pelo atalho
    (a Área de Trabalho usa o .exe!), rode `3 - Gerar EXE.bat` e copie
    `dist\Pesquisa IA.exe` para a Área de Trabalho. Sem isso, a correção só
-   existe em `2 - Abrir Pesquisa IA.bat`. Diga ao Igor qual dos dois ele
+   existe em `2 - Abrir Pesquisa IA.bat`. Diga ao Wolf qual dos dois ele
    está usando.
-9. Nunca apague arquivos do Igor. Para "remover", mova para `_arquivo_morto`.
+9. Nunca apague arquivos do Wolf. Para "remover", mova para `_arquivo_morto`.
 10. Instalou ou removeu biblioteca? Atualize `requirements.txt` (ou
     `-dev`) com a versão exata (`==`) e registre no
     `HISTORICO-DE-MUDANCAS.md`.
@@ -83,7 +83,7 @@ chaves) ficam em `%LOCALAPPDATA%\PesquisaIA\` e NUNCA entram no projeto.
   para palavra, sem triplo para linha). Trocar por `tk.Text` somente leitura
   é o caminho de menor esforço. Alternativa maior: interface em HTML com
   `pywebview` (ver conversa sobre alternativas ao tkinter).
-- Não há backup do código fora deste computador. Sugerir ao Igor um
+- Não há backup do código fora deste computador. Sugerir ao Wolf um
   repositório privado (GitHub) ou cópia periódica da pasta.
 - Nomes de modelos Gemini em `MODELOS_RESERVA` não foram conferidos na
   documentação oficial; o programa já tenta o próximo se um falhar.
