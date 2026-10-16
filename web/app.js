@@ -1526,6 +1526,40 @@ function aplicarCfg() {
   $("#entrada").spellcheck = estado.cfg.web_corretor !== false;
 }
 
+function lerArquivoTexto(arquivo) {
+  return new Promise((resolve) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result || ""));
+    r.onerror = () => resolve("");
+    try { r.readAsText(arquivo); } catch (e) { resolve(""); }
+  });
+}
+async function tratarArquivoSolto(arquivo) {
+  if (!arquivo) return;
+  const ext = String(arquivo.name.split('.').pop() || "").toLowerCase();
+  if (["txt","md","csv","json"].indexOf(ext) === -1) {
+    aviso("Formato " + ext + " ainda nao suportado. Solte .txt/.md/.csv/.json.", true);
+    return;
+  }
+  const texto = (await lerArquivoTexto(arquivo)).slice(0, 30000);
+  if (!texto.trim()) { aviso("Arquivo vazio.", true); return; }
+  const marcador = "\n\n--- Arquivo: " + arquivo.name + " ---\n" + texto + "\n--- Fim ---\n\n";
+  const entrada = $("#entrada");
+  entrada.value = (entrada.value ? entrada.value.trim() + "\n\n" : "") + marcador;
+  ajustarAltura(); atualizarEnviar();
+  aviso("Arquivo carregado: " + arquivo.name + ". Aperte Enter para enviar.");
+}
+function ligarArrasto() {
+  ["dragenter", "dragover", "dragleave", "drop"].forEach((ev) =>
+    window.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); }));
+  window.addEventListener("drop", async (e) => {
+    const arqs = e.dataTransfer && e.dataTransfer.files;
+    if (arqs && arqs.length) {
+      for (const a of arqs) await tratarArquivoSolto(a);
+    }
+  });
+}
+
 function ligarEventos() {
   const entrada = $("#entrada");
   entrada.addEventListener("input", () => { ajustarAltura(); atualizarEnviar(); });
@@ -1583,6 +1617,7 @@ $("#btn-deep").addEventListener("click", () => {
   // tamanho normal e so mudaria depois do primeiro Ctrl +.
   try { aplicarTamanho(tamanhoAtual()); } catch (_e) { /* sem armazenamento */ }
   mostrarPrivada();
+  ligarArrasto();
 }
 
 async function iniciar() {
