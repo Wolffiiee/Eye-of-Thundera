@@ -1656,7 +1656,69 @@ def testes_tela_nova(p):
         else:
             falha("tela nova: excluir o que não existe devolveu algo")
 
-        # 9. a memoria que a tela mostra vem do arquivo, sem mudar nada
+        # 9. PROCURAR dentro das conversas (o Wolf digita sem acento e sem
+        # se preocupar com maiuscula)
+        p.salvar_conversas([
+            {"id": "busca-1", "titulo": "Receita de bolo",
+             "quando": "16/10 10:00",
+             "mensagens": [
+                 {"role": "user", "text": "Me da uma receita de bolo de cenoura"},
+                 {"role": "model", "text": "Leve 3 cenouras grandes a ..."}]},
+            {"id": "busca-2", "titulo": "Japão", "quando": "16/10 09:00",
+             "mensagens": [
+                 {"role": "user", "text": "Qual a capital?"},
+                 {"role": "model", "text": "Tóquio, no Japão."}]},
+        ])
+        achados = ponte2.conversas_buscar("japao").get("achados", [])
+        if [a["id"] for a in achados] == ["busca-2"]:
+            ok("tela nova: procurar acha o texto mesmo digitado sem acento")
+        else:
+            falha("tela nova: procurar por 'japao' deu %r"
+                  % ([a["id"] for a in achados],))
+        if achados and "Japão" in achados[0]["trecho"]:
+            ok("tela nova: a busca mostra o trecho onde achou (com o acento)")
+        else:
+            falha("tela nova: o trecho da busca ficou %r"
+                  % (achados[0]["trecho"] if achados else None,))
+        if [a["id"] for a in ponte2.conversas_buscar("CENOURA").get("achados", [])] \
+                == ["busca-1"]:
+            ok("tela nova: a busca não liga para maiúscula")
+        else:
+            falha("tela nova: procurar em maiúscula não achou")
+        if [a["id"] for a in ponte2.conversas_buscar("bolo").get("achados", [])] \
+                == ["busca-1"]:
+            ok("tela nova: a busca olha o título da conversa também")
+        else:
+            falha("tela nova: procurar só no título não achou")
+        if ponte2.conversas_buscar("bolo").get("achados", [])[0]["indice"] == 0:
+            ok("tela nova: a busca diz em qual mensagem achou")
+        else:
+            falha("tela nova: o índice da mensagem ficou %r"
+                  % (ponte2.conversas_buscar("bolo").get("achados", []),))
+        if ponte2.conversas_buscar("z").get("vazio") and \
+                not ponte2.conversas_buscar("z").get("achados"):
+            ok("tela nova: uma letra sozinha não procura (acha demais)")
+        else:
+            falha("tela nova: uma letra sozinha dispara a busca")
+        if ponte2.conversas_buscar("   ").get("achados") == [] and \
+                ponte2.conversas_buscar("xablau").get("achados") == []:
+            ok("tela nova: busca em branco e busca sem nada dão lista vazia")
+        else:
+            falha("tela nova: a busca respondeu coisa para busca vazia")
+        if ponte2.conversas_buscar("Tokio").get("achados") == []:
+            ok("tela nova: procurar por 'Tokio' NÃO acha 'Tóquio' "
+               "(o Unicode trata os dois como coisas diferentes)")
+        else:
+            falha("tela nova: a busca devolveu coisa para 'Tokio'")
+        if len(p.carregar_conversas()) == 2:
+            ok("tela nova: procurar não apaga nem muda conversa nenhuma")
+        else:
+            falha("tela nova: procurar mexeu nas conversas")
+        # as conversas de mentira da busca ficam no arquivo de TESTE; o
+        # check do fim da secao exige arquivo vazio, entao limpar aqui
+        p.salvar_conversas([])
+
+        # 10. a memoria que a tela mostra vem do arquivo, sem mudar nada
         p.salvar_memoria(["Gosta de RPG", "Mora em Santa Maria"])
         antes_mem = p.carregar_memoria()
         if app_web.Ponte().memoria_listar()["fatos"] == antes_mem:

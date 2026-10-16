@@ -63,7 +63,18 @@ de graça (no Tk ele só sai de uma cor).
    aba Ajuda com **voz e a lista de atalhos**. **Ctrl+S** salva a última
    resposta em `.txt`, como no programa antigo (sem isso o navegador
    abriria a janelinha branca de "salvar página").
-6. Salvar em .txt (já existia), copiar (já existia), pesquisar.
+6. ~~Salvar em .txt, copiar~~ **FEITO** (os dois já existiam; o **Ctrl+S**
+   foi acrescentado no passo 5) e ~~procurar~~ **FEITO (passo 6,
+   16/10/2026)**: a caixinha "Procurar nas conversas..." na barra da
+   esquerda procura no **título** e **dentro das mensagens**, sem levar
+   em conta acento nem maiúscula (é o mesmo `_sem_acento` que a Memória
+   usa: digitar `japao` acha "Japão", `CENOURA` acha "cenoura").
+   Mostra o **trecho** com a palavra destacada e, ao clicar, abre a
+   conversa. Uma letra sozinha **não** busca (acharia conversa demais) e
+   o máximo é 30 resultados. Deliberadamente, **"Tokio" NÃO acha
+   "Tóquio"** — `c` e `ç` são letras diferentes para o computador, e
+   melhor isso do que a busca adivinhar. Deixado num teste para não
+   virar "correção" depois.
 7. Atalhos de teclado (Ctrl+M, Ctrl+S, Esc já existem), cantos
    arredondados da caixa, borda escura da janela.
 8. `verificar.bat` cobrindo a tela nova e `.exe` gerado e testado.

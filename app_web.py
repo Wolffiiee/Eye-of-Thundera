@@ -171,6 +171,26 @@ def _tem_chave(valor):
     }
 
 
+def _trecho_em_torno(texto, alvo, largura=110):
+    """Recorta o texto mostrando o trecho onde o termo aparece.
+
+    Compara sem acento (o `alvo` ja vem em minusculas e sem acento) e
+    devolve o pedaco com reticencias na frente e no fim quando corta.
+    """
+    limpo = p._sem_acento(texto).lower()
+    pos = limpo.find(alvo)
+    if pos < 0:
+        return texto[:largura].strip()
+    comeco = max(0, pos - largura // 2)
+    fim = min(len(texto), pos + len(alvo) + largura // 2)
+    pedaco = texto[comeco:fim].replace("\n", " ").strip()
+    if comeco > 0:
+        pedaco = "… " + pedaco
+    if fim < len(texto):
+        pedaco = pedaco + " …"
+    return pedaco
+
+
 def _cfg_tela():
     """O que as abas de Configuracoes precisam mostrar (so leitura)."""
     cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
@@ -301,6 +321,52 @@ class Ponte:
                     "atual": self.id_atual,
                 }
         return {"erro": "Não achei essa conversa."}
+
+    def conversas_buscar(self, termo):
+        """Procura um texto dentro das conversas (titulo e mensagens).
+
+        Devolve, para cada conversa que tem o termo, um pedaco do texto
+        com o trecho achado no meio (para o Wolf ver onde era) e o
+        indice da mensagem. A tela usa isso para mostrar o resultado e
+        pular direto para a conversa.
+
+        Regra de procura: sem acento e sem diferenciar maiuscula de
+        minuscula, porque o Wolf digita do jeito que lembra. `unicodedata`
+        e' a mesma coisa que o programa antigo usa para comparar
+        palavras Parecidas na Memoria.
+        """
+        termo = (termo or "").strip()
+        if len(termo) < 2:
+            # Uma letra sozinha acha conversa demais e polui a tela.
+            return {"achados": [], "vazio": True}
+        alvo = p._sem_acento(termo).lower()
+        achados = []
+        for conversa in _conversas_para_a_tela():
+            cid = conversa.get("id")
+            titulo = str(conversa.get("titulo") or "")
+            mensagens = conversa.get("mensagens") or []
+            melhor = None
+            for indice, mensagem in enumerate(mensagens):
+                texto = str(mensagem.get("text") or "")
+                if alvo in p._sem_acento(texto).lower():
+                    if melhor is None or indice < melhor[0]:
+                        melhor = (indice, texto)
+            if melhor is None and alvo not in p._sem_acento(titulo).lower():
+                continue
+            if melhor is None:
+                pedaco = "O título dessa conversa tem o que você procurou."
+            else:
+                pedaco = _trecho_em_torno(melhor[1], alvo)
+            achados.append({
+                "id": cid,
+                "titulo": titulo or "Conversa sem título",
+                "quando": conversa.get("quando", ""),
+                "indice": melhor[0] if melhor else -1,
+                "trecho": pedaco,
+            })
+            if len(achados) >= 30:
+                break
+        return {"achados": achados}
 
     def config_ler(self):
         """Abre as Configurações (so leitura neste passo)."""

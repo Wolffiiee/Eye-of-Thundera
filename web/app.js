@@ -342,6 +342,55 @@ document.addEventListener("click", (e) => {
   }
 });
 
+/* ---------------- procurar nas conversas ----------------
+   O Python procura (sem acento e sem diferenciar maiuscula, porque o
+   Wolf digita do jeito que lembra) e devolve onde achou. Aqui a tela
+   mostra os resultados e, ao clicar, abre a conversa. */
+function pintarTrecho(texto, termo) {
+  const alvo = termo.trim().toLowerCase();
+  if (alvo.length < 2) return document.createTextNode(texto);
+  const i = texto.toLowerCase().indexOf(alvo);
+  if (i < 0) return document.createTextNode(texto);
+  const frag = document.createDocumentFragment();
+  frag.append(document.createTextNode(texto.slice(0, i)));
+  const m = el("mark", "", texto.slice(i, i + alvo.length));
+  frag.append(m);
+  frag.append(document.createTextNode(texto.slice(i + alvo.length)));
+  return frag;
+}
+
+async function buscar(termo) {
+  termo = termo.trim();
+  const caixa = $("#resultados-busca");
+  $("#btn-limpar-busca").classList.toggle("oculto", !termo);
+  if (!termo) return caixa.replaceChildren();
+  const r = await chamar("conversas_buscar", termo);
+  // se o Wolf digitou mais coisa enquanto a busca rodava, esta resposta
+  // ja nao interessa
+  if ($("#campo-busca").value.trim() !== termo) return;
+  caixa.replaceChildren();
+  const achados = r.achados || [];
+  if (!achados.length) {
+    caixa.append(el("div", "nada", 'Nada encontrado com "' + termo + '".'));
+    return;
+  }
+  for (const a of achados) {
+    const b = el("button", "resultado");
+    b.append(el("span", "rt", a.titulo));
+    const p = el("span", "rp");
+    p.append(pintarTrecho(a.trecho, termo));
+    b.append(p);
+    b.addEventListener("click", async () => {
+      await abrirConversa(a.id);
+      $("#campo-busca").value = "";
+      $("#resultados-busca").replaceChildren();
+      $("#btn-limpar-busca").classList.add("oculto");
+      rolarParaOFim();
+    });
+    caixa.append(b);
+  }
+}
+
 function desenharConversas() {
   const lista = $("#lista-conversas");
   lista.replaceChildren();
@@ -767,6 +816,18 @@ function ligarEventos() {
   $("#btn-salvar-config").addEventListener("click", salvarConfig);
   $("#modal").addEventListener("mousedown", (e) => { if (e.target.id === "modal") fecharConfig(); });
   $$("#abas .aba").forEach((b) => b.addEventListener("click", () => mostrarAba(b.dataset.aba)));
+  $("#campo-busca").addEventListener("input", (e) => buscar(e.target.value));
+  $("#campo-busca").addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      e.target.value = "";
+      buscar("");
+    }
+  });
+  $("#btn-limpar-busca").addEventListener("click", () => {
+    $("#campo-busca").value = "";
+    buscar("");
+    $("#campo-busca").focus();
+  });
   $$(".sugestao").forEach((b) => b.addEventListener("click", () => enviar(b.textContent)));
   $("#btn-web").addEventListener("click", async () => {
     const ordem = ["auto", "sempre", "nunca"];

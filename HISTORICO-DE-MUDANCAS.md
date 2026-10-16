@@ -5,6 +5,38 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Tela nova: PASSO 6 (procurar nas conversas)
+
+Uma caixinha "Procurar nas conversas..." em cima da lista, na barra da
+esquerda. É um item que estava na `IDEIAS.md` há semanas.
+
+- **`app_web.py` — `conversas_buscar(termo)`:** procura no **título e
+  dentro das mensagens**, e devolve para cada conversa achada: o id, o
+  título, um **trecho** com o texto em volta do achado e o **índice da
+  mensagem**. Máximo de 30 resultados, para a barra não virar uma parede.
+- **A comparação é sem acento e sem diferenciar maiúscula**, usando o
+  mesmo `pesquisa_ia._sem_acento` que a Memória já usa. Assim digitar
+  `japao` acha "Japão" e `CENOURA` acha "cenoura".
+- **Uma letra sozinha não busca** (`vazio: true`): uma letra acha
+  conversa demais e polui a tela. O mínimo são 2 letras.
+- **`web/app.js`:** os resultados aparecem com o trecho e a palavra
+  **destacada** (`<mark>`); clicar abre a conversa e limpa a busca. Se o
+  Wolf digitar mais coisa enquanto a busca roda, a resposta velha é
+  descartada (senão os resultados ficam trocados com o que ele pediu).
+- **`web/estilo.css`:** o campo de busca, os resultados e o destaque.
+- **9 testes novos.** As conversas de mentira da busca ficam no arquivo
+  de **teste** e são limpas no fim, porque o check do fim da seção
+  exige o arquivo de conversa vazio (se sobrasse, o teste seguinte
+  acusaria "sobrou conversa no arquivo" sem dizer de onde veio).
+
+Uma decisão que vale registrar: procurar **"Tokio" NÃO acha "Tóquio"**.
+Para o computador, `c` e `ç` são letras diferentes. Preferi isso a
+"achar qualquer coisa parecida", porque senão a busca mostraria o que o
+Python adivinha, e o Wolf não saberia por que um resultado apareceu ali.
+Está escrito num teste, para não virar "correção" sem querer.
+
+Verificação: `TUDO CERTO`, **257 testes, 0 falhas** (36 s).
+
 ## 2026-10-16 — Tela nova: PASSO 5 (as Configurações de verdade)
 
 As quatro abas já existiam e já gravavam; o que faltava da Tarefa D foi
