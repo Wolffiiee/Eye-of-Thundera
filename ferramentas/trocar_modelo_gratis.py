@@ -32,7 +32,7 @@ SO_TESTAR = "--so-testar" in sys.argv
 
 
 def candidatos():
-    for linha in LISTA.read_text(encoding="utf-8").splitlines():
+    for linha in LISTA.read_text(encoding="utf-8-sig").splitlines():
         linha = linha.strip()
         if linha and not linha.startswith("#"):
             yield linha
@@ -70,7 +70,7 @@ def main():
     if SO_TESTAR:
         print("\nModelo gratis que funciona: %s (nada foi alterado)" % escolhido)
         return 0
-    dados = json.loads(CONFIG.read_text(encoding="utf-8"))
+    dados = json.loads(CONFIG.read_text(encoding="utf-8-sig"))
     if dados.get("model") == escolhido:
         print("\nO OpenCode ja esta usando %s." % escolhido)
         return 0

@@ -60,3 +60,8 @@ Depois rode `verificar.bat`. **Só diga que terminou se a última linha for
 - `ctypes.wintypes` **NAO vem junto com `import ctypes`**: sem o
   `from ctypes import wintypes`, a função de contar telas levanta
   `AttributeError`.
+
+---
+## ATUALIZACAO (16/10, Claude): LEIA GUIA-DO-OPENCODE.md
+Area de Trabalho agora tem 1 icone (so o .exe); atalhos extras e o Wolf.lnk velho foram para _arquivo_morto. Existe ferramentas/trocar_modelo_gratis.py para trocar de modelo quando o limite chegar.
+

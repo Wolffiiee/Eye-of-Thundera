@@ -1,7 +1,5 @@
-"""Atualiza a Area de Trabalho: copia o Eye of Thundera.exe e recria o atalho .lnk."""
-import os
+﻿"""Atualiza a Area de Trabalho: copia o Eye of Thundera.exe e recria o atalho .lnk."""
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -19,17 +17,14 @@ if not exe_projeto.exists():
 shutil.copy2(exe_projeto, exe_desktop)
 print("[OK] .exe copiado para a Area de Trabalho: " + str(exe_desktop))
 
-ps_script = (
-    '$ws = New-Object -ComObject WScript.Shell; '
-    '$sc = $ws.CreateShortcut("' + str(lnk_desktop) + '"); '
-    '$sc.TargetPath = "' + str(exe_desktop) + '"; '
-    '$sc.WorkingDirectory = "' + str(DESKTOP) + '"; '
-    '$sc.Description = "Eye of Thundera - programa novo"; '
-    '$sc.IconLocation = "' + str(exe_desktop) + ',0"; '
-    '$sc.Save()'
-)
-subprocess.run([
-    "powershell.exe", "-ExecutionPolicy", "Unrestricted",
-    "-WindowStyle", "Hidden", "-Command", ps_script
-], check=True, capture_output=True)
-print("[OK] atalho criado: " + str(lnk_desktop))
+# UM icone so na Area de Trabalho: o proprio .exe. Atalho .lnk a mais
+# vira icone duplicado, entao se existir um (nosso ou o velho "Wolf") ele
+# e' MOVIDO (nunca apagado) para a pasta _arquivo_morto.
+morto = PASTA_PROJETO / "_arquivo_morto"
+morto.mkdir(exist_ok=True)
+for velho in (lnk_desktop, DESKTOP / "Wolf.lnk"):
+    if velho.exists():
+        shutil.move(str(velho), str(morto / (velho.stem + " (atalho antigo).lnk")))
+        print("[OK] atalho extra guardado em _arquivo_morto: " + velho.name)
+print("[OK] Area de Trabalho: so o Eye of Thundera.exe (um icone).")
+
