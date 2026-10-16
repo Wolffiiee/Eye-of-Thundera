@@ -1005,6 +1005,15 @@ def principal():
     try:
         webview.start(ao_abrir, janela, gui="edgechromium")
     except Exception as erro:
+        # O programa de sempre grava tudo no erro.log para podermos ver
+        # depois. A tela nova nao gravava NADA: um erro aqui era simplesmente
+        # perdido. Escrever o log e' o unico jeito de ter prova do que
+        # aconteceu na proxima vez (achado em 16/10/2026, quando o Wolf
+        # viu a tela fechar ao arrastar a janela para o outro monitor).
+        try:
+            p.registrar_erro("tela nova - abrindo a janela", erro)
+        except Exception:
+            pass
         sys.exit("A janela nao abriu: %r" % (erro,))
     print("Tela nova fechada.")
 

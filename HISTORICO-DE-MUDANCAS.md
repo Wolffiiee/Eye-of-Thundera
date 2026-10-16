@@ -5,6 +5,43 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — A IA respondia com invenção depois de pesquisar
+
+Com o defeito do prazo corrigido, a pesquisa passou a funcionar de
+verdade: a pergunta do proximo jogo do Wolf voltou com data, horario e
+local. **Mas a resposta trouxe coisa inventada:** falou do "Imortal" em
+vez do Gremio, inventou a palavra "szól", disse que ela significa "falar"
+em hungaro e ainda pediu confirmacao.
+
+O programa ja mandava "nunca invente numeros, datas ou fatos", mas
+faltavam tres regras. Acrescentadas em `INSTRUCOES` (vale para os DOIS
+programas), sem mexer no resto:
+
+- **Responda exatamente sobre o que foi perguntado** — se a pergunta
+  citar um time, pessoa ou produto pelo nome, use ESSE nome, nao troque
+  por outro parecido.
+- **Nunca invente palavras de outros idiomas** e nao pergunte ao usuario
+  se elas significam algo.
+- **Nao termine fazendo perguntas de volta** para quem perguntou:
+  responda e pare.
+
+## 2026-10-16 — A tela nova nao guardava rastro de erro (crash ao arrastar)
+
+O Wolf viu a tela nova **fechar ao arrastar a janela para o monitor
+principal**. Nao foi possivel confirmar a causa: a hipotese mais obvio
+(diferenca de escala entre os monitores) foi **medida e descartada** — os
+dois monitores estao em 96 DPI (100%).
+
+- **A tela nova nao escrevia NADA em log.** O programa de sempre grava
+  tudo no `erro.log`; a tela nova engolia qualquer erro em silencio, e um
+  crash do Windows nao deixa nem rastro. Agora ela chama
+  `pesquisa_ia.registrar_erro(...)`, como o programa antigo.
+- **Falta o Wolf confirmar** se acontece sempre ou as vezes, e se
+  acontece tambem no modo exemplo (`5 - Ver a tela nova.bat`), que nao
+  toca em dado nenhum. Sem isso nao da para reproduzir.
+
+Verificação: `TUDO CERTO`, **262 testes, 0 falhas** (42 s).
+
 ## 2026-10-16 — Defeito antigo e silencioso: o programa nunca pesquisava
 
 O Wolf perguntou no programa novo "Quanto será o próximo jogo do Grêmio?"
