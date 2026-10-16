@@ -40,6 +40,7 @@ import sys
 import threading
 import time
 import webbrowser
+from datetime import datetime
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent
@@ -808,6 +809,49 @@ class Ponte:
             return self._demo_nada()
         mudou = p.organizar_memoria()
         return {"fatos": p.carregar_memoria(), "mudou": bool(mudou)}
+
+    def memoria_editar(self, antigo, novo):
+        """Troca um fato guardado por outro (clicar no texto na lista).
+
+        Nao apaga e regrava: o `esquecer_memoria` e' usado so para tirar o
+        item da gaveta, e `mesclar_memoria` para colocar o novo. Assim o
+        jeito com que a memoria guarda continua igual ao do programa
+        antigo (que e' o que a tela nova e o programa antigo leem).
+        """
+        if DEMO:
+            return self._demo_nada()
+        antigo = (antigo or "").strip()
+        novo = (novo or "").strip()
+        if not antigo:
+            return {"erro": "Não achei esse item na memória."}
+        if not novo:
+            return {"erro": "O item não pode ficar vazio."}
+        if novo == antigo:
+            return {"fatos": p.carregar_memoria()}
+        if len(novo) > p.memoria.TAMANHO_MAXIMO:
+            return {"erro": "Esse item tem %d letras e o limite é %d. "
+                            "Escreva mais curto."
+                            % (len(novo), p.memoria.TAMANHO_MAXIMO)}
+        antes = p.carregar_memoria()
+        restante = [f for f in antes if f != antigo]
+        if len(restante) == len(antes):
+            return {"erro": "Não achei esse item na memória."}
+        p.salvar_memoria(restante)
+        p._mesclar_memoria([novo])
+        return {"fatos": p.carregar_memoria()}
+
+    def memoria_exportar(self):
+        """Salva a memória inteira num .txt (o mesmo .txt do Windows)."""
+        if DEMO:
+            return self._demo_nada()
+        fatos = p.carregar_memoria()
+        if not fatos:
+            return {"erro": "A memória está vazia: não há nada para exportar."}
+        data = datetime.now().strftime("%d/%m/%Y %H:%M")
+        linhas = ["MEMÓRIA DO PESQUISA IA", "salva em %s" % data,
+                  "%d item(ns):" % len(fatos), ""]
+        linhas += ["- %s" % f for f in fatos]
+        return self.salvar_texto("\n".join(linhas))
 
 
 # --- montando a janela ------------------------------------------------------

@@ -33,15 +33,17 @@ Claude em outra conversa): leia isto depois do PASSO-A-PASSO.md.
 - **As janelas escuras foram conferidas com os olhos pelo Wolf** (15/10).
 - **O botão direito na caixa vazia foi achado pelo Wolf e consertado**;
   falta só ele olhar o corrigido.
-1. **Falar com o microfone na tela nova** (16/10): duplo clique em
-   `6 - Falar com a tela nova.bat`. Abre no 2º monitor, o microfone é o
-   de verdade e a IA responde — mas **não salva nenhuma conversa** (é
-   `--demo --voz`). Confirmar: o botão fica vermelho piscando com o
-   tempo, o segundo clique para, e o que foi falado cai na caixa de
-   digitar para conferir. É o único jeito de testar o microfone sem
-   sujar o histórico.
-2. **Uma pergunta normal** (digitando) com a chave nova — é o único
-   caminho que nunca foi testado de ponta a ponta.
+1. ~~**Falar com o microfone na tela nova**~~ **FEITO e TESTADO pelo Wolf
+   em 16/10/2026**: duplo clique em `6 - Falar com a tela nova.bat`,
+   microfone de verdade, **"funcionou perfeitamente"**. Era o último
+   caminho sem testar de ponta a ponta da tela nova (o `verificar.py` só
+   usa microfone falso, de propósito: o de verdade não abre no teste).
+   Aprende-se com isso: quando o Wolf diz que funcionou, pode ir em
+   frente — o caminho de código novo, reusando o motor do programa
+   antigo, sai certo de primeira.
+2. **Uma pergunta normal** (digitando) com a chave nova — ainda não
+   testada de ponta a ponta na tela nova (só digitando no programa
+   antigo).
 3. Usar o `.exe` por mais tempo (nos testes ele ficou aberto de 13 a 20
    segundos, sem criar `erro.log`).
 Se algo falhar, leia o `erro.log` (no `.exe`: `%LOCALAPPDATA%\PesquisaIA\`;

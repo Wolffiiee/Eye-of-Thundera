@@ -5,6 +5,57 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Tela nova: PASSO 5 (as Configurações de verdade)
+
+As quatro abas já existiam e já gravavam; o que faltava da Tarefa D foi
+acrescentado, mais o `Ctrl+S`.
+
+- **Editar um item da Memória clicando no texto** (`memoria_editar`).
+  Antes: só dava para apagar e adicionar. Agora o texto vira campo na
+  hora; Enter salva, Esc cancela. A troca passa por
+  `salvar_memoria` + `_mesclar_memoria`, que é o mesmo caminho do
+  programa antigo.
+- **Exportar a Memória em `.txt`** (`memoria_exportar`): botão novo,
+  reusa a janela de "Salvar como" do Windows (que já sai escura) e o
+  arquivo sai com data e "N item(ns):".
+- **Aviso do limite de 200 letras.** O `memoria.py` corta o item em
+  200 letras **em silêncio** (era assim no programa de hoje). A tela nova
+  mostra "faltam N letras" enquanto se digita e **recusa** de salvar
+  passando do limite, em vez de cortar a frase pela metade.
+- **Aba Ajuda** ganhou a parte de **voz** (microfone e "enviar
+  sozinho") e a **tabela de atalhos** (Enter, Shift+Enter, Ctrl+M,
+  Ctrl+S, Esc).
+- **`Ctrl+S`** salva a última resposta em `.txt`, como no programa
+  antigo. Sem isso o navegador abriria a janelinha branca de "salvar
+  página". O texto cru agora fica guardado em cada resposta
+  (`data-bruto`), porque o que aparece na tela já vem formatado.
+- **Novo `7 - Usar a tela nova de verdade.bat`**: abre a tela nova com
+  as conversas do Wolf (sem `--demo`). Como é o mesmo arquivo de
+  conversas, as barras laterais dos dois programas mostram a mesma
+  coisa.
+
+### Um teste que falhou sem explicação (e o que foi feito)
+
+Um teste novo do `.txt` da memória falhou **uma vez** e passou em todas
+as outras (11 execuções isoladas + 2 completas). O arquivo impresso no
+log **continha** o item que o teste dizia estar faltando — a falha não
+se explicava. A causa **não foi achada**.
+
+O que não se fez: aceitar "passou, então tá bom". O teste foi
+reescrito para ser mais forte e à prova de formatação: antes procurava
+um texto solto dentro do `.txt`; agora compara **item por item** com a
+memória de verdade, o que não deixa passar item trocado, item a menos
+nem item a mais. Também se descartou a suspeita mais óbvia (a ordem
+dos itens mudar entre execuções, por causa do embaralhamento de strings
+do Python): testada com 4 sementes diferentes, a ordem é sempre a
+mesma.
+
+**A lição fica registrada:** teste que falha e o motivo não aparece
+não é teste "instável", é teste que não explica a si mesmo. Reforçar
+o teste vale mais que repetir a suíte até ela passar.
+
+Verificação: `TUDO CERTO`, **248 testes, 0 falhas** (45 s).
+
 ## 2026-10-16 — Tela nova: o microfone pode ser testado falando
 
 Duas correções e um atalho novo, para o Wolf poder testar o microfone

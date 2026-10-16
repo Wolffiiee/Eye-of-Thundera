@@ -193,8 +193,22 @@ select { background: var(--bg); color: var(--texto); border: 1px solid var(--bor
 .memoria-topo { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
 .fato { display: flex; align-items: center; gap: 10px; background: var(--superficie); border: 1px solid var(--borda); border-radius: 12px; padding: 10px 12px 10px 14px; margin-bottom: 8px; }
 .fato span { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
-.adicionar { display: flex; gap: 8px; margin: 14px 0 6px; }
+.adicionar { display: flex; gap: 8px; margin: 14px 0 6px; align-items: center; }
+.adicionar .restam { color: var(--texto-3); font-size: 12px; }
+.adicionar .restam.ruim, .alerta-edicao { color: #ff9a9a; font-size: 12px; }
+.adicionar input { flex: 1; min-width: 0; }
+/* editar um item da memoria: o texto vira campo, sem sair da lista */
+.fato .editavel { cursor: text; border-radius: 6px; padding: 1px 4px; margin: -1px -4px; }
+.fato .editavel:hover { background: var(--superficie-2); }
+.fato.editando input.edicao { flex: 1; min-width: 0; }
 .contador { color: var(--texto-3); font-size: 12.5px; margin: 4px 0 14px; }
+/* lista de atalhos na aba Ajuda */
+.atalhos { margin-top: 14px; }
+.lista-atalhos { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.linha-atalho { display: flex; align-items: center; gap: 12px; font-size: 13.5px; color: var(--texto-2); }
+kbd { font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--texto);
+  background: var(--superficie-2); border: 1px solid var(--borda); border-bottom-width: 2px;
+  border-radius: 7px; padding: 3px 9px; min-width: 92px; text-align: center; }
 .ajuda p { color: var(--texto-2); max-width: 66ch; margin: 0 0 12px; font-size: 14px; }
 .ajuda kbd { background: var(--superficie-2); border: 1px solid var(--borda); border-radius: 6px; padding: 1px 7px; font: 12.5px var(--fonte); }
 

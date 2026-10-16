@@ -2471,6 +2471,76 @@ def testes_tela_nova_config(p):
         else:
             falha("tela nova: memoria_apagar_tudo nao esvaziou")
 
+        # 7. EDITAR um item: e' o que o Wolf faz clicando no texto
+        ponte.memoria_adicionar("Moro em Santa Maria")
+        ponte.memoria_adicionar("Gosta de RPG")
+        antes_editar = p.carregar_memoria()
+        r = ponte.memoria_editar("Gosta de RPG", "Gosta de RPG de mesa")
+        depois = r.get("fatos") or []
+        if "Gosta de RPG de mesa" in depois and "Gosta de RPG" not in depois:
+            ok("tela nova: editar a memória troca o texto do item")
+        else:
+            falha("tela nova: editar deixou %r" % (depois,))
+        if [f for f in antes_editar if f != "Gosta de RPG"] == \
+                [f for f in depois if f != "Gosta de RPG de mesa"]:
+            ok("tela nova: editar não mexe nos outros itens da memória")
+        else:
+            falha("tela nova: editar mudou os outros itens (%r -> %r)"
+                  % (antes_editar, depois))
+        if ponte.memoria_editar("item que nao existe", "x").get("erro"):
+            ok("tela nova: editar o que não existe avisa em vez de inventar")
+        else:
+            falha("tela nova: editar o que não.exists devolveu algo")
+        if ponte.memoria_editar("Gosta de RPG de mesa", "  ").get("erro"):
+            ok("tela nova: editar para texto vazio é recusado")
+        else:
+            falha("tela nova: deixou um item vazio na memória")
+        if ponte.memoria_editar("Gosta de RPG de mesa",
+                                "x" * (p.memoria.TAMANHO_MAXIMO + 1)).get("erro"):
+            ok("tela nova: item maior que o limite é recusado com aviso")
+        else:
+            falha("tela nova: aceitou item maior que o limite")
+        if "Gosta de RPG de mesa" in p.carregar_memoria():
+            ok("tela nova: as edições recusadas não estragaram o item")
+        else:
+            falha("tela nova: o item se perdeu numa edição recusada")
+
+        # 8. EXPORTAR a memória: o texto vem pronto para o .txt
+        exportados = []
+        ponte.salvar_texto = lambda texto: exportados.append(texto) or {}
+        r = ponte.memoria_exportar()
+        corpo = exportados[0] if exportados else ""
+        if not r.get("erro") and corpo:
+            ok("tela nova: exportar a memória monta o texto e não abre janela")
+        else:
+            falha("tela nova: exportar devolveu %r (texto %r)"
+                  % (r, corpo[:80]))
+        # Compara o que foi SALVO com o que a memoria tem de verdade, item
+        # por item. Antes este teste procurava um texto solto dentro do
+        # .txt inteiro, e foi assim que uma falha ficou sem explicacao: o
+        # arquivo tinha o item dentro e o teste dizia que nao. Comparar a
+        # lista inteira nao deixa passar item trocado, item a menos nem
+        # item a mais -- e nao depende de formatacao nenhuma.
+        esperado = p.carregar_memoria()
+        linhas_txt = corpo.splitlines()
+        itens_txt = [l[2:] for l in linhas_txt if l.startswith("- ")]
+        if sorted(itens_txt) == sorted(esperado):
+            ok("tela nova: o .txt da memoria traz exatamente os itens que ela tem")
+        else:
+            falha("tela nova: o .txt ficou %r mas a memoria tem %r"
+                  % (itens_txt, esperado))
+        if len(linhas_txt) > 2 and \
+                "%d item(ns)" % len(esperado) in linhas_txt[2]:
+            ok("tela nova: o .txt da memoria diz quantos itens sao")
+        else:
+            falha("tela nova: o .txt nao diz quantos itens sao")
+
+        ponte.memoria_apagar_tudo()
+        if ponte.memoria_exportar().get("erro"):
+            ok("tela nova: exportar memória vazia avisa e não abre janela")
+        else:
+            falha("tela nova: exportar memória vazia tentou salvar assim mesmo")
+
         app_web.DEMO = True
         antes = p.ARQUIVO_CONFIG.read_text(encoding="utf-8")
         ponte.config_salvar({"aprender": True})

@@ -125,6 +125,10 @@ function criarMensagem(m) {
     });
     acoes.append(bCopiar, bSalvar);
     corpo.append(acoes);
+    // O texto CRU fica guardado na propria mensagem: e' ele que o
+    // Ctrl+S precisa salvar (o que aparece na tela ja vem formatado,
+    // com link e negrito).
+    caixa.dataset.bruto = m.text;
   }
   caixa.append(corpo);
   return caixa;
@@ -314,6 +318,20 @@ document.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && (e.key === "m" || e.key === "M")) {
     e.preventDefault();
     alternarMicrofone();
+    return;
+  }
+  // Ctrl+S: salva a ultima resposta em .txt (igual ao programa antigo).
+  // Sem isso, o navegador abriria a janelinha de "Salvar pagina", que
+  // e' branca e nao tem nada a ver com o programa.
+  if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+    e.preventDefault();
+    const ultima = [...document.querySelectorAll("#mensagens .msg.ia")].pop();
+    if (!ultima) return aviso("Ainda não tem resposta para salvar.");
+    const bruto = ultima.dataset.bruto || "";
+    chamar("salvar_texto", bruto).then((r) => {
+      if (r && r.caminho) aviso("Salvo em " + r.caminho);
+      else if (r && r.erro) aviso(r.erro, true);
+    });
   }
 });
 document.addEventListener("click", (e) => {
@@ -489,13 +507,29 @@ async function abaMemoria(corpo) {
   busca.spellcheck = false;
   const organizar = el("button", "btn", "Organizar");
   organizar.title = "Junta fatos repetidos";
+  const exportar = el("button", "btn", "Exportar");
+  exportar.title = "Salva a memória num .txt";
   const apagarTudo = el("button", "btn perigo", "Apagar tudo");
-  topo.append(busca, organizar, apagarTudo);
+  topo.append(busca, organizar, exportar, apagarTudo);
+  exportar.addEventListener("click", async () => {
+    const rr = await chamar("memoria_exportar");
+    if (rr.erro) aviso(rr.erro, true);
+  });
   const novo = el("div", "adicionar");
   const campo = el("input");
+  // O limite e' de verdade (o memoria.py corta em 200). Avisar ANTES
+  // e' melhor do que o item ser cortado pela metade sem ninguem ver.
+  const LIMITE = 200;
   campo.placeholder = "Adicionar algo que ele deve saber sobre você...";
+  const restam = el("span", "restam");
+  restam.title = `Cada item pode ter até ${LIMITE} letras`;
   const add = el("button", "btn primario", "Adicionar");
-  novo.append(campo, add);
+  novo.append(campo, add, restam);
+  const avisarResto = () => {
+    const n = LIMITE - campo.value.trim().length;
+    restam.textContent = campo.value.trim() ? (n >= 0 ? n + " letras restantes" : "passou " + -n + " do limite") : "";
+    restam.classList.toggle("ruim", n < 0);
+  };
   const contador = el("div", "contador");
   const lista = el("div");
   const desenhar = () => {
@@ -513,7 +547,43 @@ async function abaMemoria(corpo) {
         const rr = await chamar("memoria_apagar", f);
         if (rr.fatos) { fatos = rr.fatos; desenhar(); }
       });
-      linha.append(el("span", "", f), x);
+      // Clicar no TEXTO edita na hora (a Tarefa D pede "editar: clique no
+      // texto"). Nao abro uma janelinha: edita-se aqui mesmo, e so grava
+      // quando o Wolf confirmar.
+      const texto = el("span", "editavel", f);
+      texto.title = "Clique para editar";
+      texto.addEventListener("click", () => {
+        if (linha.classList.contains("editando")) return;
+        linha.classList.add("editando");
+        const caixa = el("input", "edicao");
+        caixa.value = f;
+        const ok = el("button", "btn primario", "Salvar");
+        const cancelar = el("button", "btn", "Cancelar");
+        ok.addEventListener("click", async () => {
+          const novoTexto = caixa.value.trim();
+          if (!novoTexto) return aviso("O item não pode ficar vazio.", true);
+          const rr = await chamar("memoria_editar", f, novoTexto);
+          if (rr.erro) return aviso(rr.erro, true);
+          fatos = rr.fatos || fatos;
+          aviso("Item editado.");
+          desenhar();
+        });
+        cancelar.addEventListener("click", () => desenhar());
+        caixa.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); ok.click(); }
+          if (e.key === "Escape") { e.preventDefault(); desenhar(); }
+        });
+        const alerta = el("span", "alerta-edicao");
+        const ver = () => {
+          const n = LIMITE - caixa.value.trim().length;
+          alerta.textContent = caixa.value.trim() && n < 0 ? "passou " + -n + " do limite" : "";
+        };
+        caixa.addEventListener("input", ver);
+        linha.replaceChildren(caixa, ok, cancelar, alerta);
+        caixa.focus();
+        caixa.setSelectionRange(caixa.value.length, caixa.value.length);
+      });
+      linha.append(texto, x);
       lista.append(linha);
     }
   };
@@ -524,6 +594,7 @@ async function abaMemoria(corpo) {
     if (rr.fatos) { fatos = rr.fatos; campo.value = ""; desenhar(); }
   };
   add.addEventListener("click", adicionar);
+  campo.addEventListener("input", avisarResto);
   campo.addEventListener("keydown", (e) => { if (e.key === "Enter") adicionar(); });
   organizar.addEventListener("click", async () => {
     const rr = await chamar("memoria_organizar");
@@ -554,9 +625,26 @@ function abaAjuda(corpo) {
     el("p", "sub", "O básico para usar o assistente."),
     el("p", "", "Escreva do seu jeito: papo normal ele responde na hora. Quando a pergunta precisa de informação atual (preço, notícia, clima...), ele pesquisa na web sozinho."),
     el("p", "", "Para forçar: comece com “pesquise …”. Para impedir: comece com “sem pesquisar, …”. O botão “Web” abaixo da caixa muda o modo para toda a conversa."),
-    el("p", "", "Enter envia. Shift+Enter quebra a linha. Em cada resposta, passe o mouse para copiar ou salvar em .txt."),
-    el("p", "", "Para ele lembrar de algo, diga “lembra que …”. Os itens ficam na aba Memória, onde você pode buscar, apagar ou organizar.")
+    el("p", "", "Para ele lembrar de algo, diga “lembra que …”. Os itens ficam na aba Memória, onde você pode buscar, clicar no texto para editar, apagar ou organizar."),
+    el("h4", "", "Falar"),
+    el("p", "", "O botão do microfone grava; o clique seguinte para e o que você falou aparece na caixa para conferir. Se a opção “enviar sozinho” estiver ligada, ele manda sem você precisar apertar Enter.")
   );
+  const atalhos = el("div", "cartao atalhos");
+  atalhos.append(el("h4", "", "Atalhos do teclado"));
+  const lista = el("div", "lista-atalhos");
+  for (const [teclas, oque] of [
+    ["Enter", "envia a pergunta"],
+    ["Shift + Enter", "quebra a linha"],
+    ["Ctrl + M", "liga e desliga o microfone"],
+    ["Ctrl + S", "salva a última resposta em .txt"],
+    ["Esc", "fecha esta janela"],
+  ]) {
+    const l = el("div", "linha-atalho");
+    l.append(el("kbd", "", teclas), el("span", "", oque));
+    lista.append(l);
+  }
+  atalhos.append(lista);
+  corpo.append(atalhos);
 }
 
 function mostrarAba(aba) {

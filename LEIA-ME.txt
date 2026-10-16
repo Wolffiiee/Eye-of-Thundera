@@ -383,6 +383,14 @@ Arquivos novos:
                                para parar; o que voce falou aparece na
                                caixa de digitar para voce conferir antes
                                de enviar.
+  7 - Usar a tela nova de verdade.bat -> a tela nova NAO mais em modo
+                               exemplo: ela abre com as SUAS conversas de
+                               verdade e salva no mesmo lugar que o
+                               programa de sempre (a barra da esquerda
+                               mostra as duas iguais). Use enquanto ela
+                               esta em construcao e quiser ver como fica
+                               com os seus dados. Se algo parecer errado,
+                               e so fechar: o programa de sempre nao muda.
   4 - Fazer backup.bat      -> cópia de segurança: salva o código e todo o
                               histórico do Git num .zip dentro da pasta
                               "Backup Pesquisa IA" do seu OneDrive (que vai

@@ -54,9 +54,18 @@ de graça (no Tk ele só sai de uma cor).
    ligado "enviar" nas Configurações). Botão ou `Ctrl+M`. Botão ou `Ctrl+M`. No `--demo` ele finge que ouviu; com
    `--voz` (o `6 - Falar com a tela nova.bat`) ele é o microfone de
    verdade, sem gravar nada.
-5. Janela de Configurações com as 4 abas funcionando de verdade (gravar).
-6. Salvar em .txt, copiar, pesquisar.
-7. Atalhos de teclado, cantos arredondados da caixa, borda escura da janela.
+5. ~~Janela de Configurações com as 4 abas~~ **FEITO (passo 5, 16/10/2026)**:
+   as quatro abas (Memória, Conversa, Chaves, Ajuda) jáexistiam e já
+   gravavam; o que faltava da Tarefa D foi acrescentado: **editar** um
+   item **clicando no texto** (`memoria_editar`), **Exportar** a memória
+   em `.txt` (`memoria_exportar`), o **aviso do limite de 200 letras**
+   (o `memoria.py` corta em silêncio, e agora a tela avisa antes) e a
+   aba Ajuda com **voz e a lista de atalhos**. **Ctrl+S** salva a última
+   resposta em `.txt`, como no programa antigo (sem isso o navegador
+   abriria a janelinha branca de "salvar página").
+6. Salvar em .txt (já existia), copiar (já existia), pesquisar.
+7. Atalhos de teclado (Ctrl+M, Ctrl+S, Esc já existem), cantos
+   arredondados da caixa, borda escura da janela.
 8. `verificar.bat` cobrindo a tela nova e `.exe` gerado e testado.
 
 ## Como a tela conversa com o Python
@@ -92,6 +101,11 @@ de graça (no Tk ele só sai de uma cor).
   `6 - Falar com a tela nova.bat`. É a mesma tela, com `--voz`: o
   microfone é o real e a IA responde com a chave dele, **mas nenhuma
   conversa é salva** (é `--demo --voz`).
+- **Para o Wolf USAR COM OS DADOS DELE:** duplo clique em
+  `7 - Usar a tela nova de verdade.bat`. Aí a tela abre com as conversas
+  dele e **salva no mesmo arquivo que o programa de sempre** (as duas
+  barredas mostram a mesma coisa). Ainda em construção: se algo parecer
+  errado, é só fechar — o programa de sempre não muda.
 - **Para quem programa:** `.venv\Scripts\python.exe app_web.py` (usa as
   conversas de verdade, e grava).
 
