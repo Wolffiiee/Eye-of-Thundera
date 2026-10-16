@@ -1526,6 +1526,13 @@ def principal():
     else:
         print("Suas conversas e memoria podem ser atualizadas ao conversar.")
     try:
+        # Nome do app na barra de tarefas (em vez de "IDLE (Python 3.12)").
+        try:
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                "Eye of Thundera")
+        except Exception:
+            pass
         webview.start(ao_abrir, janela, gui="edgechromium",
                       icon=str(RAIZ / "icone.ico"))
     except Exception as erro:
