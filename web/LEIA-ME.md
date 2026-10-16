@@ -39,10 +39,14 @@ de graça (no Tk ele só sai de uma cor).
    e excluir funcionam. A conversa aberta mora na ponte
    (`Ponte.mensagens` / `Ponte.id_atual`) e `_gravar_conversa()` grava no
    arquivo quando há mensagem nova — igual ao programa antigo.
-3. **O que falta agora: a IA.** `enviar()` ainda responde "passo 3".
-   É aqui que entra `p.perguntar(...)` e o `window.PIA.evento(...)`
-   mandando `etapa` (o que ele está fazendo), `resposta` e `erro`.
-4. Caixa de digitar, microfone, botão enviar, modo web.
+3. ~~A IA~~ **FEITO (passo 3, 16/10/2026)**: a pergunta chega na IA e a
+   resposta volta por partes. O `enviar()` devolve na hora e o trabalho
+   roda numa thread; o que ela faz chega pela tela por `etapa`,
+   `resposta`, `erro` e `conversas` (ver `window.PIA.evento`). Reaproveita
+   `pesquisa_ia.perguntar`/`conversar`, o roteador, a chave reserva e o
+   tradutor de erro do programa antigo — nada disso foi reescrito.
+4. Caixa de digitar (já existe), microfone, botão enviar (já existe),
+   modo web.
 5. Janela de Configurações com as 4 abas funcionando de verdade (gravar).
 6. Salvar em .txt, copiar, pesquisar.
 7. Atalhos de teclado, cantos arredondados da caixa, borda escura da janela.
@@ -53,12 +57,16 @@ de graça (no Tk ele só sai de uma cor).
 - A ponte do pywebview é **assíncrona**: a chamada devolve uma Promise, e
   o `app.js` já usa `await` (`async function chamar`). Do lado do Python,
   tudo pode ser normal.
-- Para o Python **falar com a tela** (usado no passo 3, para a resposta
-  ir aparecendo), é `janela.evaluate_js("window.PIA.evento(" + json +
-  ")")`. O `json.dumps(..., ensure_ascii=False)` evita que acento e emoji
-  virem lixo.
-- Todo teste do `verificar.py` que mexe em conversa ou memória aponta os
-  arquivos para `_tmp\teste-tela-nova` e restaura no fim. Nunca teste
+- Para o Python **falar com a tela**, use o `self._evento(...)` da ponte
+  (é ele que faz `janela.evaluate_js("window.PIA.evento(" + json + ")")`).
+  O `json.dumps(..., ensure_ascii=False)` evita que acento e emoji virem
+  lixo — sem ele o ç chega como `\u00e7`. Os quatro tipos de evento são
+  `etapa` (o que a IA está fazendo), `resposta`, `erro` (com `"chave"`
+  quando o problema é a chave, e aí a tela abre as Configurações) e
+  `conversas` (atualiza a barra da esquerda).
+- Todo teste do `verificar.py` que mexe em conversa, memória ou chave
+  aponta os arquivos para `_tmp\teste-tela-nova` (ou
+  `_tmp\teste-tela-nova-ia`, o da IA) e restaura no fim. Nunca teste
   contra os dados do Wolf.
 
 ## Como abrir

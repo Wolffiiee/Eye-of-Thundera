@@ -1,18 +1,21 @@
 # ONDE A GENTE PAROU (leia isto primeiro)
 
-> Written em 15/10/2026. Se você é uma IA lendo isto: o Wolf não programa.
+> Escrito em 16/10/2026. Se você é uma IA lendo isto: o Wolf não programa.
 > Fale com ele em português simples, sem jargão, e chame-o de Wolf.
 
 ## Uma linha de resumo
-Tela nova do Pesquisa IA em **HTML**: os **passos 1 e 2 estão prontos e
-testados**. O que falta é o **passo 3: ligar a IA de verdade** (hoje
-`enviar()` responde "passo 3"). O programa antigo (tkinter) **continua
+Tela nova do Pesquisa IA em **HTML**: os **passos 1, 2 e 3 estão prontos e
+testados** — a IA de verdade responde no passo 3. Falta o **passo 4: o
+microfone e o modo web**. O programa antigo (tkinter) **continua
 funcionando e não foi tocado** — é o atalho da Área de Trabalho.
 
 ## Como ver a tela nova
-Duplo clique em **`5 - Ver a tela nova.bat`**. Abre no segundo monitor,
-em modo exemplo (conversas de mentira, com emoji colorido), e não mexe em
-nada do Wolf.
+Duplo clique em **`5 - Ver a tela nova.bat`**. Abre no segundo monitor, em
+modo exemplo (as conversas mostradas são de mentira, com emoji colorido).
+Desde o passo 3 **a IA de verdade também responde por lá**, mas nada é
+gravado — nem conversa, nem memória — enquanto a janela estiver no modo
+exemplo. Para usar com as conversas de verdade:
+`.venv\Scripts\python.exe app_web.py`.
 
 ## Leia nesta ordem antes de mexer em qualquer coisa
 1. `INSTRUCOES-PARA-IA.md` — as regras e as armadilhas já descobertas
@@ -25,33 +28,50 @@ Depois rode `verificar.bat`. **Só diga que terminou se a última linha for
 "TUDO CERTO"**.
 
 ## Estado atual (confie, foi conferido)
-- `verificar.bat` = **TUDO CERTO**, com **18 testes** só da tela nova.
-- O `.exe` da Área de Trabalho (19:23) está **atualizado** e roda sem erro.
-- O `.git` está limpo; último commit `75d6738` (passo 2).
-- Teste instável já consertado (o do foco da caixa de digitar).
+- `verificar.bat` = **TUDO CERTO**, com **197 verificações** no total (49
+  só da tela nova; as 31 do passo 3 estão em `testes_tela_nova_ia`).
+- O `.exe` da Área de Trabalho **não foi regenerado**: o programa antigo
+  não teve mudança de comportamento (o passo 3 só *moveu* regras de
+  lugar, para as duas telas usarem a mesma), então o `.exe` continua
+  igual e continua certo.
+- O `.git` está limpo; último commit `1075253` (passo 3).
+- **Cuidado: o teste "clicar no texto de apoio não focou a caixa" ainda
+  oscila.** Ele falhou em 1 rodada em 8 e as outras passaram. É da tela
+  tkinter antiga, não da tela nova — se ele falhar, rode o `verificar.bat`
+  de novo antes de achar que quebrou algo.
 
-## O próximo passo: PASSO 3 — a IA
-É o passo grande e o mais importante. O que já está pronto para ele:
-- `app_web.py` tem `Ponte.mensagens` e `Ponte.id_atual` (a conversa
-  aberta mora na ponte) e o método `_gravar_conversa()`, que grava no
-  arquivo quando há mensagem nova. **O passo 3 é quem chama isso.**
-- O `web/app.js` já está ouvindo o Python: `window.PIA.evento({tipo: ...})`
-  com `tipo` = `"etapa"` (o que ele está fazendo), `"resposta"` ou
-  `"erro"`. Use `json.dumps(..., ensure_ascii=False)` para não estragar
-  acentos e emoji.
-- Do lado do Python, a lógica que chama o Gemini e faz a busca está no
-  `pesquisa_ia.py` (função `perguntar`, mais o `_chamar_servico` e a
-  chave reserva). **Reaproveite, não reescreva.**
+## Como o passo 3 ficou (leia antes de mexer no `app_web.py`)
+`Ponte.enviar(texto)` devolve **na hora** e passa o trabalho para a
+thread `_responder`. A tela recebe tudo por eventos.
 
-### Como mandar um evento do Python para a tela
 ```python
-import json
-janela.evaluate_js(
-    "window.PIA.evento(" + json.dumps(
-        {"tipo": "etapa", "texto": "Pesquisando na web..."},
-        ensure_ascii=False) + ")"
-)
+# como a tela manda o que a IA está fazendo:
+self._evento({"tipo": "etapa", "texto": "Consultando a inteligência artificial"})
 ```
+O `_evento` já cuida do `json.dumps(..., ensure_ascii=False)` e engole o
+erro se a janela já foi fechada. Os quatro tipos de evento são:
+`etapa`, `resposta`, `erro` (com `"chave": True` quando for a chave) e
+`conversas` (atualiza a barra da esquerda).
+
+O que reaproveita o `pesquisa_ia.py` (não reescreva): `conversar`,
+`perguntar`, `_decidir_modo`, `tentar_com_reserva`, `traduzir_erro`,
+`_mesclar_memoria` e `aprender_com_o_usuario`.
+
+## O próximo passo: PASSO 4 — microfone e modo web
+A caixa de digitar e o botão enviar **já existem e já funcionam**
+(`#entrada` e `#btn-enviar` do `web/index.html`, ligados no
+`web/app.js`). O que o passo 4 tem que trazer de novo é:
+- o **microfone**: `voz.py` grava e transcreve; o botão `#btn-mic` já
+  existe, mas ainda é `aviso_honesto("microfone")`;
+- o **modo web**: o botão `#btn-web` e o `definir_modo()` já existem, e o
+  modo pesquisado pelo `enviar()` vem de `cfg["modo_pesquisa"]`
+  (`auto` / `sempre` / `nunca`). Hoje `definir_modo()` ainda devolve o
+  aviso, então dá para só gravar o valor no config.
+- o `cfg["voz_enviar"]` (enviar sozinho depois de falar) é desta mesma
+  etapa.
+
+O passo 5 é a Tarefa D (Configurações gravando de verdade). Não faça as
+duas coisas junto: cada passo é um commit e um `verificar.bat` verde.
 
 ## Regras que não podem ser quebradas
 1. **Nenhuma janela branca.** Todo aviso/erro/pergunta é
@@ -62,8 +82,10 @@ janela.evaluate_js(
 3. **Nada de `unbind_all("<Button-1>")`.** Menus usam
    `_registrar_clique_global` / `_remover_clique_global`.
 4. **Nunca mexer nos dados do Wolf** (`%LOCALAPPDATA%\PesquisaIA`) nos
-   testes: aponte `p.ARQUIVO_HISTORICO` e `p.ARQUIVO_MEMORIA` para uma
-   pasta em `_tmp` e restaure no fim (veja a seção 5d do `verificar.py`).
+   testes: aponte `p.ARQUIVO_HISTORICO`, `p.ARQUIVO_MEMORIA` e
+   `p.ARQUIVO_CONFIG` para uma pasta em `_tmp` e restaure no fim (veja a
+   seção 5d do `verificar.py`). Zere também `p._memoria_cache`, senão a
+   memória do teste anterior aparece como se fosse dele.
 5. **Nunca apagar nem renomear o `pesquisa_ia.py`.** A tela nova nasce ao
    lado da antiga. Só trocar quando a nova estiver igual ou melhor.
 6. Nada de API key escrita no projeto; nada de mexer no histórico/git do

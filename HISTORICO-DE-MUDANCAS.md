@@ -5,6 +5,72 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Tela nova: PASSO 3 (a IA de verdade)
+
+O `enviar()` deixou de responder "passo 3". Agora a pergunta chega na IA
+e a resposta volta para a tela enquanto aparece. Commit `1075253`.
+
+- **`app_web.py` — `Ponte.enviar(texto)`:** devolve **na hora** (para a
+  janela não travar) e passa o trabalho para a thread `_responder`. A
+  resposta volta por `window.PIA.evento(...)`: `"etapa"` enquanto a IA
+  trabalha, `"resposta"` no fim, `"erro"` se deu ruim. Só dois erros
+  saem de `enviar()` mesmo: pergunta em branco e `"sem_chave"` (o
+  `app.js` reconhece esse e abre as Configurações sozinho).
+- **Nada foi reescrito.** Reaproveita `pesquisa_ia.perguntar` (busca na
+  web), `pesquisa_ia.conversar` (papo normal), o mesmo roteador
+  (`_decidir_modo`), a mesma troca automática de chave reserva e o
+  mesmo tradutor de erro do programa antigo. Pedido de notícia continua
+  pesquisando a pergunta inteira, como antes.
+- **`pesquisa_ia.py` — regras compartilhadas, sem mudança de
+  comportamento:** `traduzir_erro`, `chave_reserva`, `chave_ativa` e
+  `tentar_com_reserva` saíram de dentro da classe `Aplicativo` e viraram
+  funções de módulo; os métodos dela passaram a chamar essas funções.
+  É o mesmo código, só mudou de lugar. **A tela antiga não tem nada de
+  novo — só pode ser usada por duas telas ao mesmo tempo.**
+- **A memória continua sem repetir:** depois de responder, a IA é mandada
+  aprender em segundo plano e calada (`_aprender`), igual ao
+  `_guardar_e_aprender` do programa antigo, com o mesmo limite de
+  chamadas. O "lembra que..." grava direto na memória, sem gastar IA.
+- **`web/app.js` — ordem garantida (defeito real, achado no caminho):**
+  o Python devolve a chamada de `enviar()` e manda os eventos logo
+  depois, mas a `Promise` às vezes volta **depois** do primeiro evento.
+  Se a IA falhava na hora (chave inválida, internet caiu), o evento
+  `erro` chegava antes da pergunta: a resposta aparecia em cima dela e o
+  "pensando" ficaria aceso para sempre. Agora os eventos são guardados
+  até a pergunta entrar na tela.
+- **Modo exemplo (`--demo`):** a IA de verdade responde, mas **nada é
+  gravado** (nem conversa, nem memória). `Nova conversa` passou a
+  funcionar no exemplo (ela não grava nada); `excluir_conversa` continua
+  barrado lá — as conversas do exemplo são de mentira e o arquivo é do
+  Wolf.
+- **Testes: `testes_tela_nova_ia`, 31 verificações novas.** Nenhuma chama
+  a IA de verdade: `conversar`/`perguntar`/`_decidir_modo` são trocados
+  por uma resposta de mentira, a `threading` vira uma que roda na hora, e
+  histórico/memória/chave ficam apontados para `_tmp`. Cobre: sem chave,
+  pergunta em branco, envio duplo, etapa antes da resposta, acento e
+  emoji chegando crus (sem `\u` escapado), gravação da conversa, a lista
+  da esquerda sendo atualizada, histórico da segunda pergunta, erro de
+  chave (português + abre Config.), erro de internet (não mexe nas
+  Config.), modo pesquisa × pedido de notícia, aprender ligado e
+  desligado, e o modo exemplo não gravando.
+- **Teste antigo adaptado (não apagado):** o de "no modo DEMO nada é
+  gravado" pedia que `nova_conversa` respondesse erro no exemplo. Como
+  ela agora funciona por lá, o teste passou a conferir que ela limpa a
+  tela e que nada vai para o disco.
+- **Armadilha nova registrada no `INSTRUCOES-PARA-IA.md`:** a
+  `carregar_memoria()` tem um cache (`_memoria_cache`) dentro do módulo.
+  Um teste que aponta o arquivo para outra pasta **tem que zerar o
+  cache**, senão a memória do teste anterior aparece como se fosse do
+  Wolf.
+- **`.exe` da Área de Trabalho: NÃO foi regenerado.** O programa antigo
+  não teve mudança de comportamento (só mudou de lugar), então o `.exe`
+  que o Wolf usa continua igual e continua certo.
+- **`verificar.bat` = TUDO CERTO**, com **49 verificações da tela nova**
+  (as 18 que já existiam — duas delas adaptadas — e mais **31 novas** do
+  passo 3 e do modo exemplo).
+
+---
+
 ## 2026-10-15 (noite) - Claude: memória sem repetição (módulo novo), guia dos emojis e conferência
 
 - **Pedido do Wolf:** (1) a memória do app parar de guardar o mesmo tipo de

@@ -13,7 +13,8 @@ Claude em outra conversa): leia isto depois do PASSO-A-PASSO.md.
 - `.exe` novo: `dist\Pesquisa IA.exe`, já copiado para a Área de Trabalho.
   Os anteriores estão em `_arquivo_morto\`.
 - Estado: `verificar.bat` = TUDO CERTO (seleção, duplo/triplo clique,
-  menus, microfone, e agora a caixa de digitar da Tarefa C).
+  menus, microfone, caixa de digitar da Tarefa C, e agora os passos 1, 2
+  e 3 da tela nova).
 - Feito da `PLANO-NOVAS-FUNCOES.md`: **Tarefa A** (roteador amigo/pesquisa),
   **Tarefa B** (microfone) e **Tarefa C** (interface). **Falta a Tarefa D**
   (Configurações em quatro abas).
@@ -72,10 +73,15 @@ rodando pelo código: na pasta do projeto) e siga o PASSO-A-PASSO.md.
         15/10/2026**: abrir, criar nova e excluir funcionam; a conversa
         aberta mora na ponte e o `_gravar_conversa()` (que grava no
         arquivo quando há mensagem nova) já está pronto. 18 testes.
-        Falta a **IA** (passo 3), que é o que vai usar esse gravação.
-     3. enviar pergunta e mostrar a resposta aparecendo por partes
-        (aqui entra `p.perguntar(...)` e o `window.PIA.evento(...)`
-        mandando `etapa`, `resposta` e `erro` para a tela);
+        **Já está ligado à IA** (passo 3, feito em 16/10/2026).
+     3. ~~enviar pergunta e mostrar a resposta aparecendo por partes~~
+        **FEITO em 16/10/2026**: `Ponte.enviar()` devolve na hora e o
+        trabalho roda numa thread; a resposta volta por
+        `window.PIA.evento(...)` (`etapa`, `resposta`, `erro` e
+        `conversas`), reaproveitando `p.perguntar`/`p.conversar`, o
+        roteador, a chave reserva e o tradutor de erro do programa
+        antigo. 31 testes novos (`testes_tela_nova_ia`). Falta o
+        **passo 4**;
      4. caixa de digitar, microfone, botão enviar, modo web;
      5. janela de Configurações com as 4 abas gravando de verdade
         (a Tarefa D entra aqui, para não ser feita duas vezes);

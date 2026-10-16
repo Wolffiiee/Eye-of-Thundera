@@ -160,6 +160,12 @@ trabalhando.
 - **Emojis:** as bolhas removem emojis de propósito (`_remover_emojis`).
 - **Chaves de API:** só em `%LOCALAPPDATA%\PesquisaIA\config.json`. Nunca no
   código nem em arquivo da pasta do projeto.
+- **`carregar_memoria()` tem um cache dentro do módulo** (`_memoria_cache`):
+  ele só é relido do arquivo quando é `None`. Um teste que aponte
+  `ARQUIVO_MEMORIA` para uma pasta de teste **tem que zerar
+  `p._memoria_cache`** e devolver o valor no fim — senão a memória do
+  teste anterior aparece como se fosse do Wolf. (Já enganou um teste da
+  tela nova: sobrou "Gosta de RPG" e "Mora em Santa Maria".)
 - **Avatar no .exe:** `avatar_usuario.png` e `icone.ico` são embutidos no
   .exe pelo `Pesquisa IA.spec`. Trocou a imagem? Gere o .exe de novo.
 
