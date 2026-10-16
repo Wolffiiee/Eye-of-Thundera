@@ -2883,6 +2883,92 @@ SUGESTOES = [
 ]
 
 
+# ----------------------------------------------------------------------------
+# Regras que as DUAS telas usam (a do tkinter e a nova, em HTML).
+# Estas funcoes nao dependem de nenhuma tela, por isso a tela nova
+# (app_web.py) aproveita exatamente a mesma regra em vez de reescrever.
+
+def traduzir_erro(erro):
+    """Mete um erro do Google/da web em portugues de gente.
+
+    O mesmo erro acontece em telas diferentes e a pessoa nao pode ver
+    "401 UNAUTHENTICATED". Aqui vira uma frase que diz o que fazer.
+    """
+    mensagem = str(erro)
+    baixo = mensagem.lower()
+    if (
+        "api key" in baixo or "api_key" in baixo
+        or "unauthenticated" in baixo or "no auth credentials" in baixo
+        or "invalid authentication" in baixo or "401" in baixo
+    ):
+        return (
+            "Uma das chaves de API parece inválida. Abra Configurações e "
+            "confira se copiou a chave completa (a do Google começa com "
+            "AIza ou AQ., a do Groq com gsk_ e a do OpenRouter com "
+            "sk-or-)."
+        )
+    if "quota" in baixo or "rate limit" in baixo or "resource_exhausted" in baixo:
+        return (
+            "Você atingiu o limite gratuito por agora. "
+            "Isso se renova sozinho — espere alguns minutos (ou volte "
+            "amanhã) e tente de novo."
+        )
+    if "plano b" in baixo:
+        return (
+            "O Gemini não respondeu e o plano B também falhou.\n\n"
+            "Detalhe: %s\n\n"
+            "Tente de novo em alguns minutos." % mensagem
+        )
+    if "internet" in baixo or "connect" in baixo or "timeout" in baixo or "ssl" in baixo:
+        return "Parece que a internet caiu. Confira a conexão e tente de novo."
+    if "ddgs" in baixo or "duckduckgo" in baixo:
+        return (
+            "Não consegui pesquisar na web agora. Verifique a internet e "
+            "tente de novo em alguns segundos."
+        )
+    return "Aconteceu um erro: %s" % mensagem
+
+
+def chave_reserva(cfg):
+    """A segunda chave do Google, se o Wolf cadastrou uma."""
+    return (cfg.get("api_key_reserva") or "").strip()
+
+
+def chave_ativa(cfg, falhou_principal):
+    """A chave que o programa deve usar agora.
+
+    A troca vale so nesta sessao: se a principal voltar a funcionar, ela
+    e usada de novo no proximo dia.
+    """
+    if falhou_principal and chave_reserva(cfg):
+        return chave_reserva(cfg)
+    return (cfg.get("api_key") or "").strip()
+
+
+def tentar_com_reserva(chamar, cfg, estado):
+    """Executa `chamar(chave)`. Se o Google recusar a chave principal,
+    repete com a chave reserva (uma vez so).
+
+    `estado` e um dicionario com a chave "falhou": se ficar True, o
+    programa passa a usar a reserva. E o mesmo dicionario para a
+    proxima chamada, para a troca durar a sessao toda.
+    """
+    for tentativa in range(2):
+        chave = chave_ativa(cfg, bool(estado.get("falhou")))
+        try:
+            return chamar(chave)
+        except Exception as erro:
+            if tentativa:
+                raise
+            # so troca quando o erro e de chave mesmo (nao e cota, nem
+            # internet) e so se existir uma reserva
+            if (estado.get("falhou") or not chave_reserva(cfg)
+                    or not _falha_de_chave(erro)):
+                raise
+            estado["falhou"] = True
+    raise RuntimeError("não foi possível falar com a IA")
+
+
 class Aplicativo:
     def __init__(self, raiz):
         self.raiz = raiz
@@ -3334,13 +3420,11 @@ class Aplicativo:
     # -- chave de API: principal, reserva e troca automatica ----------------
 
     def _chave_reserva(self):
-        return (self.cfg.get("api_key_reserva") or "").strip()
+        return chave_reserva(self.cfg)
 
     def _chave_ativa(self):
         """A chave que o programa deve usar agora."""
-        if self._falhou_principal and self._chave_reserva():
-            return self._chave_reserva()
-        return (self.cfg.get("api_key") or "").strip()
+        return chave_ativa(self.cfg, self._falhou_principal)
 
     def _usar_reserva(self, erro):
         """O Google recusou a chave: tem outra para tentar?
@@ -3366,16 +3450,14 @@ class Aplicativo:
 
     def _tentar_com_reserva(self, chamar):
         """Executa `chamar(chave)`. Se o Google recusar a chave principal,
-        repete com a chave reserva (uma vez só)."""
-        for tentativa in range(2):
-            chave = self._chave_ativa()
-            try:
-                return chamar(chave)
-            except Exception as erro:
-                if tentativa == 0 and self._usar_reserva(erro):
-                    continue
-                raise
-        raise RuntimeError("não foi possível falar com a IA")
+        repete com a chave reserva (uma vez só). A regra mora em
+        `tentar_com_reserva`, compartilhada com a tela nova (app_web.py),
+        para as duas telas trocarem de chave do mesmo jeito."""
+        estado = {"falhou": self._falhou_principal}
+        try:
+            return tentar_com_reserva(chamar, self.cfg, estado)
+        finally:
+            self._falhou_principal = bool(estado["falhou"])
 
     def _aviso_chave_morta(self, erro):
         """A chave principal morreu e não há reserva: mostra a janelinha
@@ -5221,39 +5303,9 @@ class Aplicativo:
         threading.Thread(target=tarefa, daemon=True).start()
 
     def _traduzir_erro(self, erro):
-        mensagem = str(erro)
-        baixo = mensagem.lower()
-        if (
-            "api key" in baixo or "api_key" in baixo
-            or "unauthenticated" in baixo or "no auth credentials" in baixo
-            or "invalid authentication" in baixo or "401" in baixo
-        ):
-            return (
-                "Uma das chaves de API parece inválida. Abra Configurações e "
-                "confira se copiou a chave completa (a do Google começa com "
-                "AIza ou AQ., a do Groq com gsk_ e a do OpenRouter com "
-                "sk-or-)."
-            )
-        if "quota" in baixo or "rate limit" in baixo or "resource_exhausted" in baixo:
-            return (
-                "Você atingiu o limite gratuito por agora. "
-                "Isso se renova sozinho — espere alguns minutos (ou volte "
-                "amanhã) e tente de novo."
-            )
-        if "plano b" in baixo:
-            return (
-                "O Gemini não respondeu e o plano B também falhou.\n\n"
-                "Detalhe: %s\n\n"
-                "Tente de novo em alguns minutos." % mensagem
-            )
-        if "internet" in baixo or "connect" in baixo or "timeout" in baixo or "ssl" in baixo:
-            return "Parece que a internet caiu. Confira a conexão e tente de novo."
-        if "ddgs" in baixo or "duckduckgo" in baixo:
-            return (
-                "Não consegui pesquisar na web agora. Verifique a internet e "
-                "tente de novo em alguns segundos."
-            )
-        return "Aconteceu um erro: %s" % mensagem
+        """Mete o erro em portugues. A regra esta em traduzir_erro, que
+        a tela nova (app_web.py) tambem usa."""
+        return traduzir_erro(erro)
 
     # -- janela de configuracoes (com abas) ---------------------------------
 

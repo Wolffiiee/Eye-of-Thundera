@@ -13,17 +13,18 @@ POR QUE EXISTE
 O QUE ESTE PASSO FAZ
     - abre a janela da tela nova no SEGUNDO MONITOR (regra do Wolf);
     - mostra as conversas que ele ja tem, lendo os MESMOS arquivos do
-      programa antigo (so LEITURA);
-    - abre as quatro abas de Configuracoes (tambem so leitura);
+      programa antigo;
+    - abrir, criar e excluir conversa;
+    - ENVIAR PERGUNTA: a IA de verdade responde, e o que ela esta
+      fazendo aparece na tela enquanto trabalha (passo 3);
+    - abre as quatro abas de Configuracoes (so leitura);
     - o botao de salvar a resposta em .txt ja funciona de verdade.
 
 O QUE AINDA NAO FUNCIONA (e avisa na tela, sem quebrar)
-    - enviar pergunta: a IA ainda nao esta ligada nesta tela (passo 3);
     - microfone (passo 4);
-    - mudar qualquer coisa nas Configuracoes ou na Memoria (passo 5);
-    - excluir conversa (passo 2).
-    Tudo que for isso devolve um aviso honesto. NUNCA grava, apaga ou
-    muda nada do Wolf.
+    - mudar qualquer coisa nas Configuracoes ou na Memoria (passo 5).
+    Tudo que for isso devolve um aviso honesto. No modo exemplo
+    (`--demo`) nada e gravado nunca.
 
 REGRA DE OURO
     O `pesquisa_ia.py` NAO foi tocado e o atalho da Area de Trabalho
@@ -35,7 +36,9 @@ Como rodar (esta e' a forma normal, o que o Wolf vai usar):
     .venv\\Scripts\\python.exe app_web.py
 """
 
+import json
 import sys
+import threading
 import time
 import webbrowser
 from pathlib import Path
@@ -128,11 +131,11 @@ CONVERSAS_DEMO = [
     },
 ]
 
+# O que AINDA nao esta ligado nesta tela. O passo 3 (a IA) ja foi feito,
+# por isso "enviar" saiu daqui.
 PASSO = {
-    "enviar": "3",
     "microfone": "4",
     "config": "5",
-    "excluir": "2",
 }
 
 
@@ -230,18 +233,19 @@ def _mensagens_de(conversa):
 class Ponte:
     """Tudo que a tela nova pode pedir ao Python.
 
-    REGRA DESTE PASSO (2): as conversas de verdade. Abrir, criar nova e
-    excluir funcionam; o resto ainda avisa em qual passo sera feito. O
-    espelho da conversa aberta fica AQUI (em `self.mensagens` e
-    `self.id_atual`), igual ao programa antigo, que tambem guarda a
-    conversa aberta dentro dele e so grava no arquivo quando ha algo
-    novo.
+    A conversa aberta mora AQUI (em `self.mensagens` e `self.id_atual`),
+    igual ao programa antigo, que tambem guarda a conversa aberta dentro
+    dele e so grava no arquivo quando ha mensagem nova.
+
+    O `self.ocupado` e o "trava" do envio: enquanto a IA responde, a tela
+    nao aceita outra pergunta (e o botao fica apagado, la no JavaScript).
     """
 
     def __init__(self, janela=None):
         self.janela = janela
         self.id_atual = None        # conversa aberta (igual ao app antigo)
         self.mensagens = []
+        self.ocupado = False
 
     # --- 1. o que a tela precisa para comecar ---
 
@@ -249,10 +253,7 @@ class Ponte:
         """Primeira coisa que a tela chama: devolve o estado inicial."""
         conversas = _conversas_para_a_tela()
         atual = conversas[0] if conversas else None
-        if DEMO:
-            cfg = {}
-        else:
-            cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+        cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
         self.id_atual = (atual or {}).get("id")
         self.mensagens = _mensagens_de(atual)
         return {
@@ -263,6 +264,8 @@ class Ponte:
             "conversas": conversas,
             "mensagens": list(self.mensagens),
             "atual": self.id_atual,
+            # No modo exemplo a chave e' lida (so ler nao mexe em nada) para
+            # o aviso ser honesto: sem chave, a IA realmente nao responde.
             "tem_chave": bool(cfg.get("api_key")),
         }
 
@@ -301,9 +304,8 @@ class Ponte:
 
         NAO grava nada: conversa sem pergunta nao tem o que salvar. O
         arquivo só é escrito quando houver mensagem nova (passo 3).
+        Funciona tambem no modo exemplo (lá nada e gravado mesmo).
         """
-        if DEMO:
-            return aviso_honesto("enviar")
         self.id_atual = None
         self.mensagens = []
         return {"atual": None, "conversas": _conversas_para_a_tela()}
@@ -315,9 +317,14 @@ class Ponte:
         arquivo e, se era a que estava aberta, abre a tela inicial. O
         que a IA aprendeu sobre o Wolf continua guardado de proposito
         (apagar a conversa nao e apagar o que ele ensinou).
+
+        No modo exemplo NÃO apaga: as conversas mostradas ali são de
+        mentira, e o arquivo de verdade é do Wolf.
         """
         if DEMO:
-            return aviso_honesto("excluir")
+            return {"erro": "No modo exemplo nada é apagado (as conversas "
+                            "aí são de mentira). Use o programa de sempre "
+                            "para excluir de verdade."}
         alvo = str(identificador)
         restantes = [c for c in p.carregar_conversas()
                      if str(c.get("id")) != alvo]
@@ -394,10 +401,159 @@ class Ponte:
             pass
         return {}
 
-    # --- 3. o que ainda falta (avisa, sem quebrar) ---
+    # --- 3. a IA de verdade (este passo) ---
+
+    def _evento(self, dados):
+        """Fala com a tela: `window.PIA.evento({...})` (ver web/app.js).
+
+        O `json.dumps` com `ensure_ascii=False` e' obrigatorio: sem ele o
+        acento e o emoji viram "\\u00e7" na tela.
+
+        Aqui nunca estoura nada: se o Wolf fechou a janela no meio da
+        resposta, o erro e' engolido (a thread morre em silencio).
+        """
+        if self.janela is None:
+            return                    # teste sem janela: nao ha para quem falar
+        try:
+            self.janela.evaluate_js(
+                "window.PIA.evento("
+                + json.dumps(dados, ensure_ascii=False) + ")"
+            )
+        except Exception:
+            pass
 
     def enviar(self, texto):
-        return aviso_honesto("enviar")
+        """O Wolf aperta Enter (ou o botao): a IA responde.
+
+        DEVOLVE NA HORA. Quem trabalha e' a thread `_responder`; o que ela
+        descobre volta para a tela por `_evento` ("etapa" enquanto pesquisa,
+        "resposta" no fim, "erro" se deu ruim). Fazer o trabalho aqui
+        mesmo travaria a janela por varios segundos.
+
+        Os dois unicos erros que saem daqui sao os que a tela precisa saber
+        AGORA, antes de mostrar a pergunta: pergunta vazia e falta de
+        chave ("sem_chave", que o app.js reconhece e abre as Configuracoes).
+        """
+        texto = str(texto or "").strip()
+        if not texto:
+            return {"erro": "Escreva a pergunta antes de enviar."}
+        if self.ocupado:
+            return {"erro": "Aguarde a resposta terminar."}
+
+        cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+        chave = (cfg.get("api_key") or "").strip()
+        if not chave:
+            return {"erro": "sem_chave"}
+
+        # A pergunta entra no espelho da conversa antes da thread comecar,
+        # para ela ja fazer parte do historico que a IA vai ler.
+        self.ocupado = True
+        self.mensagens.append({"role": "user", "text": texto})
+        threading.Thread(
+            target=self._responder, args=(texto, cfg, chave), daemon=True
+        ).start()
+        return {}
+
+    def _responder(self, texto, cfg, chave):
+        """A thread que trabalha enquanto a janela continua viva.
+
+        Reaproveita o caminho do programa antigo: `pesquisa_ia.perguntar`
+        (com busca na web) ou `pesquisa_ia.conversar` (papo normal),
+        escolhidos pelo mesmo roteador, com a mesma chave reserva e o
+        mesmo tradutor de erro. Nenhum disso foi reescrito aqui.
+        """
+        def avisar(mensagem):
+            """`progresso` das funcoes acima: o que a IA esta fazendo."""
+            self._evento({"tipo": "etapa", "texto": str(mensagem or "")})
+
+        try:
+            modelo = cfg.get("modelo", p.MODELO_PADRAO)
+            usar_contexto = bool(cfg.get("usar_contexto", True))
+            modo_cfg = cfg.get("modo_pesquisa", "auto")
+            if modo_cfg not in ("auto", "sempre", "nunca"):
+                modo_cfg = "auto"
+
+            # Historico que a IA entende: so "user" e "model" (o erro de
+            # uma tentativa anterior nao entra, e o Gemini nao aceita).
+            historico = [{"role": m["role"], "text": m["text"]}
+                         for m in self.mensagens[:-1]
+                         if m.get("role") in ("user", "model")
+                         and str(m.get("text") or "").strip()]
+
+            # "lembra que ...": guarda direto, sem gastar chamada de IA
+            # (igual ao programa antigo). No modo exemplo nao guarda nada.
+            if not DEMO:
+                try:
+                    fato = p.roteador.fato_pedido(texto)
+                    if fato:
+                        p._mesclar_memoria([fato])
+                except Exception:
+                    pass
+
+            decisao = p._decidir_modo(chave, texto, historico, modo_cfg)
+            modo = decisao.get("modo", "amigo")
+            consulta = decisao.get("consulta") or texto
+            # Noticia explicita continua pesquisando, como antes.
+            if p._quer_noticias(texto):
+                modo = "pesquisa"
+                consulta = texto
+
+            def chamar_a_ia(qual_chave):
+                if modo == "amigo":
+                    return p.conversar(
+                        qual_chave, modelo, historico, texto, usar_contexto,
+                        progresso=avisar, cfg=cfg, id_atual=self.id_atual,
+                    )
+                return p.perguntar(
+                    qual_chave, modelo, historico, texto, usar_contexto,
+                    progresso=avisar, cfg=cfg, id_atual=self.id_atual,
+                    consulta=consulta,
+                )
+
+            # Mesma troca automatica de chave do programa antigo.
+            resposta, _fontes, _buscas, _origem = p.tentar_com_reserva(
+                chamar_a_ia, cfg, {})
+            resposta = (resposta or "").strip() or "(sem resposta)"
+
+            self.mensagens.append({"role": "model", "text": resposta})
+            if not DEMO:
+                self._gravar_conversa()
+            self._evento({"tipo": "resposta", "texto": resposta})
+            if not DEMO:
+                # A lista da esquerda mostra a conversa nova.
+                self._evento({"tipo": "conversas",
+                              "conversas": _conversas_para_a_tela(),
+                              "atual": self.id_atual})
+                self._aprender(texto, resposta, cfg, chave)
+        except Exception as erro:
+            self.mensagens.append({"role": "erro", "text": p.traduzir_erro(erro)})
+            # `chave`: a tela abre as Configuracoes sozinha (como o programa
+            # antigo faz quando a chave morre).
+            self._evento({"tipo": "erro",
+                          "texto": p.traduzir_erro(erro),
+                          "chave": bool(p._falha_de_chave(erro))})
+        finally:
+            self.ocupado = False
+
+    def _aprender(self, pergunta, resposta, cfg, chave):
+        """Deixa a IA aprender sobre o Wolf, em segundo plano e calada.
+
+        Igual ao programa antigo: nada aparece na tela, nada e' perguntado,
+        e o proprio `aprender_com_o_usuario` se limita para nao chamar a IA
+        a cada mensagem.
+        """
+        if DEMO or not cfg.get("aprender", True) or not chave:
+            return
+
+        def tarefa():
+            try:
+                p.aprender_com_o_usuario(chave, pergunta, resposta)
+            except Exception:
+                pass
+
+        threading.Thread(target=tarefa, daemon=True).start()
+
+    # --- o que ainda falta (avisa, sem quebrar) ---
 
     def definir_modo(self, modo):
         return aviso_honesto("config")
@@ -457,12 +613,15 @@ def principal():
         except Exception:
             pass
 
-    print("Abrindo a tela nova (passo 1, so leitura).")
+    print("Abrindo a tela nova (passo 3: a IA ja esta ligada).")
     print("Janela no segundo monitor: x=%d y=%d  (%dx%d)"
           % (X_PADRAO, Y_PADRAO, LARGURA, ALTURA))
     if DEMO:
         print("MODO DEMO: as conversas mostradas sao de EXEMPLO.")
-    print("Suas conversas, memoria e chaves NAO vao ser alteradas.")
+        print("A IA de verdade responde, mas NADA e gravado (nem conversa,")
+        print("nem memoria) enquanto a janela estiver no modo exemplo.")
+    else:
+        print("Suas conversas e memoria podem ser atualizadas ao conversar.")
     try:
         webview.start(ao_abrir, janela, gui="edgechromium")
     except Exception as erro:

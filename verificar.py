@@ -19,6 +19,7 @@ Para criar um teste novo: copie um dos "caso(...)" ou "ok(...)" abaixo.
 
 import importlib.util
 import io
+import json
 import py_compile
 import re
 import shutil
@@ -1377,11 +1378,19 @@ def testes_tela_nova(p):
         else:
             falha("tela nova: o modo exemplo mostrou %d conversa(s)"
                   % len(inicial["conversas"]))
-        if demo.nova_conversa().get("erro") and \
-                demo.excluir_conversa("demo-1").get("erro"):
-            ok("tela nova: no modo exemplo, alterar conversa avisa e não faz")
+        # "Nova conversa" pode funcionar no exemplo (ela nao grava nada),
+        # mas EXCLUIR tem que continuar barrado: as conversas mostradas
+        # ali sao de mentira e o arquivo de verdade e' do Wolf.
+        nova = demo.nova_conversa()
+        if nova.get("atual") is None and not demo.mensagens:
+            ok("tela nova: no modo exemplo, 'Nova conversa' limpa a tela")
         else:
-            falha("tela nova: o modo exemplo respondeu que alterou conversa")
+            falha("tela nova: no modo exemplo, 'Nova conversa' devolveu %r"
+                  % (nova,))
+        if demo.excluir_conversa("demo-1").get("erro"):
+            ok("tela nova: no modo exemplo, excluir conversa avisa e não faz")
+        else:
+            falha("tela nova: no modo exemplo respondeu que excluiu conversa")
         if p.carregar_conversas() == []:
             ok("tela nova: o teste todo não deixou conversa nenhuma no disco")
         else:
@@ -1394,11 +1403,396 @@ def testes_tela_nova(p):
         shutil.rmtree(pasta, ignore_errors=True)
 
 
+# --- 5e. tela nova: a IA de verdade (o passo 3) ----------------------------
+
+
+class _JanelaDeMentira:
+    """Janela de mentira: guarda o que o Python tentou falar para a tela."""
+
+    def __init__(self):
+        self.eventos = []
+        self.scriptos = []
+
+    def evaluate_js(self, script):
+        self.scriptos.append(script)
+        # chega "window.PIA.evento({...})": o que importa e' o objeto
+        dentro = script[script.index("(") + 1:script.rindex(")")]
+        self.eventos.append(json.loads(dentro))
+
+    def tipos(self):
+        return [e.get("tipo") for e in self.eventos]
+
+    def unico(self, tipo):
+        achados = [e for e in self.eventos if e.get("tipo") == tipo]
+        return achados[0] if achados else None
+
+
+class _ThreadNaHora:
+    """Thread que roda na hora (o teste nao pode esperar a IA de verdade).
+
+    O app_web chama `Thread(target=..., args=(...), daemon=True)`, entao
+    os nomes dos parâmetros precisam bater com os do threading de verdade.
+    """
+
+    def __init__(self, target=None, args=(), **_ignorado):
+        self._alvo, self._args, self.rodou = target, args, False
+
+    def start(self):
+        self.rodou = True
+        self._alvo(*self._args)
+
+
+class _ThreadsNaHora:
+    """Finge o `threading` do app_web e anota o que foi criado.
+
+    A tela nova trabalha em thread para a janela nao travar. Aqui tudo roda
+    na hora, e `rodadas` fica com o nome de cada thread, para o teste
+    conferir que a tarefa de aprender foi chamada (ou nao).
+    """
+
+    def __init__(self):
+        self.rodadas = []
+
+    def Thread(self, target=None, args=(), **_ignorado):
+        self.rodadas.append(getattr(target, "__name__", str(target)))
+        return _ThreadNaHora(target=target, args=args)
+
+
+# Resposta com acento e emoji: é o que pega o ensure_ascii=False quebrado
+# (sem ele o ç e o 🚀 chegariam na tela como "\\u00e7" e "\\ud83d\\ude80").
+RESPOSTA_TESTE = "Claro! Voce tem razão: çãé, ação e 🚀 (resposta de teste)"
+
+
+def testes_tela_nova_ia(p):
+    """O passo 3: enviar pergunta e a resposta voltando por evento.
+
+    NAO chama a IA de verdade (gastaria a cota do Wolf e depends de
+    internet): o `conversar`/`perguntar` sao trocados por uma resposta de
+    mentira. O arquivo de configuracao tambem aponta para uma pasta de
+    teste, entao a chave do Wolf nem chega a ser lida.
+    """
+    import app_web
+
+    pasta = Path(PASTA) / "_tmp" / "teste-tela-nova-ia"
+    shutil.rmtree(pasta, ignore_errors=True)
+    pasta.mkdir(parents=True, exist_ok=True)
+
+    chamadas = []
+    aprendidas = []
+
+    def ia_de_mentira(api_key, modelo, historico, pergunta, usar_contexto,
+                      progresso=None, cfg=None, id_atual=None, consulta=None):
+        """Responde na hora, como o `pesquisa_ia.conversar`/`perguntar`."""
+        chamadas.append({"api_key": api_key, "pergunta": pergunta,
+                         "historico": list(historico), "id_atual": id_atual,
+                         "consulta": consulta})
+        if progresso:
+            progresso("Procurando na web")
+            progresso("Consultando a inteligência artificial")
+        return RESPOSTA_TESTE, [], [], "Gemini"
+
+    def ia_quebrada(*_args, **_kw):
+        raise RuntimeError("API key not valid: 401 UNAUTHENTICATED")
+
+    def ia_sem_internet(*_args, **_kw):
+        raise RuntimeError("ConnectionError: a internet caiu")
+
+    def decidir_de_mentira(chave, texto, historico, modo="auto"):
+        return {"modo": "amigo", "consulta": texto}
+
+    def aprender_de_mentira(chave, pergunta, resposta):
+        aprendidas.append((pergunta, resposta))
+
+    guardados = {
+        "ARQUIVO_HISTORICO": p.ARQUIVO_HISTORICO,
+        "ARQUIVO_MEMORIA": p.ARQUIVO_MEMORIA,
+        "ARQUIVO_CONFIG": p.ARQUIVO_CONFIG,
+        "_memoria_cache": p._memoria_cache,
+        "conversar": p.conversar,
+        "perguntar": p.perguntar,
+        "_decidir_modo": p._decidir_modo,
+        "aprender_com_o_usuario": p.aprender_com_o_usuario,
+        "threading": app_web.threading,
+        "DEMO": app_web.DEMO,
+    }
+    try:
+        # ---- os dados do Wolf estao "escondidos" durante o teste ----
+        p.ARQUIVO_HISTORICO = pasta / "historico.json"
+        p.ARQUIVO_MEMORIA = pasta / "memoria.json"
+        p.ARQUIVO_CONFIG = pasta / "config.json"
+        # a memoria tem um cache dentro do modulo: sem zerar aqui, o teste
+        # de cima ("Gosta de RPG") apareceria como se fosse do Wolf
+        p._memoria_cache = None
+        p.conversar = ia_de_mentira
+        p.perguntar = ia_de_mentira
+        p._decidir_modo = decidir_de_mentira
+        p.aprender_com_o_usuario = aprender_de_mentira
+        app_web.DEMO = False
+        threads = _ThreadsNaHora()
+        app_web.threading = threads
+
+        def com_chave(aprender=True):
+            p._gravar_json(p.ARQUIVO_CONFIG,
+                           {"api_key": "AIza-chave-de-teste",
+                            "aprender": aprender})
+
+        # 1. SEM CHAVE: a tela e avisada na hora, sem chamar a IA
+        com_chave()
+        p._gravar_json(p.ARQUIVO_CONFIG, {})
+        janela = _JanelaDeMentira()
+        ponte = app_web.Ponte(janela)
+        chamadas.clear()
+        resposta = ponte.enviar("Olá")
+        if resposta.get("erro") == "sem_chave":
+            ok("tela nova: sem chave, o envio avisa 'sem_chave' na hora")
+        else:
+            falha("tela nova: sem chave o envio devolveu %r" % (resposta,))
+        if not chamadas and not threads.rodadas and not janela.eventos:
+            ok("tela nova: sem chave, a IA nem é chamada e nada é desenhado")
+        else:
+            falha("tela nova: sem chave, mas a IA foi chamada (%r)"
+                  % (chamadas,))
+
+        # 2. pergunta vazia e envio com a tela ocupada sao recusados
+        if ponte.enviar("   ").get("erro"):
+            ok("tela nova: pergunta em branco não é enviada")
+        else:
+            falha("tela nova: pergunta em branco foi aceita")
+        ponte.ocupado = True
+        if ponte.enviar("outra coisa").get("erro"):
+            ok("tela nova: não aceita segunda pergunta enquanto responde")
+        else:
+            falha("tela nova: aceitou segunda pergunta enquanto respondia")
+        ponte.ocupado = False
+
+        # 3. RESPOSTA COMPLETA: devolve na hora e o texto volta por evento
+        com_chave()
+        janela = _JanelaDeMentira()
+        ponte = app_web.Ponte(janela)
+        chamadas.clear()
+        resposta = ponte.enviar("Me explica o que é IA")
+        tipos = janela.tipos()
+        if resposta == {}:
+            ok("tela nova: enviar volta na hora (a janela não trava)")
+        else:
+            falha("tela nova: enviar devolveu %r" % (resposta,))
+        if "resposta" in tipos:
+            ok("tela nova: a resposta chega como evento 'resposta'")
+        else:
+            falha("tela nova: os eventos foram %r" % (tipos,))
+        if janela.unico("resposta") and \
+                janela.unico("resposta").get("texto") == RESPOSTA_TESTE:
+            ok("tela nova: o texto da resposta chega inteiro")
+        else:
+            falha("tela nova: o evento 'resposta' veio %r"
+                  % (janela.unico("resposta"),))
+        if "etapa" in tipos:
+            ok("tela nova: a tela é avisada do que a IA está fazendo (etapa)")
+        else:
+            falha("tela nova: nenhum evento 'etapa' chegou (%r)" % (tipos,))
+        if tipos.index("etapa") < tipos.index("resposta"):
+            ok("tela nova: a etapa vem antes da resposta")
+        else:
+            falha("tela nova: a ordem dos eventos ficou %r" % (tipos,))
+        if not ponte.ocupado:
+            ok("tela nova: depois da resposta a tela volta a aceitar")
+        else:
+            falha("tela nova: a tela ficou travada depois da resposta")
+
+        # 4. o texto vai com acento e emoji de verdade (ensure_ascii=False)
+        if any("🚀" in s and "ç" in s and "\\u" not in s
+               for s in janela.scriptos):
+            ok("tela nova: acento e emoji chegam crus, sem \\u escapado")
+        else:
+            falha("tela nova: o texto para a tela foi escapado: %r"
+                  % (janela.scriptos[-1:],))
+
+        # 5. a conversa e gravada e a lista da esquerda e atualizada
+        salvas = p.carregar_conversas()
+        if len(salvas) == 1 and salvas[0].get("titulo") == \
+                "Me explica o que é IA" and \
+                [m["role"] for m in salvas[0]["mensagens"]] == \
+                ["user", "model"]:
+            ok("tela nova: a pergunta e a resposta foram gravadas juntas")
+        else:
+            falha("tela nova: a gravação ficou %r" % (salvas,))
+        lista = janela.unico("conversas")
+        if lista and [c.get("titulo") for c in lista.get("conversas", [])] \
+                == ["Me explica o que é IA"] and \
+                lista.get("atual") == salvas[0]["id"]:
+            ok("tela nova: a lista da esquerda é atualizada com a conversa")
+        else:
+            falha("tela nova: o evento 'conversas' veio %r" % (lista,))
+
+        # 6. a segunda pergunta continua a MESMA conversa e leva o historico
+        chamadas.clear()
+        ponte.enviar("E como ela aprende?")
+        if len(p.carregar_conversas()) == 1:
+            ok("tela nova: a segunda pergunta continua a mesma conversa")
+        else:
+            falha("tela nova: a segunda pergunta abriu outra conversa (%d)"
+                  % len(p.carregar_conversas()))
+        historico = chamadas[0]["historico"] if chamadas else []
+        if [m["role"] for m in historico] == ["user", "model"] and \
+                historico[0]["text"] == "Me explica o que é IA":
+            ok("tela nova: a IA recebe a conversa anterior como histórico")
+        else:
+            falha("tela nova: o histórico da IA ficou %r" % (historico,))
+        if chamadas and chamadas[0].get("id_atual") == salvas[0]["id"]:
+            ok("tela nova: a conversa aberta não entra duas vezes no contexto")
+        else:
+            falha("tela nova: id_atual ficou %r"
+                  % (chamadas[0].get("id_atual") if chamadas else None,))
+
+        # 7. ERRO DE CHAVE: vem em portugues e a tela abre as Configuracoes
+        p.conversar = ia_quebrada
+        p.perguntar = ia_quebrada
+        janela = _JanelaDeMentira()
+        ponte = app_web.Ponte(janela)
+        ponte.enviar("Oi")
+        erro = janela.unico("erro")
+        if erro and "chave" in erro.get("texto", "").lower() \
+                and "401" not in erro.get("texto", ""):
+            ok("tela nova: erro de chave vira frase em português")
+        else:
+            falha("tela nova: o evento de erro veio %r" % (erro,))
+        if erro and erro.get("chave") is True:
+            ok("tela nova: erro de chave avisa a tela para abrir as Config.")
+        else:
+            falha("tela nova: o evento de erro nao marcou 'chave': %r"
+                  % (erro,))
+        if ponte.mensagens and ponte.mensagens[-1].get("role") == "erro":
+            ok("tela nova: o erro também fica na conversa da tela")
+        else:
+            falha("tela nova: o erro não entrou na conversa: %r"
+                  % (ponte.mensagens,))
+
+        # 8. erro que NAO e de chave nao manda a tela para as Configuracoes
+        p.conversar = ia_sem_internet
+        p.perguntar = ia_sem_internet
+        janela = _JanelaDeMentira()
+        ponte = app_web.Ponte(janela)
+        ponte.enviar("Oi")
+        erro = janela.unico("erro")
+        if erro and erro.get("chave") is False:
+            ok("tela nova: erro de internet não mexe nas Configurações")
+        else:
+            falha("tela nova: erro de internet veio %r" % (erro,))
+
+        # 9. a IA DECIDE o modo: pesquisa quando o roteador manda pesquisar
+        p.conversar = ia_de_mentira
+        p.perguntar = ia_de_mentira
+        p._decidir_modo = lambda c, t, h, modo="auto": {
+            "modo": "pesquisa", "consulta": "IA generativa"}
+        chamadas.clear()
+        janela = _JanelaDeMentira()
+        ponte = app_web.Ponte(janela)
+        ponte.enviar("O que é IA generativa?")   # nao e' pedido de noticia
+        if chamadas and chamadas[0].get("consulta") == "IA generativa":
+            ok("tela nova: em modo pesquisa, a busca usa o assunto do "
+               "roteador")
+        else:
+            falha("tela nova: a consulta da busca ficou %r"
+                  % (chamadas[0].get("consulta") if chamadas else None,))
+        # PEDIDO DE NOTÍCIA é tratado à parte, igual ao programa antigo: a
+        # busca sai com a pergunta inteira, não com o assunto abreviado.
+        chamadas.clear()
+        ponte.enviar("Pesquisa as notícias de tecnologia de hoje")
+        if chamadas and chamadas[0].get("consulta") == \
+                "Pesquisa as notícias de tecnologia de hoje":
+            ok("tela nova: pedido de notícia busca a pergunta inteira")
+        else:
+            falha("tela nova: a consulta de notícia ficou %r"
+                  % (chamadas[0].get("consulta") if chamadas else None,))
+        p._decidir_modo = decidir_de_mentira
+
+        # 10. a IA pode aprender sobre o Wolf, em segundo plano e calado
+        aprendidas.clear()
+        com_chave(aprender=True)
+        janela = _JanelaDeMentira()
+        ponte = app_web.Ponte(janela)
+        ponte.enviar("Gosto de jogar RPG")
+        if len(aprendidas) == 1 and aprendidas[0][0] == "Gosto de jogar RPG":
+            ok("tela nova: a IA é mandada aprender depois de responder")
+        else:
+            falha("tela nova: a tarefa de aprender rodou %d vez(es)"
+                  % len(aprendidas))
+        if any(r == "tarefa" for r in threads.rodadas):
+            ok("tela nova: aprender roda fora da tela (em segundo plano)")
+        else:
+            falha("tela nova: nenhuma thread de aprender foi criada (%r)"
+                  % (threads.rodadas,))
+
+        # 11. com 'aprender' desligado, nada e aprendido
+        aprendidas.clear()
+        com_chave(aprender=False)
+        ponte = app_web.Ponte(_JanelaDeMentira())
+        ponte.enviar("Moro em Porto Alegre")
+        if not aprendidas:
+            ok("tela nova: com 'aprender' desligado, a IA não aprende nada")
+        else:
+            falha("tela nova: aprendeu %r com a opção desligada"
+                  % (aprendidas,))
+
+        # 12. MODO EXEMPLO: a IA responde, mas NADA é gravado
+        app_web.DEMO = True
+        aprendidas.clear()
+        janela = _JanelaDeMentira()
+        ponte = app_web.Ponte(janela)
+        ponte.iniciar()
+        chamadas.clear()
+        ponte.enviar("Me conta uma curiosidade")
+        if janela.unico("resposta"):
+            ok("tela nova: no modo exemplo a IA de verdade também responde")
+        else:
+            falha("tela nova: no modo exemplo a IA não respondeu (%r)"
+                  % (janela.tipos(),))
+        if not aprendidas:
+            ok("tela nova: no modo exemplo a IA não aprende nada")
+        else:
+            falha("tela nova: no modo exemplo aprendeu %r" % (aprendidas,))
+        app_web.DEMO = False
+        if ponte.mensagens[-1].get("role") == "model":
+            ok("tela nova: no modo exemplo a resposta entra na conversa da tela")
+        else:
+            falha("tela nova: a conversa do exemplo ficou %r"
+                  % (ponte.mensagens[-1],))
+
+        # 13. a memoria do Wolf nao foi mexida e o teste rodou isolado
+        if p.ARQUIVO_HISTORICO == pasta / "historico.json" and \
+                p.ARQUIVO_CONFIG == pasta / "config.json":
+            ok("tela nova: o teste da IA rodou com os arquivos do Wolf "
+               "escondidos")
+        else:
+            falha("tela nova: o teste da IA usou o arquivo de verdade (%r)"
+                  % (p.ARQUIVO_HISTORICO,))
+        if p.carregar_memoria() == []:
+            ok("tela nova: a IA da tela nova não escreveu nada na Memória")
+        else:
+            falha("tela nova: sobrou memória na pasta de teste: %r"
+                  % (p.carregar_memoria(),))
+    finally:
+        for nome, valor in guardados.items():
+            if nome == "DEMO":
+                app_web.DEMO = valor
+            elif nome == "threading":
+                app_web.threading = valor
+            else:
+                setattr(p, nome, valor)
+        shutil.rmtree(pasta, ignore_errors=True)
+
+
 if not falhas:
     try:
         testes_tela_nova(importlib.import_module("pesquisa_ia"))
     except Exception as erro:
         falha("os testes da tela nova quebraram: %r" % (erro,))
+
+if not falhas:
+    try:
+        testes_tela_nova_ia(importlib.import_module("pesquisa_ia"))
+    except Exception as erro:
+        falha("os testes da IA da tela nova quebraram: %r" % (erro,))
 
 
 # --- 6. roteador: papo ou pesquisa (sem internet) --------------------------

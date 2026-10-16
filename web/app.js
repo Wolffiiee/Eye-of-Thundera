@@ -170,40 +170,71 @@ function ajustarAltura() {
   e.style.height = Math.min(e.scrollHeight, 200) + "px";
 }
 
+/* O Python devolve a chamada de `enviar` e manda os eventos logo depois.
+   A promise normalmente volta antes do primeiro evento, mas nao e
+   garantido: se a IA falhar na hora (chave invalida, internet caiu), o
+   evento de erro pode chegar antes. Guardar os eventos ate a pergunta
+   entrar na tela garante a ordem - pergunta, depois resposta/erro. Sem
+   isso o "pensando" ficaria aceso para sempre quando o erro chegasse
+   primeiro. */
+let eventosSegurados = null;
+
+function segurarEventos(ligado) {
+  if (ligado) {
+    eventosSegurados = [];
+    return;
+  }
+  const guardados = eventosSegurados || [];
+  eventosSegurados = null;
+  for (const o of guardados) aplicarEvento(o);
+}
+
+function aplicarEvento(o) {
+  if (o.tipo === "etapa") {
+    $("#etapa").textContent = o.texto;
+  } else if (o.tipo === "resposta") {
+    esperar(false);
+    anexarMensagem({ role: "model", text: o.texto });
+  } else if (o.tipo === "erro") {
+    esperar(false);
+    anexarMensagem({ role: "erro", text: o.texto });
+    if (o.chave) abrirConfig("chaves");
+  } else if (o.tipo === "conversas") {
+    estado.conversas = o.conversas;
+    estado.atual = o.atual;
+    desenharConversas();
+  }
+}
+
 async function enviar(texto) {
   texto = (texto !== undefined ? texto : $("#entrada").value).trim();
   if (!texto || estado.ocupado) return;
-  const r = await chamar("enviar", texto);
-  if (r && r.erro) {
+  segurarEventos(true);
+  let r = {};
+  try {
+    r = (await chamar("enviar", texto)) || {};
+  } finally {
+    // A pergunta entra na tela ANTES de soltar os eventos da IA.
+    $("#entrada").value = "";
+    ajustarAltura();
+    anexarMensagem({ role: "user", text: texto });
+    // Se ja veio erro, nao fica esperando resposta que nao vem.
+    esperar(!r.erro, "Pensando...");
+    segurarEventos(false);
+  }
+  if (r.erro) {
     if (r.erro === "sem_chave") {
       aviso("Cole a sua chave do Google nas Configurações para começar.");
       abrirConfig("chaves");
     } else aviso(r.erro, true);
-    return;
   }
-  $("#entrada").value = "";
-  ajustarAltura();
-  anexarMensagem({ role: "user", text: texto });
-  esperar(true, "Pensando...");
 }
 
 window.PIA = {
   __estado: estado,
   evento(o) {
-    if (o.tipo === "etapa") {
-      $("#etapa").textContent = o.texto;
-    } else if (o.tipo === "resposta") {
-      esperar(false);
-      anexarMensagem({ role: "model", text: o.texto });
-    } else if (o.tipo === "erro") {
-      esperar(false);
-      anexarMensagem({ role: "erro", text: o.texto });
-      if (o.chave) abrirConfig("chaves");
-    } else if (o.tipo === "conversas") {
-      estado.conversas = o.conversas;
-      estado.atual = o.atual;
-      desenharConversas();
-    }
+    if (eventosSegurados) return eventosSegurados.push(o);
+    aplicarEvento(o);
   },
 };
 
