@@ -621,15 +621,17 @@ function abrirVisorFotos(indice, fotos) {
     pagina.classList.toggle("oculto", !info.pagina);
     img.alt = info.titulo || ("Foto " + (novo + 1));
     img.style.opacity = "0";
-    if (carregando.parentElement) carregando.remove();
-    if (!carregando.isConnected) tampa.append(carregando);
-    carregando.textContent = "Abrindo a foto...";
+    mostrarAviso("Abrindo a foto...");
     chamar("imagem_ampliada", novo).then((r) => {
       if (!document.body.contains(tampa)) return;   // o Wolf ja fechou
       if (r && r.erro) {
-        carregando.textContent = r.erro;
+        mostrarAviso(r.erro);
         return;
       }
+      // some com o aviso AQUI. Sem esta linha, "Abrindo a foto..."
+      // ficava escrito no meio da imagem para sempre (16/10/2026) —
+      // o aviso e' tirado em mostrar(), mas nao quando a foto chega.
+      esconderAviso();
       img.src = r.base64;
       img.style.opacity = "1";
       if (r.pagina) {
@@ -637,6 +639,17 @@ function abrirVisorFotos(indice, fotos) {
         pagina.classList.remove("oculto");
       }
     });
+  }
+
+  function mostrarAviso(texto) {
+    carregando.textContent = texto;
+    carregando.classList.remove("oculto");
+    if (!carregando.isConnected) tampa.append(carregando);
+  }
+
+  function esconderAviso() {
+    carregando.classList.add("oculto");
+    if (carregando.parentElement) carregando.remove();
   }
 
   function terminar() {

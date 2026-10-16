@@ -11,7 +11,10 @@ POR QUE EXISTE
     funciona nesta maquina (inclusive com emoji COLORIDO).
 
 O QUE ESTE PASSO FAZ
-    - abre a janela da tela nova no SEGUNDO MONITOR (regra do Wolf);
+    - abre a janela onde o Wolf fechou o programa da ultima vez, e se
+      ainda nao houver posicao guardada, no MEIO da tela principal
+      (16/10/2026: ele pediu para acabar com a regra do segundo
+      monitor, que so existia enquanto a tela era teste);
     - mostra as conversas que ele ja tem, lendo os MESMOS arquivos do
       programa antigo;
     - abrir, criar e excluir conversa;
@@ -83,13 +86,138 @@ DEMO = "--demo" in sys.argv or PREVIA
 # conversa e' salva.
 VOZ_REAL = "--voz" in sys.argv
 VOZ_FALSA = DEMO and not VOZ_REAL
-# REGRA DO WOLF: enquanto a tela nova e' coisa de teste, ela nasce no
-# SEGUNDO monitor (x=2000), com ou sem --demo. Sem isso, rodar a tela
-# com a chave de verdade (para testar o microfone) abriria em cima da
-# tela em que ele esta trabalhando. Quando a tela nova virar O programa,
-# esta posicao vai embora, como nas janelas do tkinter (que seguem o
-# app).
-X_PADRAO, Y_PADRAO = (2000, 100)
+# ONDE A JANELA ABRE. (16/10/2026)
+#
+# Antes era fixo no SEGUNDO monitor, porque a tela nova ainda era teste e
+# nao podia cobrir a tela em que o Wolf estava trabalhando. Ele pediu
+# para acabar com isso, mas com UMA excecao:
+#
+#   - --previa (modo "so olhar") -> continua no segundo monitor, porque
+#     la ele esta *trabalhando* no editor e o programa e' apenas uma
+#     janela de lado.
+#   - programa normal -> lembra onde foi fechado, e se ainda nao sabe,
+#     abre no CENTRO da tela principal (que e' onde um programa de
+#     verdade nasce, e nao num canto fixo).
+#
+# O arquivo e' separado do config.json de proposito: e' uma posicao de
+# janela, nao uma preferencia, e mexer no config.json seria mexer no
+# arquivo que tem a chave da API.
+if PREVIA:
+    X_PADRAO, Y_PADRAO = (2000, 100)
+else:
+    X_PADRAO, Y_PADRAO = (200, 100)
+ARQUIVO_POSICAO = p.PASTA_CONFIG / "janela.json"
+
+
+def _ler_posicao():
+    """Onde a janela ficou da ultima vez, ou None se nunca foi movida."""
+    try:
+        d = p._ler_json(ARQUIVO_POSICAO, {})
+        x, y = d.get("x"), d.get("y")
+        if isinstance(x, int) and isinstance(y, int):
+            return x, y
+    except Exception:
+        pass
+    return None
+
+
+def _telas():
+    """Todas as telas do Windows: [(esq, topo, dir, baixo), ...].
+
+    Devolve lista vazia se nao conseguir perguntar ao Windows: quem chama
+    trata (caindo no padrao) em vez de travar o programa.
+    """
+    try:
+        import ctypes
+        # `ctypes.wintypes` NAO vem junto com `import ctypes`: sem este
+        # `from`, a linha abaixo levanta AttributeError - que o `except`
+        # engolia e devolvia "nao tem monitor" para QUALQUER posicao
+        # (16/10/2026: o programa nunca mais abriria no monitor certo).
+        from ctypes import wintypes
+
+        class _RECT(ctypes.Structure):
+            _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
+                        ("right", ctypes.c_long),
+                        ("bottom", ctypes.c_long)]
+
+        encontradas = []
+        proc = ctypes.windll.user32.EnumDisplayMonitors
+        CALLBACK = ctypes.WINFUNCTYPE(
+            ctypes.c_int, wintypes.HMONITOR, wintypes.HDC,
+            ctypes.POINTER(_RECT), ctypes.c_ulong)
+
+        def pegar(_h, _hdc, lprc, _d):
+            r = lprc.contents
+            encontradas.append((r.left, r.top, r.right, r.bottom))
+            return 1
+
+        proc(0, 0, CALLBACK(pegar), None)
+        return encontradas
+    except Exception as erro:
+        p.registrar_erro("_telas", erro)
+        return []
+
+
+def _tela_principal():
+    """A tela que contem o ponto (0,0) - a 'principal' do Windows.
+
+    Nao e' 'a primeira que o Windows devolveu': ele pode ordenar como
+    quiser, e em varias maquinas o monitor 0 e' o do notebook.
+    """
+    telas = _telas()
+    for esq, topo, dir_, baixo in telas:
+        if esq <= 0 < dir_ and topo <= 0 < baixo:
+            return esq, topo, dir_, baixo
+    return telas[0] if telas else None
+
+
+def _onde_tem_monitor(x, y):
+    """A posicao ainda cai em algum monitor que exista HOJE?
+
+    Precisa disso: o Wolf fecha o programa no segundo monitor, leva o
+    notebook para a casa, liga e so tem a tela do notebook. Sem esta
+    conferida, o programa abriria em x=2000 - fora de qualquer tela, e
+    pareceria ter sumido.
+    """
+    return any(esq <= x < dir_ and topo <= y < baixo
+               for esq, topo, dir_, baixo in _telas())
+
+
+def _centro_da_tela_principal():
+    """O meio da tela principal, com a janela em cima.
+
+    E' o que um programa de verdade faz: nascer no meio da tela, e nao
+    num ponto fixo que so faz sentido naquele computador.
+    """
+    tela = _tela_principal()
+    if not tela:
+        return X_PADRAO, Y_PADRAO
+    esq, topo, dir_, baixo = tela
+    return (esq + max(0, (dir_ - esq - LARGURA) // 2),
+            topo + max(0, (baixo - topo - ALTURA) // 2))
+
+
+def _posicao_de_abertura():
+    """Onde abrir agora, decidindo pelo que existe HOJE.
+
+    As regras, nesta ordem:
+    1. onde o Wolf fechou da ultima vez, se ainda houver esse monitor;
+    2. o meio da tela principal (so um monitor, ou nada guardado ainda);
+    3. o padrao, se o Windows nao souber dizer nada.
+    """
+    guardada = _ler_posicao()
+    if guardada and _onde_tem_monitor(*guardada):
+        return guardada
+    return _centro_da_tela_principal()
+
+
+def _guardar_posicao(x, y):
+    try:
+        ARQUIVO_POSICAO.parent.mkdir(parents=True, exist_ok=True)
+        p._gravar_json(ARQUIVO_POSICAO, {"x": int(x), "y": int(y)})
+    except Exception:
+        pass
+
 TITULO_JANELA = "Pesquisa IA (tela nova - em construção)"
 
 
@@ -716,9 +844,15 @@ class Ponte:
         "pronta" e pode TRAVAR ate 15 segundos (e a janela de Salvar
         demorava tanto que parecia que nao abria). Se o Wolf arrastar a
         janela para outro lugar, a janelinha pode nao sair bem em cima
-        dela - mas continua na tela certa, que e o que importa.
+        dela - mas continua na tela certa, que e' o que importa.
+
+        Desde 16/10/2026 devolve a posicao LEMBRADA (a mesma que o
+        programa usa para abrir), e nao mais um ponto fixo: com o
+        programa aberto no segundo monitor, devolver X_PADRAO (200)
+        punha a janelinha de Salvar no primeiro monitor - que e' o
+        mesmo defeito que o Wolf viu de manha, de novo.
         """
-        return (X_PADRAO, Y_PADRAO)
+        return _posicao_de_abertura()
 
     def salvar_texto(self, texto):
         """Salvar a resposta num .txt. Este funciona mesmo."""
@@ -1329,11 +1463,15 @@ def principal():
                  + "\n  ".join(str(a) for a in faltando))
 
     ponte = Ponte()
+    # Onde abrir: no monitor onde o Wolf fechou da ultima vez (16/10).
+    # Se esse monitor nao existir mais hoje (levou o notebook para outro
+    # lugar), cai no padrao — em vez de abrir fora de qualquer tela.
+    abrir_x, abrir_y = _posicao_de_abertura()
     janela = webview.create_window(
         TITULO_JANELA,
         url=_endereco_de(INDEX),
         js_api=ponte,
-        x=X_PADRAO, y=Y_PADRAO,
+        x=abrir_x, y=abrir_y,
         width=LARGURA, height=ALTURA,
         min_size=(900, 620),
         background_color="#0e0e13",      # a barra some no fundo escuro
@@ -1341,6 +1479,22 @@ def principal():
         easy_drag=False,
     )
     ponte._janela = janela
+
+    # ---- a janela lembra onde foi fechada ----------------------------
+    # Pedido do Wolf (16/10/2026): o programa abre no monitor em que foi
+    # fechado, e nao sempre no segundo. Guardar e' feito aqui, no
+    # `closing` (que dispara ANTES da janela sumir) — depois seria tarde
+    # demais, a posicao ja teria virado (0,0).
+    def ao_fechar():
+        try:
+            x = getattr(janela, "x", None)
+            y = getattr(janela, "y", None)
+            if isinstance(x, int) and isinstance(y, int) and (x or y):
+                _guardar_posicao(x, y)
+        except Exception as erro:
+            p.registrar_erro("ao_fechar (posicao)", erro)
+
+    janela.events.closing += ao_fechar
 
     def ao_abrir(instancia):
         # A barra de titulo do Windows e' branca por padrao e destoa de
@@ -1377,8 +1531,8 @@ def principal():
     threading.Thread(target=aquecer_corretor, daemon=True).start()
 
     print("Abrindo a tela nova (passo 4: microfone ligado).")
-    print("Janela no segundo monitor: x=%d y=%d  (%dx%d)"
-          % (X_PADRAO, Y_PADRAO, LARGURA, ALTURA))
+    print("Janela em x=%d y=%d  (%dx%d)"
+          % (abrir_x, abrir_y, LARGURA, ALTURA))
     if DEMO:
         print("MODO DEMO: as conversas mostradas sao de EXEMPLO.")
         print("A IA de verdade responde, mas NADA e gravado (nem conversa,")

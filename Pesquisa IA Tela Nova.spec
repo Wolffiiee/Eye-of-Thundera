@@ -51,7 +51,16 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,          # a tela nova ainda e' um teste: mostra erros
+    console=False,
+    # Era console=True "porque a tela nova ainda era um teste" — e o
+    # Wolf viu o resultado em 16/10/2026: abria uma janela preta (CMD)
+    # atras do programa. Agora esta e' a tela de verdade, entao nada de
+    # janela de console.
+    #
+    # Perde-se uma coisa: se o programa quebrar na largada, a janela
+    # preta nao aparece para mostrar o erro. Por isso NAO relyamos nisso:
+    # a tela nova ja grava `erro.log` sozinho (ver `registrar_erro` em
+    # app_web.py / pesquisa_ia.py), que e' onde o erro vai aparecer.
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

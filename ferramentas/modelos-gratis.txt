@@ -1,0 +1,19 @@
+﻿# Modelos gratis do OpenCode, do melhor para o pior (um por linha).
+# O script ferramentas/trocar_modelo_gratis.py testa em ordem e usa o 1o que responder.
+# Se um nome sumir do `opencode models`, apague a linha. Para ver os atuais:
+#   opencode models | findstr /i "free :free"
+opencode/deepseek-v4.1-flash-free
+opencode/glm-5.3-flash-free
+opencode/nemotron-3-ultra-free
+opencode/muse-spark-1.3-contributor-free
+opencode/mimo-v2.6-flash-free
+opencode/longcat-2.5-preview-free
+opencode/space-bunny-free
+opencode/beam-free
+opencode/ll-alpha-free
+opencode/nemotron-3.5-super-vl-free
+opencode/big-pickle
+9router/Arsenal
+9router/kilo/openrouter/free
+9router/kilo/nvidia/nemotron-3-ultra-550b-a55b:free
+ollama/local-coder:latest

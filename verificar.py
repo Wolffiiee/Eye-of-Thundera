@@ -156,31 +156,51 @@ if n_bind != 1:
 else:
     ok("só existe o bind_all de clique do dispatcher")
 
-# --- 4b. a tela nova também tem que nascer no SEGUNDO monitor ---------------
-# REGRA DO WOLF: janela de teste nao pode cobrir a tela em que ele esta
-# trabalhando. A tela nova (app_web.py) tambem e' coisa de teste, entao
-# nasce no 2o monitor SEMPRE - inclusive sem --demo, que e' o jeito de
-# testar o microfone de verdade. Se alguem voltar a fazer a posicao
-# depender de --previa, essa janela cai no monitor principal.
+# --- 4b. onde cada janela abre --------------------------------------------
+# REGRA DO WOLF, DUAS (elas mudaram em 16/10/2026):
+#
+# 1. JANELA DE TESTE (`verificar.py`): nasce no SEGUNDO monitor, para
+#    nunca cobrir a tela em que ele esta trabalhando. Esta regra continua.
+# 2. PROGRAMA DE VERDADE (.exe da tela nova): abre onde o Wolf fechou da
+#    ultima vez, caindo no meio da tela principal se ainda nao souber.
 web_txt = (PASTA / "app_web.py").read_text(encoding="utf-8")
-trecho_flags = web_txt[web_txt.index("PREVIA = "):web_txt.index("CONVERSAS_DEMO")]
-problemas_posicao = []
-for argumentos in ([], ["--demo"], ["--previa"], ["--demo", "--voz"], ["--voz"]):
-    valores = {}
-    try:
-        exec("import sys\n" + trecho_flags.replace(
-            "sys.argv", repr(["app_web.py"] + argumentos)), valores)
-    except Exception as erro:
-        problemas_posicao.append("%r deu erro: %r" % (argumentos, erro))
-        continue
-    if valores["X_PADRAO"] < 1950:
-        problemas_posicao.append("%r abre em x=%d (precisa ser >= 1950)"
-                                 % (argumentos, valores["X_PADRAO"]))
-if problemas_posicao:
-    falha("a tela nova pode abrir no monitor principal: %s"
-          % "; ".join(problemas_posicao))
+
+# (1) a PREVIA (modo 'so olhar') continua no segundo monitor.
+# Verifica o COMPROMISSO no codigo, sem copiar trecho nenhum: copiar
+# trecho quebrava toda vez que o trecho crescia e passava a usar algo
+# novo (16/10/2026: o exec do trecho deu NameError porque o trecho agora
+# inclui _telas(), que usa ctypes).
+if "if PREVIA:" in web_txt and "(2000, 100)" in web_txt:
+    ok("a janela de teste (PREVIA) nasce no segundo monitor")
 else:
-    ok("a tela nova sempre nasce no 2o monitor (nenhuma flag abre na sua tela)")
+    falha("a janela de teste (PREVIA) pode abrir na tela do Wolf")
+if "else:" in web_txt and "(200, 100)" in web_txt:
+    ok("o programa normal nao fica preso no segundo monitor")
+else:
+    falha("o programa normal pode nascer sempre no segundo monitor")
+if "x=abrir_x, y=abrir_y" in web_txt:
+    ok("a janela abre na posicao escolhida, e nao num ponto fixo")
+else:
+    falha("a janela continua a abrir num ponto fixo")
+
+# (2) o PROGRAMA DE VERDADE nao esta preso no segundo monitor
+if "X_PADRAO, Y_PADRAO = (200, 100)" in web_txt:
+    ok("o programa de verdade nao nasce fixo no 2o monitor")
+else:
+    # antes era (2000, 100); se voltar, reprova
+    falha("o programa de verdade voltou a nascer fixo no 2o monitor")
+if "_posicao_de_abertura" in web_txt and "janela.events.closing" in web_txt:
+    ok("o programa lembra em que monitor foi fechado")
+else:
+    falha("o programa ainda nao lembra onde foi fechado")
+if "_ler_posicao" in web_txt and "ARQUIVO_POSICAO" in web_txt:
+    ok("a posicao da janela e' guardada em arquivo")
+else:
+    falha("a posicao da janela nao e' guardada em lugar nenhum")
+if 'ARQUIVO_POSICAO = p.PASTA_CONFIG / "janela.json"' in web_txt:
+    ok("a posicao fica num arquivo separado (janela.json)")
+else:
+    falha("a posicao esta misturada com o config.json, onde esta a chave da API")
 
 # --- 4c. a barra de titulo da tela nova tem que ficar ESCURA ---------------
 # Defeito encontrado em 16/10/2026: a tela nova chamava
@@ -846,6 +866,182 @@ try:
 except Exception as erro:
     falha("os testes do idioma quebraram: %r" % (erro,))
 
+# --- 4c10. dois defeitos que o Wolf viu com o programa na mao -----------
+# 1) "Abrindo a foto..." ficava escrito NO MEIO da imagem, para sempre.
+#    A causa: o aviso era escondido em mostrar(), mas nao quando a foto
+#    chegava — e e' quando a foto chega que ele tem de sair.
+# 2) O .exe abria uma JANELA PRETA (CMD) atras do programa.
+try:
+    _js5 = Path(PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    # 1) o aviso some
+    if "function esconderAviso" in _js5:
+        ok("foto: existe um jeito de tirar o aviso 'Abrindo a foto...'")
+    else:
+        falha("foto: nao ha como tirar o aviso 'Abrindo a foto...'")
+    # o ponto exato: esconderAviso tem de ser chamado JUNTO de img.src
+    _linhas5 = _js5.split("\n")
+    _achou_justo = False
+    for _n, _l in enumerate(_linhas5):
+        if "img.src = r.base64" in _l:
+            # olha as 4 linhas de cima: alguma tem de esconder o aviso
+            _janela = "\n".join(_linhas5[max(0, _n - 5):_n])
+            if "esconderAviso()" in _janela:
+                _achou_justo = True
+            break
+    if _achou_justo:
+        ok("foto: o aviso some no momento em que a foto chega")
+    else:
+        falha("foto: a foto aparece mas o aviso 'Abrindo a foto...' fica "
+              "escrito por cima dela (foi o que o Wolf viu)")
+    if "mostrarAviso(" in _js5:
+        ok("foto: o aviso reaparece quando se troca de foto")
+    else:
+        falha("foto: ao trocar de foto o Wolf nao ve aviso nenhum, e "
+              "pensa que travou")
+
+    # 2) nada de janela preta atras do programa
+    _spec5 = (Path(PASTA / "Pesquisa IA Tela Nova.spec")
+              .read_text(encoding="utf-8"))
+    # Olhar so' a LINHA que manda, e nao o arquivo inteiro: o proprio
+    # comentario do spec explica que a tela NAO tem console, e a palavra
+    # "console=True" aparece la' — o teste acusava o comentario.
+    _secao_exe = _spec5[_spec5.index("EXE("):]
+    _linhas_spec = [l.strip() for l in _secao_exe.split(chr(10))]
+    _manda = [l for l in _linhas_spec if l.startswith("console=")]
+    if _manda and _manda[0] == "console=False,":
+        ok("programa: o .exe e' gerado sem janela de console (CMD)")
+    else:
+        falha("programa: o .exe abre uma janela preta atras do programa "
+              "(%r)" % (_manda,))
+    # e o aviso sobre o erro.log, que e' o que substitui a janela preta
+    if ("erro.log" in _spec5 or "erro.log" in
+            Path(PASTA / "app_web.py").read_text(encoding="utf-8")):
+        ok("programa: sem janela de console, os erros vão para o erro.log")
+    else:
+        falha("programa: sem a janela preta, o erro nao tem onde aparecer")
+except Exception as erro:
+    falha("os testes dos defeitos que o Wolf viu quebraram: %r" % (erro,))
+
+# --- 4c11. onde a janela abre: ela lembra do monitor ---------------------
+# O Wolf pediu (16/10/2026): acaba com a regra do segundo monitor, abre
+# onde ele fechou da ultima vez, e se adapta a quantas telas tiver.
+try:
+    import app_web as _aw3
+    import pesquisa_ia as _pg_pos2
+
+    _UM = [(0, 0, 1920, 1080)]
+    _DOIS = [(0, 0, 1920, 1080), (1920, 0, 3840, 1080)]
+    _INVERTIDO = [(1920, 0, 3840, 1080), (0, 0, 1920, 1080)]
+    _NOTEBOOK = [(0, 0, 1366, 768)]
+
+    _pasta_pos = Path(PASTA) / "_tmp" / "teste-posicao"
+    shutil.rmtree(_pasta_pos, ignore_errors=True)
+    _pasta_pos.mkdir(parents=True)
+    _pos_original = _aw3.ARQUIVO_POSICAO
+    _telas_original = _aw3._telas
+    try:
+        _aw3.ARQUIVO_POSICAO = _pasta_pos / "janela.json"
+
+        def _com_telas(telas, funcao):
+            _aw3._telas = lambda: list(telas)
+            try:
+                return funcao()
+            finally:
+                _aw3._telas = _telas_original
+
+        def _caso(telas, guardada, esperado):
+            if guardada:
+                _aw3._guardar_posicao(*guardada)
+            else:
+                _aw3.ARQUIVO_POSICAO.unlink(missing_ok=True)
+            x, y = _com_telas(telas, _aw3._posicao_de_abertura)
+            dentro = any(e <= x < d and tp <= y < b
+                        for e, tp, d, b in telas)
+            return dentro and (x, y) == esperado
+
+        if _caso(_DOIS, (2100, 300), (2100, 300)):
+            ok("janela: fecha no segundo monitor e abre no segundo")
+        else:
+            falha("janela: não voltou para o segundo monitor")
+        if _caso(_DOIS, (200, 150), (200, 150)):
+            ok("janela: fecha no principal e abre no principal")
+        else:
+            falha("janela: não voltou para o monitor principal")
+        if _caso(_INVERTIDO, (200, 150), (200, 150)):
+            ok("janela: acha o principal mesmo se o Windows inverter a ordem")
+        else:
+            falha("janela: a ordem das telas do Windows atrapalhou")
+
+        # sem nada guardado: o meio da tela principal
+        x, y = _caso and _com_telas(_DOIS, lambda: (
+            _aw3.ARQUIVO_POSICAO.unlink(missing_ok=True),
+            _aw3._posicao_de_abertura())[1])
+        if 0 <= x < 1920 and 0 <= y < 1080:
+            ok("janela: nunca movida, abre no meio da tela principal (%d,%d)"
+               % (x, y))
+        else:
+            falha("janela: nunca movida, abriu em (%d,%d), fora da principal"
+                  % (x, y))
+        # uma tela so
+        x, y = _com_telas(_NOTEBOOK, lambda: (
+            _aw3.ARQUIVO_POSICAO.unlink(missing_ok=True),
+            _aw3._posicao_de_abertura())[1])
+        if 0 <= x < 1366 and 0 <= y < 768:
+            ok("janela: num notebook de uma tela so, abre em cima dela")
+        else:
+            falha("janela: num notebook de uma tela abriu em (%d,%d)" % (x, y))
+        # o monitor guardado sumiu
+        if _caso(_UM, (2100, 300), (370, 130)):
+            ok("janela: se o monitor guardado sumiu, abre no meio da outra")
+        else:
+            falha("janela: ficou presa num monitor que não existe mais")
+
+        # posicao corrompida: nunca derruba o programa
+        _sobrou = True
+        for _ruim in ('{"x": "abc"}', "isto nao e json", "[]", "{}"):
+            _aw3.ARQUIVO_POSICAO.write_text(_ruim, encoding="utf-8")
+            try:
+                _com_telas(_UM, _aw3._posicao_de_abertura)
+            except Exception:
+                _sobrou = False
+        if _sobrou:
+            ok("janela: arquivo de posição estragado não derruba o programa")
+        else:
+            falha("janela: posição estragada derrubou o programa")
+
+        # e nao e' o config.json (que tem a chave da API)
+        if _aw3.ARQUIVO_POSICAO.name == "janela.json" and \
+                _aw3.ARQUIVO_POSICAO != _pg_pos2.ARQUIVO_CONFIG:
+            ok("janela: a posição fica em arquivo separado do config.json")
+        else:
+            falha("janela: a posição está misturada com o config.json")
+
+        # a janela de Salvar tem que nascer junto com o programa
+        if "_posicao_de_abertura()" in (
+                Path(PASTA / "app_web.py").read_text(encoding="utf-8")
+                .split("def _onde_esta_a_janela")[1].split("def salvar_texto")[0]):
+            ok("janela: a janela de Salvar nasce onde o programa está")
+        else:
+            falha("janela: a janela de Salvar ainda usa um ponto fixo "
+                  "(abriria no monitor errado)")
+
+        # o .exe NAO pode ter janela de console
+        _spec3 = (Path(PASTA / "Pesquisa IA Tela Nova.spec")
+                  .read_text(encoding="utf-8"))
+        _linhas3 = [l.strip() for l in _spec3.split(chr(10))]
+        _manda3 = [l for l in _linhas3 if l.startswith("console=")]
+        if _manda3 and _manda3[0] == "console=False,":
+            ok("programa: o .exe não abre janela preta (CMD) atrás")
+        else:
+            falha("programa: o .exe ainda abre janela de console (%r)"
+                  % (_manda3,))
+    finally:
+        _aw3.ARQUIVO_POSICAO = _pos_original
+        _aw3._telas = _telas_original
+        shutil.rmtree(_pasta_pos, ignore_errors=True)
+except Exception as erro:
+    falha("os testes da posição da janela quebraram: %r" % (erro,))
+
 # --- 4d. sites consultados: o que a busca traz, limpo e honesto ---------
 # Sao os RESULTADOS DA BUSCA, nao citacoes: por isso a tela escreve
 # "sites consultados" e mostra o link, para o Wolf conferir com os
@@ -892,11 +1088,23 @@ try:
     _app = importlib.import_module("app_web")
     _ponte = _app.Ponte()
     _x, _y = _ponte._onde_esta_a_janela()
-    if _x >= 1950:
-        ok("a janela de Salvar nasce no 2o monitor (a mesma tela do programa)")
+    # A janela de Salvar tem que nascer ONDE o PROGRAMA ESTA. Como o
+    # programa agora abre onde foi fechado (16/10), o certo e' conferir
+    # que a ancora vem da mesma funcao de escolha de posicao — e nao mais
+    # um numero fixo. Conferir "x >= 1950" aqui so fazia sentido quando
+    # o programa era preso no segundo monitor.
+    _mesma_funcao = ("return _posicao_de_abertura()" in
+                     Path(PASTA / "app_web.py").read_text(encoding="utf-8")
+                     .split("def _onde_esta_a_janela")[1]
+                     .split("def salvar_texto")[0])
+    _abertura = _app._posicao_de_abertura()
+    if _mesma_funcao and (_x, _y) == _abertura:
+        ok("a janela de Salvar nasce onde o programa está (%d,%d)" % (_x, _y))
     else:
-        falha("a janela de Salvar nasceria em x=%d (1o monitor: o Wolf "
-              "nao veria ela e acharia que travou)" % (_x,))
+        falha("a janela de Salvar nasceria em (%d,%d) e o programa em "
+              "(%d,%d): nasceriam em monitores diferentes" % (_x, _y,
+                                                              _abertura[0],
+                                                              _abertura[1]))
     if 'geometry("1x1+' in app_txt:
         ok("a janela de Salvar é posicionada antes de abrir")
     else:
