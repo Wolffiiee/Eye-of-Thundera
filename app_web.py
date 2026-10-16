@@ -246,6 +246,11 @@ class Ponte:
         self.id_atual = None        # conversa aberta (igual ao app antigo)
         self.mensagens = []
         self.ocupado = False
+        # A chave principal do Google parou de ser recusada? Este dicionario
+        # e' o que FAZ LEMBRAR. Precisa ser o mesmo a cada pergunta, senao o
+        # programa esqueceria que ja trocou e voltaria a insistir na chave
+        # morta a cada mensagem.
+        self.chaves = {"falhou": False}
 
     # --- 1. o que a tela precisa para comecar ---
 
@@ -440,6 +445,17 @@ class Ponte:
         if self.ocupado:
             return {"erro": "Aguarde a resposta terminar."}
 
+        if DEMO:
+            # Modo exemplo: NAO chama o Google de verdade (gastaria token
+            # do Wolf a cada rascunho). Repete o mesmo caminho da tela —
+            # "etapa", espera, "resposta" — para dar para ver o desenho
+            # funcionando antes de gastar.
+            self.ocupado = True
+            self.mensagens.append({"role": "user", "text": texto})
+            threading.Thread(target=self._responder_exemplo, args=(texto,),
+                             daemon=True).start()
+            return {}
+
         cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
         chave = (cfg.get("api_key") or "").strip()
         if not chave:
@@ -510,9 +526,16 @@ class Ponte:
                     consulta=consulta,
                 )
 
-            # Mesma troca automatica de chave do programa antigo.
+            # Mesma troca automatica de chave do programa antigo. O
+            # dicionario `self.chaves` e' o mesmo sempre, para a troca
+            # durar a sessao toda (e nao recomecar a cada pergunta).
             resposta, _fontes, _buscas, _origem = p.tentar_com_reserva(
-                chamar_a_ia, cfg, {})
+                chamar_a_ia, cfg, self.chaves)
+            resposta = (resposta or "").strip() or "(sem resposta)"
+            if self.chaves.get("falhou"):
+                self._evento({"tipo": "etapa",
+                              "texto": "A chave principal parou de valer; "
+                                       "estou usando a chave reserva."})
             resposta = (resposta or "").strip() or "(sem resposta)"
 
             self.mensagens.append({"role": "model", "text": resposta})
@@ -532,6 +555,35 @@ class Ponte:
             self._evento({"tipo": "erro",
                           "texto": p.traduzir_erro(erro),
                           "chave": bool(p._falha_de_chave(erro))})
+        finally:
+            self.ocupado = False
+
+    def _responder_exemplo(self, texto):
+        """Resposta falsificada, so para o modo exemplo (--demo).
+
+        Serve para ver a tela animando: os tres pontinhos, o texto
+        aparecendo aos poucos e a lista de conversas se atualizando,
+        sem gastar uma unica chamada de IA.
+        """
+        partes = [
+            "Voce esta vendo uma resposta de EXEMPLO. 🙂",
+            "",
+            "- No modo exemplo eu **nao** chamo o Google: nao gasta token.",
+            "- O desenho da tela e' o mesmo de verdade (mesmos eventos).",
+            "- Para a IA de verdade, abra sem o modo exemplo.",
+        ]
+        try:
+            for etapa in ("Pensando...", "Conversando com voce..."):
+                self._evento({"tipo": "etapa", "texto": etapa})
+                time.sleep(0.6)
+            for parte in partes:
+                self._evento({"tipo": "etapa", "texto": "Escrevendo..."})
+                time.sleep(0.35)
+            resposta = "\n".join(partes)
+            self.mensagens.append({"role": "model", "text": resposta})
+            self._evento({"tipo": "resposta", "texto": resposta})
+        except Exception:
+            pass
         finally:
             self.ocupado = False
 

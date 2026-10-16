@@ -73,15 +73,18 @@ rodando pelo código: na pasta do projeto) e siga o PASSO-A-PASSO.md.
         15/10/2026**: abrir, criar nova e excluir funcionam; a conversa
         aberta mora na ponte e o `_gravar_conversa()` (que grava no
         arquivo quando há mensagem nova) já está pronto. 18 testes.
-        **Já está ligado à IA** (passo 3, feito em 16/10/2026).
+        **Já está ligado à IA** (passo 3, feito em 15/10/2026).
      3. ~~enviar pergunta e mostrar a resposta aparecendo por partes~~
-        **FEITO em 16/10/2026**: `Ponte.enviar()` devolve na hora e o
+        **FEITO em 15/10/2026**: `Ponte.enviar()` devolve na hora e o
         trabalho roda numa thread; a resposta volta por
         `window.PIA.evento(...)` (`etapa`, `resposta`, `erro` e
         `conversas`), reaproveitando `p.perguntar`/`p.conversar`, o
         roteador, a chave reserva e o tradutor de erro do programa
-        antigo. 31 testes novos (`testes_tela_nova_ia`). Falta o
-        **passo 4**;
+        antigo. **Testado com a IA de verdade** (respondeu certo numa
+        pergunta curta) e no `verificar.py` sem gastar token. Corrigido
+        no caminho: a chave reserva não se lembrava da troca (era
+        chamada com um dicionário descartável, e voltava a insistir na
+        chave morta a cada mensagem);
      4. caixa de digitar, microfone, botão enviar, modo web;
      5. janela de Configurações com as 4 abas gravando de verdade
         (a Tarefa D entra aqui, para não ser feita duas vezes);

@@ -1403,6 +1403,7 @@ def testes_tela_nova(p):
         shutil.rmtree(pasta, ignore_errors=True)
 
 
+
 # --- 5e. tela nova: a IA de verdade (o passo 3) ----------------------------
 
 

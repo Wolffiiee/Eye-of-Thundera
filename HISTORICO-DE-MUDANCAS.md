@@ -101,6 +101,78 @@ e a resposta volta para a tela enquanto aparece. Commit `1075253`.
 
 ---
 
+## 2026-10-15 — Tela nova: PASSO 3 (a IA de verdade) + o defeito do Alethe
+
+### 1. A tela nova chama a IA de verdade
+
+- **`enviar(pergunta)`** na ponte: devolve na hora (a janela não trava) e
+  o trabalho acontece na thread `_responder`. Só a pergunta vazia, a
+  sessão já ocupada e a falta de chave ("sem_chave", que o `app.js`
+  reconhece e abre as Configurações) voltam na hora — o resto chega por
+  evento.
+- **A tela é avisada do que está acontecendo** por `_evento`, que fala
+  `window.PIA.evento({...})` com `json.dumps(..., ensure_ascii=False)`
+  (sem isso acento e emoji viram `\u00e7` na tela). Tipos: `etapa`
+  (os três pontinhos), `resposta`, `erro` e `conversas`.
+- **Nada foi reescrito:** reaproveita `pesquisa_ia.perguntar` (com busca
+  na web), `pesquisa_ia.conversar` (papo), o mesmo `_decidir_modo` do
+  roteador, a mesma chave reserva e o mesmo tradutor de erro.
+- **Defeito corrigido no caminho:** a chave reserva estava sendo chamada
+  com um dicionário descartável (`{}`), então o programa **esquecia que
+  já tinha trocado** e voltava a insistir na chave morta a cada
+  mensagem. Agora o dicionário vive na ponte (`self.chaves`), como no
+  programa antigo.
+- **Modo exemplo (`--demo`)** parou de gastar token: `enviar` simula
+  etapas e resposta pelo mesmo caminho da tela, sem chamar o Google.
+
+### 2. Regra compartilhada entre as duas telas (sem duas cópias)
+
+- `traduzir_erro`, `chave_reserva`, `chave_ativa` e `tentar_com_reserva`
+  viraram **funções de nível de módulo** no `pesquisa_ia.py`. Os métodos
+  antigos do `Aplicativo` agora só chamam elas. Motivo: a tela nova usa
+  **a mesma** regra; duas cópias divergiriam sem ninguém perceber.
+  Os 9 testes de chave reserva do programa antigo continuam passando.
+
+### 3. Testado
+
+- **Com a IA de verdade:** uma pergunta curta, e a tela respondeu
+  *"Um ano comum tem 365 dias, e o bissexto tem 366."* — incluindo
+  etapas, gravação da conversa e atualização da lista.
+- **Sem gastar token e sem internet:** o `verificar.py` troca só a
+  chamada de rede por uma resposta de mentira e confere o caminho
+  inteiro (ida, etapas, resposta, gravação, lista, erro em português,
+  recusa de pergunta duplicada, pergunta vazia). **TUDO CERTO.**
+- **Armadilha do pywebview descoberta nesta rodada:** o `evaluate_js`
+  **trava para sempre** se a página não responder, e o pywebview imprime
+  um barulho gigante de COM ("maximum recursion depth exceeded",
+  "can only be accessed from the UI thread") ao tentar introspecionar a
+  janela de outra thread. É ruído dele, não do nosso código. Por isso os
+  testes do `verificar.py` **não abrem janela** para testar a IA: eles
+  trocam a rede e conversam com a ponte direto, que é o que importa.
+
+### 4. O defeito do plugin do Alethe (achado a pedido do Wolf)
+
+O Alethe escrevia `alethe-bridge.js` num formato que o opencode 2.0.30
+recusa (*"Plugin must export a default definition with an id and an
+effect or setup function"*), e ele mostrava "1 plugin failed". Confirmei
+no log do opencode. O Alethe **reinstala esse arquivo toda vez que
+abre** (aparece `[opencode_bridge] plugin instalado em ...` no log), por
+isso corrigir na mão não segurava. Criados, na Área de Trabalho:
+
+- `Corrigir o Alethe.bat` + `corrigir-alethe.ps1` — conserta na mão;
+- `abrir-alethe.bat` + `abrir-alethe.ps1` + atalho `Alethe.lnk` — abre o
+  programa e já aplica a correção sozinho (espera o Alethe instalar o
+  arquivo e conserta em seguida; como o opencode recarrega o plugin
+  sozinho quando o arquivo muda, o aviso nem chega a aparecer).
+
+Medido: **79 falhas de plugin antes da correção, 0 depois**; o plugin
+passou a aparecer no log como `loading plugin`. O script é idempotente
+(rodei duas vezes: a segunda diz "já estava corrigido", sem duplicar) e
+tira correções antigas antes de reescrever — sem isso ele deixava dois
+`export default` no arquivo, que é justamente o erro que ele conserta.
+
+---
+
 ## 2026-10-15 — Tela nova: PASSO 2 (as conversas de verdade)
 
 O Wolf aprovou a tela nova ("curti demais mesmo") e mandou seguir o
