@@ -20,7 +20,11 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
-  background: var(--bg); color: var(--texto); font: 15px/1.6 var(--fonte);
+  /* A letra da tela e' ajustavel (Ctrl +, Ctrl - e Ctrl 0, ou os botoes
+     da aba Conversa). O --tamanho e' trocado em tempo de execucao, e as
+     medidas em 'rem' acompanham sozinhas. */
+  background: var(--bg); color: var(--texto);
+  font: var(--tamanho, 15px)/1.6 var(--fonte);
   -webkit-font-smoothing: antialiased; overflow: hidden;
 }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
@@ -159,6 +163,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   color: var(--texto-2); border: 1px solid var(--borda); }
 .pilula:hover { background: var(--superficie-2); color: var(--texto); }
 .pilula.ligada { color: #b8c8ff; border-color: #34458f; background: #1c2447; }
+/* tamanho da letra: botoes da aba Conversa */
+.grupo-letra { display: flex; align-items: center; gap: 6px; }
+.grupo-letra .btn.letra { min-width: 40px; font-weight: 700; }
+.rotulo-letra { color: var(--texto-3); font-size: 12px; min-width: 34px; text-align: center; }
 .enviar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--azul); color: #fff; }
 .enviar:hover:not(:disabled) { background: var(--azul-2); }
 .enviar:disabled { background: var(--superficie-2); color: var(--texto-3); opacity: 1; }

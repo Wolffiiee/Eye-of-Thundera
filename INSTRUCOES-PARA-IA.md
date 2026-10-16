@@ -58,10 +58,19 @@ que estava tudo bem. Só olhando o **total** de testes e o tempo se nota.
 **Como verificar "apagou e a lista continua igual"** sem travar: chame a
 ação **direto**, sem passar pelo botão que abre a confirmação.
 
-**Como saber se a verificação rodou tudo** (confira as três):
+## Como saber se a verificação rodou tudo (confira as três):
 1. a última linha é `TUDO CERTO`;
-2. o total de `[OK]` bate com o de sempre (hoje ~204);
-3. o tempo ficou perto de **95 segundos** — muito mais que isso travou.
+2. o total de `[OK]` bate com o de sempre (hoje ~274);
+3. o tempo ficou perto de **35 segundos** — muito mais que isso travou,
+   **e muito menos que isso pulou teste**.
+
+**O item 3 é o que mais pega.** Aconteceu duas vezes (15/10 e 16/10/2026):
+um teste com FALHA faz a verificação **pular todas as seções seguintes**,
+e aí ela termina em poucos segundos com pouquíssimos `[OK]`. A tela mostra
+"TUDO CERTO" quando não há falha nenhuma, mas com uma falha no meio o
+resultado é "RESULTADO: 1 FALHA(S)" — e **é justamente a falha logo
+depois da qual os testes somem** que importa. Por isso: leia o **total**,
+não só a última linha.
 
 ## Coisas que custaram tempo (para não repetir)
 - **Nada que leia arquivo pode rodar em evento disparado por centenas de

@@ -234,6 +234,35 @@ try:
 except Exception as erro:
     falha("conferir a posição da janela de Salvar deu erro: %r" % (erro,))
 
+# --- 4e. tamanho da letra: existe e não mexe em nada do Python --------------
+# A letra e' so aparencia (fica no navegador), mas um erro aqui quebraria
+# a tela INTEIRA na hora de abrir, entao precisa de prova de que os botoes
+# e os atalhos existem e que a funcao nao mexe em arquivo nenhum.
+web_js = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+web_css = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+faltando = [x for x in ("function aplicarTamanho", "function mudarLetra",
+                        "function tamanhoAtual", 'id = "rotulo-letra"',
+                        "aplicarTamanho(tamanhoAtual())")
+            if x not in web_js]
+if not faltando:
+    ok("o tamanho da letra tem função, botões e é aplicado ao abrir a tela")
+else:
+    falha("o tamanho da letra está incompleto: falta %r" % (faltando,))
+if "var(--tamanho" in web_css and 'setProperty("--tamanho"' in web_js:
+    ok("o tamanho da letra usa a variável do CSS (a tela inteira acompanha)")
+else:
+    falha("a letra não usa a variável do CSS: só o corpo mudaria")
+if 'localStorage.setItem("pia_letra"' in web_js and \
+        'getItem("pia_letra")' in web_js:
+    ok("o tamanho da letra fica guardado (a tela abre do jeito que ficou)")
+else:
+    falha("o tamanho da letra não fica guardado entre uma abertura e outra")
+corpo_aplicar = web_js.split("function aplicarTamanho")[1].split("}")[0]
+if "chamar(" not in corpo_aplicar:
+    ok("mudar a letra não chama o Python (não arrisca as conversas)")
+else:
+    falha("mudar a letra chama o Python: não deveria")
+
 # --- 5. testes com a janela de verdade -------------------------------------
 
 
@@ -1768,6 +1797,64 @@ def testes_tela_nova(p):
             falha("tela nova: procurar mexeu nas conversas")
         # as conversas de mentira da busca ficam no arquivo de TESTE; o
         # check do fim da secao exige arquivo vazio, entao limpar aqui
+        p.salvar_conversas([])
+
+        # 8b. FIXAR NO TOPO: a conversa vai para o comeco e volta quando solta
+        p.salvar_conversas([
+            {"id": "p1", "titulo": "Antiga", "quando": "10/10 10:00",
+             "mensagens": [{"role": "user", "text": "pergunta antiga"}]},
+            {"id": "p2", "titulo": "Do meio", "quando": "11/10 10:00",
+             "mensagens": [{"role": "user", "text": "oi"}]},
+            {"id": "p3", "titulo": "Recente", "quando": "12/10 10:00",
+             "mensagens": [{"role": "user", "text": "e a ultima"}]},
+        ])
+        if [c["id"] for c in app_web._conversas_para_a_tela()] == \
+                ["p3", "p2", "p1"]:
+            ok("tela nova: a lista começa pela conversa mais nova")
+        else:
+            falha("tela nova: a lista ficou %r"
+                  % ([c["id"] for c in app_web._conversas_para_a_tela()],))
+        ponte_f = app_web.Ponte()
+        r = ponte_f.fixar_conversa("p1")
+        if [c["id"] for c in r.get("conversas", [])] == ["p1", "p3", "p2"]:
+            ok("tela nova: fixar traz a conversa para o topo da lista")
+        else:
+            falha("tela nova: depois de fixar a lista ficou %r"
+                  % ([c["id"] for c in r.get("conversas", [])],))
+        salvas = [c for c in p.carregar_conversas()
+                  if c.get("id") == "p1"]
+        if salvas and salvas[0].get("fixada") is True:
+            ok("tela nova: a conversa fica marcada como fixada no arquivo")
+        else:
+            falha("tela nova: a marca de fixada nao foi gravada (%r)"
+                  % (salvas[0] if salvas else None,))
+        if salvas and len(salvas[0].get("mensagens") or []) == 1:
+            ok("tela nova: fixar não perde as mensagens da conversa")
+        else:
+            falha("tela nova: as mensagens sumiram ao fixar")
+        r = ponte_f.fixar_conversa("p1")
+        if r.get("fixada") is False and \
+                [c["id"] for c in r.get("conversas", [])] == ["p3", "p2", "p1"]:
+            ok("tela nova: soltar devolve a conversa para o fim da lista")
+        else:
+            falha("tela nova: depois de soltar ficou %r"
+                  % (r.get("conversas"),))
+        if ponte_f.fixar_conversa("nao-existe").get("erro"):
+            ok("tela nova: fixar o que não existe avisa em vez de inventar")
+        else:
+            falha("tela nova: fixar o que não existe devolveu algo")
+        # o programa antigo (tkinter) ignora o campo 'fixada': a conversa
+        # continua aparecendo la, sem a fixacao, e nao some do arquivo
+        if "fixada" not in [k for c in p.carregar_conversas()
+                            for k in c if k != "fixada"]:
+            ok("tela nova: o campo novo não atrapalha a leitura das conversas")
+        if len(p.carregar_conversas()) == 3:
+            ok("tela nova: fixar não apaga nem cria conversa")
+        else:
+            falha("tela nova: sobrou ou faltou conversa ao fixar (%d)"
+                  % len(p.carregar_conversas()))
+        # as 3 conversas de mentira ficam no arquivo de TESTE; o check do
+        # fim da secao exige ele vazio, entao limpar aqui
         p.salvar_conversas([])
 
         # 10. a memoria que a tela mostra vem do arquivo, sem mudar nada

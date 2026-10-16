@@ -252,10 +252,19 @@ def _conversas_para_a_tela():
     ao contrario. Nao ordenar pelo texto do horario de propósito: ele so
     tem minuto de precisao, e duas conversas no mesmo minuto ficariam em
     ordem aleatoria.
+
+    Quem o Wolf **fixou no topo** vem antes de todas, mas entre as
+    fixadas e entre as soltas a ordem continua sendo a mesma (a mais nova
+    primeiro) — senao a lista inteira mudaria de lugar a cada conversa
+    nova. A conversa fixada continua valendo no programa antigo: ele
+    apenas ignora o campo a mais (ver `fixar_conversa`).
     """
     if DEMO:
         return list(CONVERSAS_DEMO)
-    return list(reversed(p.carregar_conversas()))
+    lista = list(reversed(p.carregar_conversas()))
+    fixadas = [c for c in lista if c.get("fixada")]
+    soltas = [c for c in lista if not c.get("fixada")]
+    return fixadas + soltas
 
 
 def _mensagens_de(conversa):
@@ -397,6 +406,49 @@ class Ponte:
         self.id_atual = None
         self.mensagens = []
         return {"atual": None, "conversas": _conversas_para_a_tela()}
+
+    def fixar_conversa(self, identificador):
+        """Fixa a conversa no topo da lista, ou solta se ja estiver fixada.
+
+        Grava um campo a mais na conversa ("fixada": true). O programa
+        antigo NAO conhece esse campo, mas tambem nao se incomoda com ele
+        (ele ignora o que nao usa) — por isso a conversa continua
+        aparecendo la como sempre, so que sem a fixacao.
+
+        Este e' o unico jeito de mexer em uma conversa sem passar pelo
+        caminho de excluir e recriar: o arquivo inteiro e' reescrito com
+        a conversa trocada de lugar, e as mensagens dela vao junto,
+        intactas.
+        """
+        if DEMO:
+            return self._demo_nada()
+        alvo = str(identificador)
+        conversas = p.carregar_conversas()
+        achou = None
+        for conversa in conversas:
+            if str(conversa.get("id")) == alvo:
+                achou = conversa
+                break
+        if achou is None:
+            return {"erro": "Não achei essa conversa."}
+        mensagens_antes = len(achou.get("mensagens") or [])
+        if achou.get("fixada"):
+            achou.pop("fixada", None)
+            fixada = False
+        else:
+            achou["fixada"] = True
+            fixada = True
+        p.salvar_conversas(conversas)
+        # confere que nada se perdeu no caminho
+        depois = [c for c in p.carregar_conversas()
+                  if str(c.get("id")) == alvo]
+        if not depois or len(depois[0].get("mensagens") or []) != mensagens_antes:
+            return {"erro": "A conversa ficou esquisita ao ser fixada; "
+                            "melhor não arriscar."}
+        return {
+            "fixada": fixada,
+            "conversas": _conversas_para_a_tela(),
+        }
 
     def excluir_conversa(self, identificador):
         """Apaga uma conversa da lista.

@@ -5,6 +5,59 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Tela nova: tamanho da letra e "fixar no topo"
+
+Duas ideias da `IDEIAS.md` que nao existiam em NENHUM dos dois programas.
+
+### 1. Tamanho da letra
+
+Falar e' o programa inteiro, e letra pequena cansa a leitura.
+
+- **Ctrl + e Ctrl -** aumentam e diminuem; **Ctrl 0** volta ao normal.
+- **Botoes** em Configurações > Conversa (A-, A+, Normal) — ninguem
+  precisa decorar atalho para aumentar a letra.
+- Vai de **13 px a 26 px**.
+- **Fica guardado** neste computador: a tela ja abre do jeito que o Wolf
+  deixou (vive no `localStorage` do navegador).
+- A letra vem de **uma variavel de CSS** (`--tamanho`), e nao de mexer em
+  cada tamanho da tela: assim **um** lugar muda e a tela inteira
+  acompanha.
+- **Nao chama o Python.** E' so aparencia e nao arrisca as conversas. Ha
+  teste que REPROVA se um dia isso mudar.
+
+### 2. Fixar conversa no topo
+
+No menu dos tres pontinhos de cada conversa: **Fixar no topo** /
+**Soltar do topo**.
+
+- Grava um campo a mais na conversa (`"fixada": true`). O programa
+  antigo **ignora** o campo, entao a conversa continua aparecendo la
+  como sempre — so que sem a fixacao.
+- A ordem da lista nao vira bagunca: as fixadas sobem, mas entre elas e
+  entre as soltas continua valendo "mais nova primeiro", senao a lista
+  inteira mudaria de lugar a cada conversa nova.
+- Como fixar reescreve o arquivo inteiro, a tela nova **confere depois**
+  que a conversa continua la **com o mesmo numero de mensagens**; se
+  algo estiver errado, avisa em vez de deixar a conversa quebrada.
+- **8 testes**: topo da lista, marca gravada, mensagens intactas, soltar
+  volta ao normal, o que nao existe avisa, nao apaga nem cria conversa,
+  e o campo novo nao atrapalha a leitura do outro programa.
+
+### Um teste meu quebrou e pulou 110 testes (de novo)
+
+Um dos testes novos da letra falhou na primeira vez (escrevi a condicao
+olhando o arquivo errado: `var(--tamanho)` esta no CSS, e
+`setProperty("--tamanho")` esta no JS). Como a verificacao **pula as
+secoes seguintes quando ha FALHA**, a rodada seguinte rodou **em 2
+segundos** e com 78 testes em vez de 274.
+
+Foi percebido pelo **tempo**, nao pelo resultado: 2 segundos é rápido
+demais para uma verificacao que costuma levar 35. A regra ja existia nas
+instrucoes (confira sempre o total E o tempo, nao so o "TUDO CERTO") e
+foi ela que salvou.
+
+Verificacao: `TUDO CERTO`, **274 testes, 0 falhas** (34 s).
+
 ## 2026-10-16 — Apelido nao e invencao, e o log de erro agora e' real
 
 Duas correcoes vindas do feedback do Wolf.

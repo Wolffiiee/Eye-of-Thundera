@@ -279,6 +279,18 @@ function abrirMenuConversa(botao, c) {
   fecharMenu();
   if (mesmo) return;
   const pop = el("div", "pop");
+  // Fixar no topo: a conversa vai para o comeco da lista e fica la.
+  const fixar = el("button", c.fixada ? "" : "");
+  fixar.append(ico(c.fixada ? "i-soltar" : "i-fixar"),
+               el("span", "", c.fixada ? "Soltar do topo" : "Fixar no topo"));
+  fixar.addEventListener("click", async () => {
+    fecharMenu();
+    const r = await chamar("fixar_conversa", c.id);
+    if (r.erro) return aviso(r.erro, true);
+    estado.conversas = r.conversas || estado.conversas;
+    desenharConversas();
+    aviso(r.fixada ? "Conversa fixada no topo." : "Conversa solta.");
+  });
   const pedir = el("button", "perigo");
   pedir.append(ico("i-lixo"), el("span", "", "Excluir"));
   pedir.addEventListener("click", () => {
@@ -295,7 +307,7 @@ function abrirMenuConversa(botao, c) {
     linha.append(nao, sim);
     pop.append(linha);
   });
-  pop.append(pedir);
+  pop.append(fixar, pedir);
   document.body.append(pop);
   const r = botao.getBoundingClientRect();
   pop.style.left = Math.max(8, r.right - pop.offsetWidth) + "px";
@@ -350,6 +362,22 @@ document.addEventListener("keydown", (e) => {
     const campo = $("#campo-busca");
     campo.focus();
     campo.select();
+    return;
+  }
+  // Ctrl +, / Ctrl - / Ctrl 0: tamanho da letra.
+  if ((e.ctrlKey || e.metaKey) && (e.key === "=" || e.key === "+")) {
+    e.preventDefault();
+    mudarLetra(1);
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.key === "-" || e.key === "_")) {
+    e.preventDefault();
+    mudarLetra(-1);
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === "0") {
+    e.preventDefault();
+    aplicarTamanho(15);
   }
 });
 document.addEventListener("click", (e) => {
@@ -359,6 +387,33 @@ document.addEventListener("click", (e) => {
     chamar("abrir_link", link.dataset.url);
   }
 });
+
+/* ---------------- tamanho da letra ----------------
+   Ctrl + (ou =) aumenta, Ctrl - diminui, Ctrl 0 volta ao normal. O
+   tamanho fica guardado neste computador (localStorage), entao a tela
+   ja abre do jeito que o Wolf deixou. Nao mexe em nada do Python nem
+   dos arquivos: e' so aparencia. */
+const TAMANHOS = [13, 14, 15, 16, 18, 20, 23, 26];
+
+function tamanhoAtual() {
+  const lido = parseInt(localStorage.getItem("pia_letra") || "15", 10);
+  return TAMANHOS.includes(lido) ? lido : 15;
+}
+
+function aplicarTamanho(px) {
+  if (!TAMANHOS.includes(px)) px = 15;
+  document.body.style.fontSize = px + "px";
+  document.documentElement.style.setProperty("--tamanho", px + "px");
+  try { localStorage.setItem("pia_letra", String(px)); } catch (_e) { /* sem armazenamento */ }
+  const rotulo = $("#rotulo-letra");
+  if (rotulo) rotulo.textContent = px + "px";
+}
+
+function mudarLetra(passo) {
+  let i = TAMANHOS.indexOf(tamanhoAtual());
+  if (i < 0) i = TAMANHOS.indexOf(15);
+  aplicarTamanho(TAMANHOS[Math.max(0, Math.min(TAMANHOS.length - 1, i + passo))]);
+}
 
 /* ---------------- procurar nas conversas ----------------
    O Python procura (sem acento e sem diferenciar maiuscula, porque o
@@ -497,12 +552,37 @@ function abaConversa(corpo) {
   l.append(t, sel);
   caixa.append(
     l,
+    linhaTamalho(),
     linhaToggle("Lembrar o assunto da conversa", "Permite perguntas de acompanhamento.", "usar_contexto"),
     linhaToggle("Aprender sozinho com as conversas", "Guarda gostos e hábitos (sem repetir o que já sabe).", "aprender"),
     linhaToggle("Corretor ortográfico", "Sublinha palavras erradas na caixa de digitar.", "web_corretor"),
     linhaToggle("Enviar sozinho depois de falar", "Para quando o microfone estiver ligado.", "voz_enviar")
   );
   corpo.append(caixa);
+}
+
+/* A letra da tela. Tem botão aqui E atalho (Ctrl +, Ctrl - e Ctrl 0),
+   para ninguem ter que decorar atalho para aumentar a letra. */
+function linhaTamalho() {
+  const l = el("div", "linha-opcao");
+  const t = el("div");
+  t.append(el("b", "", "Tamanho da letra"),
+           el("span", "", "Deixa a conversa mais fácil de ler."));
+  const grupo = el("div", "grupo-letra");
+  const menos = el("button", "btn letra", "A−");
+  menos.title = "Diminuir a letra (Ctrl -)";
+  menos.addEventListener("click", () => mudarLetra(-1));
+  const rotulo = el("span", "rotulo-letra");
+  rotulo.id = "rotulo-letra";
+  const mais = el("button", "btn letra", "A+");
+  mais.title = "Aumentar a letra (Ctrl +)";
+  mais.addEventListener("click", () => mudarLetra(1));
+  const normal = el("button", "btn", "Normal");
+  normal.title = "Voltar ao tamanho normal (Ctrl 0)";
+  normal.addEventListener("click", () => aplicarTamanho(15));
+  grupo.append(menos, rotulo, mais, normal);
+  l.append(t, grupo);
+  return l;
 }
 
 function cartaoChave(titulo, desc, campo, info, opc) {
@@ -706,6 +786,8 @@ function abaAjuda(corpo) {
     ["Ctrl + S", "salva a última resposta em .txt"],
     ["Ctrl + N", "começa uma conversa nova"],
     ["Ctrl + F", "procura nas conversas"],
+    ["Ctrl + e Ctrl −", "aumenta ou diminui a letra"],
+    ["Ctrl + 0", "volta a letra ao tamanho normal"],
     ["Esc", "fecha esta janela"],
   ]) {
     const l = el("div", "linha-atalho");
@@ -863,6 +945,10 @@ function ligarEventos() {
   $("#btn-recolher").addEventListener("click", () => recolher(true));
   $("#btn-abrir-lateral").addEventListener("click", () => recolher(false));
   try { if (localStorage.getItem("pia_lateral") === "1") recolher(true); } catch (_e) { /* ok */ }
+  // A letra que o Wolf deixou da ultima vez: aplicar logo no inicio, e
+  // nao so quando ele aperta o atalho. Sem isto a tela abriria sempre no
+  // tamanho normal e so mudaria depois do primeiro Ctrl +.
+  try { aplicarTamanho(tamanhoAtual()); } catch (_e) { /* sem armazenamento */ }
 }
 
 async function iniciar() {
