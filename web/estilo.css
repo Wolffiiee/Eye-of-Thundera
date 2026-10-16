@@ -172,6 +172,35 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .enviar:hover:not(:disabled) { background: var(--azul-2); }
 .enviar:disabled { background: var(--superficie-2); color: var(--texto-3); opacity: 1; }
 #dica { max-width: 780px; margin: 7px auto 0; text-align: center; font-size: 11.5px; color: var(--texto-3); }
+/* galeria de imagens dentro da conversa: mesma ideia do programa antigo
+   (grade de miniaturas, clicar abre a foto), mas desenhada em HTML. */
+.galeria-titulo { color: var(--texto-3); font-size: 12.5px; margin: 12px 0 8px; }
+.galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(126px, 1fr));
+  gap: 8px; max-width: 520px; }
+.galeria .foto { padding: 0; border: 1px solid var(--borda); border-radius: 10px;
+  overflow: hidden; background: var(--painel); cursor: pointer; aspect-ratio: 4 / 3; }
+.galeria .foto:hover { border-color: #4a4a6a; }
+.galeria .foto img { width: 100%; height: 100%; object-fit: cover;
+  display: block; transition: transform .12s ease; }
+.galeria .foto:hover img { transform: scale(1.06); }
+
+/* a foto aberta por cima de tudo */
+.foto-aberta { position: fixed; inset: 0; z-index: 95; background: rgba(4,4,8,.9);
+  display: grid; place-items: center; padding: 28px; cursor: zoom-out; }
+.foto-aberta img { max-width: 92vw; max-height: 84vh; border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.65); background: var(--painel); }
+.foto-aberta .foto-carregando { color: var(--texto-3); font-size: 14px;
+  position: absolute; }
+.foto-aberta .foto-fechar { position: absolute; top: 14px; right: 18px;
+  width: 38px; height: 38px; border-radius: 10px; font-size: 17px;
+  background: var(--superficie-2); border: 1px solid var(--borda);
+  color: var(--texto); cursor: pointer; }
+.foto-aberta .foto-fechar:hover { background: var(--superficie); }
+.foto-aberta .foto-pagina { position: absolute; bottom: 18px; left: 50%;
+  transform: translateX(-50%); color: var(--texto-2); font-size: 13px;
+  text-decoration: none; border-bottom: 1px dashed var(--borda); }
+.foto-aberta .foto-pagina:hover { color: var(--texto); }
+
 /* menu do botão direito (correção de palavra + comandos de edição).
    Nasce perto do clique, sempre DENTRO da janela: se abrisse para fora,
    o menu ficaria cortado na borda e o Wolf acharia que não funcionou. */

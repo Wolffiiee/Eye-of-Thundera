@@ -5,6 +5,71 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Galeria de imagens na tela nova (falta o último)
+
+O Wolf perguntou se dava para resumir tudo no programa novo e aposentar o
+antigo. Faz o levantamento: o **motor** (`pesquisa_ia.py`) e' dos dois, e
+so a **interface** tkinter e' do antigo. A unica coisa que o antigo tinha
+e a tela nova nao era a **galeria de imagens** — perguntar "imagens de
+God of War" e' a forma como o Wolf sempre procurou as coisas.
+
+Esta e' a ultima peca. Feita ela, o novo fica igual ou melhor.
+
+### Como funciona
+
+- **"imagens de lobos" nao vai para a IA.** O `enviar` reconhece a
+  pergunta (`p._quer_imagens`, a mesma funcao do programa antigo) e
+  desvia para a busca de imagens, que e' de graca. **Nao gasta chave de
+  API** — e nem devia: quem procura foto nao e' o Gemini.
+- **As miniaturas viajam dentro do evento, em base64.** Sao pequenas
+  (6 KB cada) e nove cabem folgadas.
+- **A foto grande NAO viaja junto.** Uma foto de 2 MB em base64 viraria
+  uma string de 2,7 MB passando por `evaluate_js` — isso trava a janela.
+  A grande fica guardada no Python e a tela pede **uma por vez**, so
+  quando o Wolf clica. Como ja foi baixada em segundo plano enquanto ele
+  lia a resposta, aparece quase na hora.
+- **A grade entra dentro da bolha da resposta**, antes do "copiar /
+  salvar / outras perguntas" — as fotos fazem parte da RESPOSTA.
+- Clicar abre a foto por cima de tudo, com botao de fechar (Esc tambem
+  fecha) e um link para a pagina original.
+
+### Um detalhe do Pillow que custou uma rodada
+
+`from PIL import ImageDraw` traz o **modulo**; a classe e'
+`ImageDraw.Draw`. Escrever `ImageDraw(foto)` falha com
+`"TypeError: 'module' object is not callable"` — que e' um erro de
+pouca ajuda, e que só apareceu porque o teste roda de verdade em vez de
+ficar no papel.
+
+### Os testes
+
+Secao 4c7, 14 verificacoes: a pergunta vai para a busca e nao gasta chave,
+a tela destrava, o evento chega, as miniaturas vem prontas, a pergunta
+fica na conversa, a grande vem no clique, indice inventado nao derruba
+nada, e pergunta normal nao vira busca de imagens. A internet nao e'
+chamada: o teste finge a busca com fotos geradas aqui.
+
+Verificacao: `TUDO CERTO`, **331 testes, 0 falhas, 0 avisos** (48 s).
+
+## 2026-10-16 — A pasta antiga ficou marcada, mas não pôde ser renomeada
+
+O Wolf pediu para deixar a pasta `C:\Projetos\PesquisaIA` guardada "com
+outro nome". O Windows **recusou o renomeamento** ("acesso negado"),
+mesmo por `.NET`, mesmo depois de matar todos os processos. A causa
+quase certa e' o `.venv`: ele cria arquivos com permissao especial, e o
+Windows nao deixa renomear uma pasta que contem esse tipo de arquivo.
+
+Nao vale a pena insistir — nada ali e' necessario. A solucao que resolve
+o problema de verdade (o Wolf saber qual e' a pasta certa) e' um arquivo
+`LEIA-ISTO-PRIMEIRO-ESTA-E-A-COPIA-ANTIGA.txt` dentro da pasta velha,
+que aponta para `D:\Projetos\PesquisaIA` e diz o que pode ser apagado
+com seguranca (`_arquivo_morto` = 1,3 GB de `.exe` velhos, `.venv` com o
+caminho velho gravado dentro, `build`/`dist`).
+
+**A licao:** quando o plano e' "mover", o plano B tem de existir desde o
+comeco. "Deixar com outro nome" e' melhor que "deixar como esta", mas
+so se o sistema deixar.
+
 ## 2026-10-16 — O projeto mudou de pasta: de C: para D:
 
 O Wolf pediu para mudar a pasta do projeto para o `D:` (que tem 353 GB

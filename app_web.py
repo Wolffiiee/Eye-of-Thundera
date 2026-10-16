@@ -35,6 +35,8 @@ Como rodar (esta e' a forma normal, o que o Wolf vai usar):
     .venv\\Scripts\\python.exe app_web.py
 """
 
+import base64
+import io
 import json
 import sys
 import threading
@@ -89,6 +91,41 @@ VOZ_FALSA = DEMO and not VOZ_REAL
 # app).
 X_PADRAO, Y_PADRAO = (2000, 100)
 TITULO_JANELA = "Pesquisa IA (tela nova - em construção)"
+
+
+# ---------------- imagens: da busca para a tela -------------------------
+# A tela (que e' uma pagina) nao sabe ler bytes. As miniaturas vao
+# dentro do evento ja em base64 — sao pequenas (umas 6 KB cada), e nove
+# cabem folgadas. As grandes NAO: uma foto de 2 MB em base64 viraria uma
+# string de 2,7 MB, e o pywebview manda isso por `evaluate_js`, o que
+# trava a janela. Por isso a grande fica guardada aqui e a tela pede uma
+# por vez, so quando o Wolf clica.
+def _para_base64(dados, tipo="image/jpeg"):
+    """Bytes da imagem -> string base64 pronta para a tela."""
+    if not dados:
+        return ""
+    try:
+        return "data:%s;base64,%s" % (
+            tipo, base64.b64encode(dados).decode("ascii"))
+    except Exception:
+        return ""
+
+
+def _imagem_para_base64(imagem, lado=1400, qualidade=85):
+    """Imagem do Pillow -> base64 (usado para a foto ampliada)."""
+    if imagem is None or p.Image is None:
+        return ""
+    try:
+        buffer = io.BytesIO()
+        foto = imagem
+        if foto.mode not in ("RGB", "L"):
+            foto = foto.convert("RGB")
+        if max(foto.size) > lado:
+            foto.thumbnail((lado, lado))
+        foto.save(buffer, format="JPEG", quality=qualidade)
+        return _para_base64(buffer.getvalue())
+    except Exception:
+        return ""
 LARGURA, ALTURA = (1180, 820) if not PREVIA else (1100, 760)
 
 CONVERSAS_DEMO = [
@@ -333,6 +370,12 @@ class Ponte:
         # foi dito. serve para assunto que o Wolf nao quer deixar
         # registrado. Ver `definir_privada`.
         self.privada = False
+
+        # As fotos da ultima busca de imagens. Ficam aqui (e nao vao para
+        # a conversa salva) porque sao bytes de imagem: guardar isso em
+        # arquivo nenhum, e a tela so precisa delas enquanto a conversa
+        # esta aberta na tela.
+        self._ultimas_fotos = []
 
     # --- 1. o que a tela precisa para comecar ---
 
@@ -779,6 +822,27 @@ class Ponte:
 
         cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
         chave = (cfg.get("api_key") or "").strip()
+
+        # "imagens de lobos" NAO vai para a IA: vai para a busca de
+        # imagens (o mesmo caminho do programa antigo, e a MESMA funcao
+        # do motor). Sem chave de API a busca de imagens funciona igual,
+        # porque nao usa o Google.
+        if p.TEM_PIL and p._quer_imagens(texto):
+            termo = p._termo_imagens(texto)
+            if not termo:
+                self.mensagens.append({"role": "user", "text": texto})
+                self.mensagens.append({
+                    "role": "erro",
+                    "text": "Escreva o que você quer ver, por exemplo: "
+                            "imagens de lobos.",
+                })
+                return {}
+            self.ocupado = True
+            self.mensagens.append({"role": "user", "text": texto})
+            threading.Thread(target=self._responder_imagens, args=(termo,),
+                             daemon=True).start()
+            return {}
+
         if not chave:
             return {"erro": "sem_chave"}
 
@@ -790,6 +854,79 @@ class Ponte:
             target=self._responder, args=(texto, cfg, chave), daemon=True
         ).start()
         return {}
+
+    # ---------------- galeria de imagens --------------------------------
+    def _responder_imagens(self, termo):
+        """Busca as fotos e manda para a tela, uma a uma não: junta.
+
+        As miniaturas viajam em base64 dentro do evento (são pequenas).
+        As grandes ficam guardadas aqui e a tela pede uma por vez, com
+        `imagem_ampliada` — mandar todas de uma vez travaria a janela.
+        """
+        try:
+            self._evento({"tipo": "etapa", "texto": "Buscando imagens..."})
+            itens = p._buscar_imagens(termo)
+            if not itens:
+                self._evento({
+                    "tipo": "resposta",
+                    "texto": "Não achei nenhuma imagem para "
+                              "“%s”." % termo,
+                })
+            else:
+                self._ultimas_fotos = itens
+                fotos = []
+                for item in itens:
+                    fotos.append({
+                        "miniatura": _para_base64(item.get("thumb")),
+                        "titulo": item.get("titulo") or "",
+                        "pagina": item.get("pagina") or "",
+                    })
+                self._evento({
+                    "tipo": "imagens",
+                    "termo": termo,
+                    "fotos": fotos,
+                    "texto": "Imagens de “%s”" % termo,
+                })
+            self.ocupado = False
+            self._gravar_conversa()
+            self._evento({"tipo": "conversas"})
+        except Exception as erro:
+            p.registrar_erro("_responder_imagens", erro)
+            self._evento({"tipo": "erro",
+                          "texto": p.traduzir_erro(erro)})
+        finally:
+            self.ocupado = False
+
+    def imagem_ampliada(self, indice):
+        """A foto grande, quando o Wolf clica numa miniatura.
+
+        Já foi baixada em segundo plano enquanto ele lia a resposta, então
+        costuma vir na hora. Se ainda não chegou, baixa agora.
+        """
+        if DEMO:
+            return {"erro": "No modo exemplo as fotos são de mentira. "
+                            "Abra sem --demo para ver as de verdade."}
+        try:
+            itens = getattr(self, "_ultimas_fotos", None) or []
+            if not isinstance(indice, int) or not (0 <= indice < len(itens)):
+                return {"erro": "Foto não encontrada."}
+            item = itens[indice]
+            grande = item.get("_grande")
+            if grande is None:
+                dados = p._baixar_bytes(
+                    item.get("imagem") or item.get("thumb_url"),
+                    tempo=15.0, limite=8_000_000)
+                grande = p._imagem_de_bytes(dados)
+                if grande is not None:
+                    item["_grande"] = grande
+            if grande is None:
+                return {"erro": "Não consegui abrir essa foto."}
+            return {"base64": _imagem_para_base64(grande),
+                    "titulo": item.get("titulo") or "",
+                    "pagina": item.get("pagina") or ""}
+        except Exception as erro:
+            p.registrar_erro("imagem_ampliada", erro)
+            return {"erro": "Não consegui abrir essa foto."}
 
     def _responder(self, texto, cfg, chave):
         """A thread que trabalha enquanto a janela continua viva.

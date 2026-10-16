@@ -23,6 +23,21 @@ olhos. Link `javascript:` é descartado por segurança.
 E ao clicar, abre a lista dos sites que foram usados, com o título de cada um.
 Perplexity e ChatGPT fazem isso, e dá confiança na resposta.
 
+### Galeria de imagens — **FEITA em 16/10/2026 (tela nova)**
+
+Era a ÚLTIMA coisa que o programa antigo (tkinter) tinha e a tela nova
+não: perguntar *"imagens de God of War"* e mostrar as fotos na conversa.
+Sem ela o antigo não podia ser aposentado.
+
+- A pergunta de imagem **não vai para a IA** — é desviada para a busca
+  de imagens, que é de graça. Não gasta chave de API.
+- As miniaturas viajam no evento em base64 (6 KB cada).
+- **A foto grande não viaja junto** (viraria 2,7 MB de texto e travaria a
+  janela): fica no Python e a tela pede uma por vez, quando o Wolf
+  clica. Já foi baixada em segundo plano, então aparece quase na hora.
+- Clicar abre a foto por cima de tudo, com botão de fechar (Esc fecha) e
+  link para a página original.
+
 ### 2. Pesquisa profunda
 Um modo "pesquisa séria" para quando a pergunta é importante: o app procura
 em mais sites, lê mais páginas e devolve uma resposta organizada em tópicos,

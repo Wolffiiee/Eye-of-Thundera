@@ -611,6 +611,159 @@ try:
 except Exception as erro:
     falha("os testes do menu do botão direito quebraram: %r" % (erro,))
 
+# --- 4c7. galeria de imagens: a tela nova tambem mostra fotos ----------
+# Era a ÚLTIMA coisa que o programa antigo tinha e a tela nova nao. Sem
+# isto, o antigo nao podia ser aposentado.
+try:
+    import app_web as _aw2
+    import pesquisa_ia as _pg_p          # o mesmo modulo, nome curto aqui
+    import io as _io2
+    from PIL import Image as _Img, ImageDraw as _Drw
+
+    def _foto(cor, nome):
+        # `ImageDraw` e' o MODULO: a classe e' `ImageDraw.Draw`. Do
+        # mesmo modo `Image.new` existe, mas so nas versoes novas.
+        _i = _Img.new("RGB", (640, 400), cor)
+        _Drw.Draw(_i).text((20, 20), nome, fill=(255, 255, 255))
+        _b = _io2.BytesIO()
+        _i.save(_b, format="JPEG")
+        return _b.getvalue()
+
+    _pasta_gal = Path(PASTA) / "_tmp" / "teste-galeria"
+    shutil.rmtree(_pasta_gal, ignore_errors=True)
+    _pasta_gal.mkdir(parents=True)
+    _guardado = (_pg_p.ARQUIVO_CONFIG, _pg_p.ARQUIVO_HISTORICO,
+                 _pg_p.ARQUIVO_MEMORIA, _pg_p.PASTA_CONFIG,
+                 _pg_p._buscar_imagens, _pg_p._precarregar_imagens,
+                 _aw2.DEMO)
+    try:
+        _pg_p.ARQUIVO_CONFIG = _pasta_gal / "config.json"
+        _pg_p.ARQUIVO_HISTORICO = _pasta_gal / "historico.json"
+        _pg_p.ARQUIVO_MEMORIA = _pasta_gal / "memoria.json"
+        _pg_p.PASTA_CONFIG = _pasta_gal
+        _pg_p.ARQUIVO_CONFIG.write_text(json.dumps({"api_key": "x"}),
+                                    encoding="utf-8")
+        _pg_p.ARQUIVO_HISTORICO.write_text("[]", encoding="utf-8")
+        _pg_p.ARQUIVO_MEMORIA.write_text("[]", encoding="utf-8")
+        _aw2.DEMO = False
+
+        # a internet nao e' chamada: o teste finge a busca
+        _itens = [{
+            "titulo": "Lobo %d" % _i,
+            "pagina": "https://exemplo.com/%d" % _i,
+            "imagem": "https://exemplo.com/%d.jpg" % _i,
+            "thumb_url": "https://exemplo.com/%dt.jpg" % _i,
+            "thumb": _foto((60 + _i * 40, 90, 150), "Lobo %d" % _i),
+            "_grande": _Img.new("RGB", (1200, 800), (30, 60, 120)),
+        } for _i in range(3)]
+        _foi_pedido = []
+
+        def _busca_falsa(termo, quantidade=9):
+            _foi_pedido.append(termo)
+            return [_d.copy() for _d in _itens]
+
+        _pg_p._buscar_imagens = _busca_falsa
+        _pg_p._precarregar_imagens = lambda itens: None
+
+        class _JanelaFalsa:
+            def __init__(self):
+                self.recebido = []
+
+            def evaluate_js(self, codigo):
+                self.recebido.append(
+                    json.loads(codigo[codigo.find("(") + 1:codigo.rfind(")")]))
+                return None
+
+        _pg = _aw2.Ponte()
+        _pg._janela = _JanelaFalsa()
+        _pg._gravar_conversa = lambda *a, **k: None
+
+        # --- a pergunta de imagem NAO exige chave de API
+        _r = _pg.enviar("imagens de lobos")
+        if _r == {} and _foi_pedido == ["lobos"]:
+            ok("galeria: 'imagens de lobos' vai para a busca, sem gastar "
+               "chave de API")
+        else:
+            falha("galeria: a pergunta de imagem nao chegou na busca (%r, %r)"
+                  % (_r, _foi_pedido))
+        for _ in range(60):
+            if not _pg.ocupado:
+                break
+            time.sleep(0.2)
+        if not _pg.ocupado:
+            ok("galeria: a tela destrava depois de mostrar as fotos")
+        else:
+            falha("galeria: a tela ficou travada esperando as fotos")
+
+        _eventos = [e.get("tipo") for e in _pg._janela.recebido]
+        if "imagens" in _eventos:
+            ok("galeria: o evento com as fotos chega na tela")
+        else:
+            falha("galeria: nenhum evento de imagens (veio %r)" % (_eventos,))
+        _ev = next((e for e in _pg._janela.recebido
+                    if e.get("tipo") == "imagens"), {})
+        _fotos = _ev.get("fotos") or []
+        if (len(_fotos) == 3
+                and all(str(f.get("miniatura", "")).startswith("data:image/")
+                        for f in _fotos)):
+            ok("galeria: as miniaturas viajam prontas para a tela "
+               "(%d caracteres cada)" % len(_fotos[0]["miniatura"]))
+        else:
+            falha("galeria: as miniaturas não chegaram prontas (%r)"
+                  % ([str(f)[:30] for f in _fotos],))
+        if any(m.get("role") == "user" and m.get("text") == "imagens de lobos"
+               for m in _pg.mensagens):
+            ok("galeria: a pergunta fica na conversa")
+        else:
+            falha("galeria: a pergunta não ficou na conversa")
+
+        # --- a foto grande vem quando o Wolf clica
+        _grande = _pg.imagem_ampliada(0)
+        if str(_grande.get("base64", "")).startswith("data:image/"):
+            ok("galeria: a foto grande vem quando o Wolf clica")
+        else:
+            falha("galeria: a foto grande não veio (%r)" % (_grande,))
+        if (_pg.imagem_ampliada(99).get("erro")
+                and _pg.imagem_ampliada("x").get("erro")
+                and _pg.imagem_ampliada(-1).get("erro")):
+            ok("galeria: clique fora da lista não derruba o programa")
+        else:
+            falha("galeria: índice inventado devolveu algo")
+
+        # --- pergunta normal NAO entra na busca de imagens
+        _foi_pedido.clear()
+        _pg.ocupado = False
+        _pg.enviar("como faz arroz?")
+        if not _foi_pedido:
+            ok("galeria: pergunta normal não vira busca de imagens")
+        else:
+            falha("galeria: 'como faz arroz?' foi para a busca de imagens")
+
+        # --- e a tela sabe desenhar e abrir a foto
+        _js3 = Path(PASTA / "web" / "app.js").read_text(encoding="utf-8")
+        for _precisa, _rotulo in (
+                ('o.tipo === "imagens"', "a tela entende o evento de fotos"),
+                ("function desenharGaleria", "a tela desenha a grade"),
+                ("function ampliarFoto", "a tela abre a foto grande"),
+                ('chamar("imagem_ampliada"', "a tela pede a foto grande"),
+                ("estado.ultimaBolha", "as fotos entram na bolha da resposta")):
+            if _precisa in _js3:
+                ok("galeria: %s" % _rotulo)
+            else:
+                falha("galeria: falta %s na tela" % _precisa)
+        _css3 = Path(PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+        if ".galeria {" in _css3 and ".foto-aberta {" in _css3:
+            ok("galeria: a grade e a foto aberta tem desenho (sempre escuro)")
+        else:
+            falha("galeria: falta o desenho da grade ou da foto aberta")
+    finally:
+        (_pg_p.ARQUIVO_CONFIG, _pg_p.ARQUIVO_HISTORICO, _pg_p.ARQUIVO_MEMORIA,
+         _pg_p.PASTA_CONFIG, _pg_p._buscar_imagens, _pg_p._precarregar_imagens,
+         _aw2.DEMO) = _guardado
+        shutil.rmtree(_pasta_gal, ignore_errors=True)
+except Exception as erro:
+    falha("os testes da galeria de imagens quebraram: %r" % (erro,))
+
 # --- 4d. sites consultados: o que a busca traz, limpo e honesto ---------
 # Sao os RESULTADOS DA BUSCA, nao citacoes: por isso a tela escreve
 # "sites consultados" e mostra o link, para o Wolf conferir com os

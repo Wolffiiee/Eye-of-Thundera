@@ -197,7 +197,13 @@ function desenharMensagens() {
 function anexarMensagem(m) {
   estado.mensagens.push(m);
   $("#vazio").classList.add("oculto");
-  $("#mensagens").append(criarMensagem(m));
+  const caixa = criarMensagem(m);
+  $("#mensagens").append(caixa);
+  // A ultima bolha: e' onde a galeria de imagens vai entrar quando o
+  // Python mandar as fotos ("imagens de lobos"). Guardar a bolha e'
+  // melhor do que a tela procurar por texto: se a conversa tiver varias
+  // mensagens, "a ultima" seria ambigua.
+  estado.ultimaBolha = caixa;
   if (estado.mensagens.length === 1 && m.role === "user") mostrarPrivada();
   rolarParaOFim();
 }
@@ -513,7 +519,91 @@ function aplicarEvento(o) {
     esperar(false);
     aviso(o.texto || "Não consegui transcrever o áudio.", true);
     if (o.chave) abrirConfig("chaves");
+  } else if (o.tipo === "imagens") {
+    // "imagens de lobos" NAO vai para a IA: o Python busca as fotos e
+    // manda aqui, ja com as miniaturas em base64.
+    esperar(false);
+    desenharGaleria(o);
   }
+}
+
+/* ---------------- galeria de imagens ----------------
+   A grade de miniaturas fica dentro da conversa, embaixo da resposta,
+   como no programa antigo. Clicar em uma abre a foto grande numa janela
+   propria (a grande NAO vem junto: viria em megabytes e travaria a tela,
+   entao a tela pede uma por vez com `imagem_ampliada`).
+   A foto grande ja foi baixada em segundo plano enquanto o Wolf lia a
+   resposta, entao aparece quase na hora. */
+function desenharGaleria(o) {
+  const fotos = (o && o.fotos) || [];
+  if (!fotos.length) return;
+  // Sem bolha onde colocar (a tela recarregou no meio da busca): cria
+  // uma, para as fotos nao sumirem.
+  if (!estado.ultimaBolha || !document.body.contains(estado.ultimaBolha)) {
+    anexarMensagem({ role: "model", text: o.texto || "Imagens" });
+  }
+  const corpo = estado.ultimaBolha.querySelector(".corpo") ||
+                estado.ultimaBolha;
+
+  const tit = el("div", "galeria-titulo", o.texto || "Imagens");
+  const grade = el("div", "galeria");
+  fotos.forEach((f, i) => {
+    const b = el("button", "foto");
+    b.title = f.titulo || "Abrir a foto";
+    const img = document.createElement("img");
+    img.src = f.miniatura;
+    img.alt = f.titulo || "Foto " + (i + 1);
+    img.loading = "lazy";
+    b.append(img);
+    b.addEventListener("click", () => ampliarFoto(i, f));
+    grade.append(b);
+  });
+  // antes das acoes ("copiar / salvar / outras perguntas"): as fotos
+  // fazem parte da RESPOSTA, e as acoes ficam por ultimo.
+  const acoes = corpo.querySelector(".acoes");
+  if (acoes) corpo.insertBefore(tit, acoes);
+  else corpo.append(tit);
+  if (acoes) corpo.insertBefore(grade, acoes);
+  else corpo.append(grade);
+  rolarParaOFim();
+}
+
+function ampliarFoto(indice, info) {
+  const tampa = el("div", "foto-aberta");
+  const img = document.createElement("img");
+  img.alt = info.titulo || "Foto ampliada";
+  const carregando = el("div", "foto-carregando", "Abrindo a foto...");
+  const fechar = el("button", "foto-fechar", "✕");
+  const pagina = el("a", "foto-pagina", "ver a página da foto");
+  pagina.href = info.pagina || "#";
+  pagina.target = "_blank";
+  pagina.rel = "noopener noreferrer";
+  if (!info.pagina) pagina.classList.add("oculto");
+
+  fechar.addEventListener("click", () => tampa.remove());
+  tampa.addEventListener("click", (e) => {
+    if (e.target === tampa) tampa.remove();
+  });
+  document.addEventListener("keydown", function esc(e) {
+    if (e.key === "Escape" && document.body.contains(tampa)) {
+      tampa.remove();
+      document.removeEventListener("keydown", esc);
+    }
+  });
+
+  tampa.append(fechar, carregando, img, pagina);
+  document.body.append(tampa);
+
+  chamar("imagem_ampliada", indice).then((r) => {
+    if (!document.body.contains(tampa)) return;   // o Wolf ja fechou
+    if (r && r.erro) {
+      carregando.textContent = r.erro;
+      return;
+    }
+    img.src = r.base64;
+    carregando.remove();
+    if (r.pagina) pagina.href = r.pagina;
+  });
 }
 
 async function enviar(texto) {
