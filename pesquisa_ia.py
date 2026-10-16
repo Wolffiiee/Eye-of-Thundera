@@ -89,12 +89,28 @@ USER_AGENT_PADRAO = (
 
 SERVICOS_RESERVA = [
     {
+        "nome": "ChatGPT (OpenAI)",
+        "endereco": "https://api.openai.com/v1/chat/completions",
+        "modelo": "gpt-4o-mini",
+        "campo_chave": "chave_openai",
+        "campo_modelo": "modelo_openai",
+        "pagina": "https://platform.openai.com/api-keys",
+        "prefixo": "sk-",
+        "resumo": "OpenAI (ChatGPT), pago por uso, chave comeca com sk-",
+        "passos": (
+            "Como conseguir: 1) clique em \"Como conseguir a chave\"; "
+            "2) entre com sua conta OpenAI; 3) clique em Create new secret key; "
+            "4) copie o codigo (comeca com sk-) e cole aqui."
+        ),
+    },
+    {
         "nome": "Groq",
         "endereco": "https://api.groq.com/openai/v1/chat/completions",
         "modelo": "openai/gpt-oss-120b",
         "campo_chave": "chave_groq",
         "campo_modelo": "modelo_groq",
         "pagina": "https://console.groq.com/keys",
+        "prefixo": "gsk_",
         "resumo": "grátis, sem cartão (cerca de 1.000 pedidos por dia)",
         "passos": (
             "Como conseguir: 1) clique em \"Como conseguir a chave\"; "
@@ -109,6 +125,7 @@ SERVICOS_RESERVA = [
         "campo_chave": "chave_openrouter",
         "campo_modelo": "modelo_openrouter",
         "pagina": "https://openrouter.ai/keys",
+        "prefixo": "sk-or-",
         "resumo": "grátis, sem cartão (cerca de 50 pedidos por dia)",
         "passos": (
             "Como conseguir: 1) clique em \"Como conseguir a chave\"; "
@@ -1239,7 +1256,8 @@ def _erro_do_servico(servico, erro):
             "A chave do %s não foi aceita.\n\n"
             "Confira se colou a chave inteira (começa com '%s') e sem espaço "
             "no fim dela. O botão Testar já usa o que está escrito no campo."
-            % (nome, "gsk_" if nome == "Groq" else "sk-or-")
+            % (nome, "sk-" if nome.startswith("ChatGPT") else (
+                "gsk_" if nome == "Groq" else "sk-or-"))
         )
     if codigo == 403:
         if "1010" in detalhe:
