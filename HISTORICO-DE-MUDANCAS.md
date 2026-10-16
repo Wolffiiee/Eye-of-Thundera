@@ -5,6 +5,15 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Corrige tema que voltava ao padrão ao reabrir
+
+- **Causa:** `Ponte.iniciar()` devolvia apenas `modo_pesquisa` e `corretor` em `cfg`. Como `web/app.js` aplica o tema usando `estado.cfg.temaIdx`, a ausência do campo fazia a interface cair no índice 0 (Clássico Dark), apesar de o tema escolhido estar salvo corretamente.
+- **Correção:** `iniciar()` agora usa `self._cfg_curta()`, que devolve também `tema` e `temaIdx` validados, mantendo uma única fonte para a configuração inicial e para as atualizações.
+- **Prevenção:** o teste de personalização agora valida os cinco temas em três etapas: arquivo gravado, leitura das configurações e payload real retornado por `iniciar()` — sempre com `config.json` temporário.
+- **Verificação:** `node --check web/app.js`, compilação Python e `verificar.py`: 126 verificações, 0 falhas, 0 avisos.
+
+---
+
 ## 2026-10-16 — Correção do diálogo Salvar resposta
 
 - **Defeito:** `Salvar resposta` criava uma nova raiz Tkinter dentro da thread da ponte pywebview, podendo deixar a interface esperando enquanto a janela do sistema não aparecia.

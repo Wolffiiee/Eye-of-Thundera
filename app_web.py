@@ -509,10 +509,10 @@ class Ponte:
         self.id_atual = (atual or {}).get("id")
         self.mensagens = _mensagens_de(atual)
         return {
-            "cfg": {
-                "modo_pesquisa": cfg.get("modo_pesquisa", "auto"),
-                "corretor": bool(cfg.get("corretor", True)),
-            },
+            # Usa a mesma configuração resumida das ações de atualização,
+            # incluindo tema/temaIdx para a interface aplicar o tema salvo
+            # na abertura (sem isso, ela voltava ao tema padrão).
+            "cfg": self._cfg_curta(),
             "conversas": conversas,
             "mensagens": list(self.mensagens),
             "atual": self.id_atual,

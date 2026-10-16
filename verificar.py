@@ -1185,6 +1185,7 @@ try:
         and "function aplicarTema" in _tema_js
         and "aplicarTema(estado.cfg.temaIdx ?? 0)" in _tema_js
         and '"temaIdx": tema_idx' in _tema_py
+        and '"cfg": self._cfg_curta()' in _tema_py.split("def iniciar", 1)[1].split("def abrir_conversa", 1)[0]
     )
     if _ui_tema_ok:
         ok("personalização: aba visível e tema aplicado na abertura")
@@ -1208,10 +1209,14 @@ try:
                 })
                 _gravado = json.loads(_tema_aw.p.ARQUIVO_CONFIG.read_text(encoding="utf-8"))
                 _lido_tela = _tema_aw._cfg_tela()
+                _inicio_tema = _ponte_tema.iniciar()
+                _cfg_inicio = _inicio_tema.get("cfg", {})
                 if (_ret_tema.get("erro") or _gravado.get("temaIdx") != _idx
                         or _gravado.get("tema") != _nome_tema
                         or _lido_tela.get("temaIdx") != _idx
-                        or _lido_tela.get("tema") != _nome_tema):
+                        or _lido_tela.get("tema") != _nome_tema
+                        or _cfg_inicio.get("temaIdx") != _idx
+                        or _cfg_inicio.get("tema") != _nome_tema):
                     _temas_gravaram = False
                     break
     finally:
