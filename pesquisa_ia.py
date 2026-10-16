@@ -301,6 +301,8 @@ def carregar_config():
     cfg.setdefault("aprender", True)
     cfg.setdefault("voz_enviar", False)
     cfg.setdefault("api_key_reserva", "")
+    cfg.setdefault("tema", "dark")
+    cfg.setdefault("temaIdx", 0)
     for _servico in SERVICOS_RESERVA:
         cfg.setdefault(_servico["campo_chave"], "")
 

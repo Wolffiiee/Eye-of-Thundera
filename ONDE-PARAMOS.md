@@ -12,6 +12,8 @@ Um commit recente inseriu uma chave de fechamento extra em web/app.js, imediatam
 
 A chave extra foi removida. Também foram corrigidos um texto quebrado na descrição do Gemini e uma duplicação na atualização das datas da memória.
 
+Além disso, nesta rodada foi adicionada a aba **Personalização** nas Configurações (abas: Memória, Conversa, Chaves, Ajuda, **Personalização**). Ela oferece 5 temas pré-definidos (Clássico Dark, Purpurina, Amethyst, Ocean, Forest) que alteram as variáveis CSS da interface e são salvos no config.json do usuário. A seleção é feita via <select> e persistida automaticamente.
+
 A verificação automática agora executa node --check web/app.js quando Node.js está disponível. O contador final também foi corrigido: antes imprimia TESTES: 0 mesmo depois de registrar dezenas de verificações; agora imprime VERIFICACOES e conta as mensagens OK, FALHA e AVISO.
 
 ### Verificação executada
