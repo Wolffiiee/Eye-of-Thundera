@@ -1572,7 +1572,7 @@ function ligarEventos() {
 $("#btn-deep").addEventListener("click", () => {
   estado.profundo = !estado.profundo;
   const b = $("#btn-deep");
-  b.classList.toggle("ativo", estado.profundo);
+  b.classList.toggle("ligada", !!estado.profundo);
   b.title = estado.profundo
     ? "Pesquisa profunda LIGADA (clique para desligar)"
     : "Pesquisa profunda: mais sites, resposta em topicos com fontes (clique para ligar)";
