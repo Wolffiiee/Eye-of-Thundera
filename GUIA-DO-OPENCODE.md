@@ -55,6 +55,10 @@ o contexto esta acabando:
 Observacao: o 9router (`9router/Arsenal`) e o Ollama so funcionam se estiverem
 ligados; o script pula sozinho o que nao responder.
 
+### Troca automatica (ja instalada)
+O OpenCode usa o plugin **opencode-runtime-fallback** (em opencode.json, campo plugin). A lista de modelos dele fica em %USERPROFILE%\.config\opencode\opencode-fallback.json. Quando um modelo estourar o limite, ele passa para o proximo da lista sozinho. NAO instale outro plugin de troca por cima (brigam entre si). Se a lista ficar velha, confira com: opencode models e tire os nomes que sumiram.
+Backup do plugin proprio que escrevi (nao instalado): ferramentas\opencode-gratis-sempre.js + 11 - Instalar plugin gratis-sempre.bat (so usar se o runtime-fallback der problema; remover o outro antes).
+
 ## 5. Checklist de entrega
 [ ] verificar.bat = TUDO CERTO   [ ] .exe novo aberto e olhado
 [ ] Area de Trabalho = 1 icone   [ ] ONDE-PARAMOS + HISTORICO atualizados
@@ -64,3 +68,4 @@ ligados; o script pula sozinho o que nao responder.
 - Os arquivos Eye of Thundera.spec e Eye of Thundera (debug).spec DEVEM empacotar **app_web.py**. Com pesquisa_ia.py o .exe abre o programa ANTIGO.
 - Depois de gerar o .exe: ABRA e confira (titulo da janela Eye of Thundera, sem caixa de erro). Nunca deixe codigo de depuracao (gravar em eyethundera_debug.txt) no app_web.py.
 - webview.start() so pode ser chamado UMA vez, no fim de principal().
+
