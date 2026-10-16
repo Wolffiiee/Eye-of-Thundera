@@ -1573,7 +1573,10 @@ $("#btn-deep").addEventListener("click", () => {
   estado.profundo = !estado.profundo;
   const b = $("#btn-deep");
   b.classList.toggle("ativo", estado.profundo);
-  aviso(estado.profundo ? "Pesquisa profunda LIGADA: modulo resposta mais longa." : "Pesquisa profunda desligada.");
+  b.title = estado.profundo
+    ? "Pesquisa profunda LIGADA (clique para desligar)"
+    : "Pesquisa profunda: mais sites, resposta em topicos com fontes (clique para ligar)";
+  aviso(estado.profundo ? "Pesquisa profunda LIGADA." : "Pesquisa profunda desligada.");
 });
   $("#btn-mic").addEventListener("click", () => alternarMicrofone());
   $("#btn-privada").addEventListener("click", () => alternarPrivada());
