@@ -1535,7 +1535,7 @@ def _gerar_texto_rapido(
 
 def perguntar(
     api_key, modelo, historico, pergunta, usar_contexto, progresso=None, cfg=None,
-    id_atual=None, consulta=None,
+id_atual=None, consulta=None, profundo=False,
 ):
     """Pesquisa na web e pede para a IA juntar tudo em uma resposta.
 
@@ -1595,7 +1595,7 @@ def perguntar(
     # Tenta pegar o texto completo das páginas mais relevantes (melhora muito
     # a qualidade, principalmente em notícias).
     avisar("Lendo as páginas encontradas")
-    conteudos = _conteudo_das_paginas(resultados, quantidade=4)
+    conteudos = _conteudo_das_paginas(resultados, quantidade=(8 if profundo else 4))
     blocos.extend("PÁGINA COMPLETA:\n%s" % texto for texto in conteudos)
 
     if blocos:
@@ -1613,7 +1613,15 @@ def perguntar(
         "Material encontrado agora na web:\n%s\n\n"
         "Escreva a resposta final em português do Brasil, usando esse "
         "material." % (aviso_data, pergunta, contexto)
-    ) + contexto_das_conversas(ignorar=id_atual)
+    )
+    if profundo:
+        prompt += (
+            "\n\nMODO PESQUISA PROFUNDA: organize a resposta em topicos curtos, "
+            "cite site(s) fonte por paragrafo, crie secao 'fontes' final. "
+            "Seja mais detalhada (3-5 paragrafos)."
+        )
+    prompt = prompt + contexto_das_conversas(ignorar=id_atual)
+
 
     historico_para_ia = historico if usar_contexto else []
     avisar("Consultando a inteligência artificial")

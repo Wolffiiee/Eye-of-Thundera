@@ -18,7 +18,7 @@ function el(tag, cls, texto) {
   return e;
 }
 
-const estado = { mensagens: [], conversas: [], atual: null, ocupado: false, gravando: false, privada: false, sugerindo: false, ultimaPergunta: "", ultimaResposta: "", cfg: {}, aba: "chaves", rascunho: {} };
+const estado = { mensagens: [], conversas: [], atual: null, ocupado: false, gravando: false, privada: false, profundo: false, sugerindo: false, ultimaPergunta: "", ultimaResposta: "", cfg: {}, aba: "chaves", rascunho: {} };
 const ROTULO_WEB = { auto: "Web: automática", sempre: "Web: sempre", nunca: "Web: desligada" };
 
 /* ---------------- a ponte com o programa ----------------
@@ -780,7 +780,7 @@ async function enviar(texto) {
   segurarEventos(true);
   let r = {};
   try {
-    r = (await chamar("enviar", texto)) || {};
+    r = (await chamar("enviar", texto, estado.profundo)) || {};
   } finally {
     // A pergunta entra na tela ANTES de soltar os eventos da IA.
     $("#entrada").value = "";
@@ -1536,6 +1536,12 @@ function ligarEventos() {
     }
   });
   $("#btn-enviar").addEventListener("click", () => enviar());
+$("#btn-deep").addEventListener("click", () => {
+  estado.profundo = !estado.profundo;
+  const b = $("#btn-deep");
+  b.classList.toggle("ativo", estado.profundo);
+  aviso(estado.profundo ? "Pesquisa profunda LIGADA: modulo resposta mais longa." : "Pesquisa profunda desligada.");
+});
   $("#btn-mic").addEventListener("click", () => alternarMicrofone());
   $("#btn-privada").addEventListener("click", () => alternarPrivada());
   $("#btn-resumo").addEventListener("click", () => resumoDoDia());

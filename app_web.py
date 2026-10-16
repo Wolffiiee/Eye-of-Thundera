@@ -902,7 +902,7 @@ class Ponte:
         except Exception:
             pass
 
-    def enviar(self, texto):
+    def enviar(self, texto, profundo=False):
         """O Wolf aperta Enter (ou o botao): a IA responde.
 
         DEVOLVE NA HORA. Quem trabalha e' a thread `_responder`; o que ela
@@ -962,7 +962,7 @@ class Ponte:
         self.ocupado = True
         self.mensagens.append({"role": "user", "text": texto})
         threading.Thread(
-            target=self._responder, args=(texto, cfg, chave), daemon=True
+            target=self._responder, args=(texto, cfg, chave, bool(profundo)), daemon=True
         ).start()
         return {}
 
@@ -1039,7 +1039,7 @@ class Ponte:
             p.registrar_erro("imagem_ampliada", erro)
             return {"erro": "Não consegui abrir essa foto."}
 
-    def _responder(self, texto, cfg, chave):
+    def _responder(self, texto, cfg, chave, profundo=False):
         """A thread que trabalha enquanto a janela continua viva.
 
         Reaproveita o caminho do programa antigo: `pesquisa_ia.perguntar`
@@ -1084,6 +1084,9 @@ class Ponte:
             if p._quer_noticias(texto):
                 modo = "pesquisa"
                 consulta = texto
+            if profundo:
+                modo = "pesquisa"
+                consulta = (consulta or texto).strip()
 
             def chamar_a_ia(qual_chave):
                 if modo == "amigo":
@@ -1094,7 +1097,7 @@ class Ponte:
                 return p.perguntar(
                     qual_chave, modelo, historico, texto, usar_contexto,
                     progresso=avisar, cfg=cfg, id_atual=self.id_atual,
-                    consulta=consulta,
+                    consulta=consulta, profundo=profundo,
                 )
 
             # Mesma troca automatica de chave do programa antigo. O
