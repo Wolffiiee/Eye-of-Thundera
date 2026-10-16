@@ -5,6 +5,42 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — O programa antigo foi aposentado (o Wolf mandou)
+
+O Wolf perguntou se ainda era preciso fazer os testes no programa antigo.
+**Não era** — e era uma pergunta que eu devia ter feito a ele antes, em
+vez de continuar gerando os dois `.exe` por hábito. Custava **uns 90
+segundos por build** para uma coisa que ele não usava mais.
+
+**O que foi feito:** o `Pesquisa IA.exe` saiu da Área de Trabalho e foi
+para `_arquivo_morto` (com "ANTIGO (tkinter)" no nome). **Não foi
+apagado** — se algum dia der vontade de voltar, é só copiar de lá.
+
+### O que NÃO mudou: os testes continuam todos
+
+Aqui é preciso ser claro, porque é tentador "limpar" os testes do
+antigo e isso seria um erro.
+
+O `pesquisa_ia.py` é o **motor dos dois programas**. Se eu parasse de
+testar o motor junto com a tela antiga, estaria **desligando o alarme do
+programa novo também** — a memória, o corretor, a busca na web e a
+conversa que ele usa TODO dia são exatamente as mesmas funções.
+
+O que muda é só isto:
+
+| O que os testes cobrem | Para quem serve |
+|---|---|
+| Memória, corretor, busca, conversa, factual | **Os dois** — é o motor |
+| Desenho da tela, cantos da caixa, posição da janela | **Só o antigo** |
+
+Então os testes ficam (são a rede de segurança do novo). O que parou foi
+**gerar e testar o `.exe` do antigo** — ~90 segundos por build.
+
+**A lição:** "aposentar uma parte" não significa "jogar fora o que ela
+construiu". A tela velha foi embora; o motor que ela ajudou a fazer, não.
+
+Verificacao: `TUDO CERTO`, **355 testes, 0 falhas, 0 avisos** (61 s).
+
 ## 2026-10-16 — Ver as fotos uma a uma, e português de verdade
 
 Duas coisas que o Wolf pediu depois de testar a galeria.

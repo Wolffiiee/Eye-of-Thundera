@@ -1,5 +1,14 @@
 # Tela nova em HTML (protótipo, em construção)
 
+## O programa antigo foi aposentado (16/10/2026)
+
+O `pesquisa_ia.py` continua aqui e continua sendo o MOTOR (memória,
+busca, corretor, conversa, imagens) — é ele que a tela nova usa.
+O que foi embora foi só a **interface tkinter**. Portanto: **não apague o
+`pesquisa_ia.py` e não apague os testes** — eles protegem o programa
+que o Wolf usa.
+
+
 > **Isso aqui AINDA não é o programa que você usa.**
 > O programa que funciona é o `pesquisa_ia.py` (tkinter), na pasta acima,
 > e o atalho da Área de Trabalho continua apontando para ele.

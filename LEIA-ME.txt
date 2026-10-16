@@ -2,6 +2,21 @@
   PESQUISA IA - seu assistente pessoal de pesquisa na web
 ========================================================
 
+ATUALIZADO EM 16/10/2026
+-------------------------
+O programa da sua Área de Trabalho agora se chama:
+
+      Pesquisa IA Tela Nova.exe
+
+É a versão NOVA, que é a que você usa. O programa antigo (o de janela
+cinza, "Pesquisa IA.exe") foi aposentado em 16/10/2026 e não está mais
+na sua mesa. Ele continua guardado na pasta "_arquivo_morto" (dentro do
+projeto), caso um dia você queira voltar a ele. Nada foi apagado.
+
+Este texto abaixo ainda descreve o programa antigo em alguns lugares.
+Onde for o caso, o que vale hoje é a tela nova.
+
+
 O que é isto?
 -------------
 É um programinha simples para o seu computador. Você abre uma janelinha,
@@ -15,8 +30,7 @@ digita uma pergunta e ele:
 
 Atalho pronto na Área de Trabalho:
 ----------------------------------
-Se já existir o atalho "Pesquisa IA" (com um ícone azul moderno) na sua
-Área de Trabalho, é só dar duplo clique nele para abrir o programa.
+O programa está na sua Área de Trabalho. É só dar duplo clique nele.
 Nesse caso você NÃO precisa seguir o PASSO 2 abaixo.
 
 
@@ -356,10 +370,47 @@ para quem te ajudou.
  ATUALIZAÇÃO DE 14/10/2026 - NOVA PASTA E NOVOS ARQUIVOS
 ========================================================
 
-O projeto agora mora em:   C:\Projetos\PesquisaIA
-(saiu do OneDrive, que deixava tudo lento por causa das bibliotecas).
-A pasta antiga ficou como cópia de segurança e pode ser apagada depois
-de alguns dias de uso sem problemas.
+O projeto agora mora em:   D:\Projetos\PesquisaIA
+
+Em 16/10/2026 o projeto foi do disco C: para o disco D:, porque o C: estava
+quase cheio. A cópia antiga ficou em "C:\Projetos\PesquisaIA" com um aviso
+dentro dela — e pode ser apagada quando você quiser.
+
+Arquivos novos:
+  8 - Gerar o EXE da tela nova.bat -> é ESTE que você usa hoje: gera o
+                              "Pesquisa IA Tela Nova.exe" (o da sua mesa).
+  5 - Ver a tela nova.bat  -> abre a tela nova no MODO EXEMPLO: ela só
+                              mostra, não mexe nas suas conversas, na sua
+                              memória nem nas suas chaves. Serve para ver
+                              como ela está sem arriscar nada.
+  6 - Falar com a tela nova.bat -> a tela nova no modo exemplo, mas com o
+                              MICROFONE de verdade (para testar o som).
+  7 - Usar a tela nova de verdade.bat -> a tela nova com os SEUS dados.
+                              É o mesmo que abrir o .exe da mesa.
+  verificar.bat            -> confere se o programa continua inteiro depois
+                              de uma alteração. Tem que terminar com
+                              "TUDO CERTO".
+  9 - Fazer backup dos meus dados.bat -> copia de segurança das SUAS
+                              coisas (conversas, memória e chaves) num
+                              .zip dentro da pasta "Backup Pesquisa IA" do
+                              seu OneDrive. Só lê e copia, não muda nada.
+                              As cópias com mais de 15 dias são apagadas
+                              sozinhas.
+
+O PROGRAMA ANTIGO FOI APOSENTADO em 16/10/2026
+------------------------------------------------
+O "Pesquisa IA.exe" (o de janela cinza, em tkinter) saiu da sua Área de
+Trabalho. A tela nova ganhou até a última coisa que faltava nele (a
+galeria de imagens), e a partir daí o Wolf passou a usar só a nova.
+
+Ele NÃO foi apagado: está na pasta "_arquivo_morto" do projeto, com
+"ANTIGO (tkinter)" no nome. Para voltar a usar, é só copiar de lá para
+a Área de Trabalho.
+
+Por que o motor NÃO foi junto: o arquivo `pesquisa_ia.py` é o cérebro dos
+DOIS programas. A tela velha foi embora, mas o cérebro continua, e é ele
+que faz a sua memória, a pesquisa na web e a conversa. Por isso os testes
+continuam todos — eles são a rede de segurança do programa que você usa.
 
 Arquivos novos:
   verificar.bat            -> confere se o programa continua inteiro depois

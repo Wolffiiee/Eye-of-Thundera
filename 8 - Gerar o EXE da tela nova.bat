@@ -1,13 +1,15 @@
 @echo off
 rem ================================================================
-rem  GERAR O .EXE DA TELA NOVA.
+rem  GERAR O .EXE DA TELA NOVA — ESTE E' O PROGRAMA DE HOJE.
 rem
-rem  Isto cria o "Pesquisa IA Tela Nova.exe": a tela NOVA em HTML,
-rem  num arquivo so, que roda sem o Python instalado.
+rem  Isto cria o "Pesquisa IA Tela Nova.exe": a tela em HTML, num
+rem  arquivo so, que roda sem o Python instalado. E' o programa que
+rem  esta na sua Area de Trabalho.
 rem
-rem  IMPORTANTE: este .exe NAO substitui o seu programa de sempre.
-rem  O "Pesquisa IA.exe" (o de sempre, em tkinter) continua como esta,
-rem  com o mesmo atalho. Os dois convivem.
+rem  Desde 16/10/2026 este e' o UNICO .exe que o OC gera. O programa
+rem  antigo (o de janela cinza, em tkinter) foi aposentado depois que
+rem  a tela nova ganhou a galeria de imagens — a ultima coisa que
+rem  faltava nele. O antigo continua guardado em "_arquivo_morto".
 rem
 rem  So e preciso rodar isto se mexermos no codigo da tela nova.
 rem ================================================================

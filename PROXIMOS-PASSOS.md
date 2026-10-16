@@ -1,3 +1,35 @@
+## ATUALIZADO EM 16/10/2026 — O PROGRAMA ANTIGO FOI APOSENTADO
+
+O `Pesquisa IA.exe` (o de janela cinza, em tkinter) saiu da Área de
+Trabalho. O Wolf passou a usar **só a tela nova**.
+
+**A tela nova ganhou a última coisa que faltava nele** (a galeria de
+imagens) — foi isso que destravou a aposentadoria.
+
+### O que ficou valendo
+
+| Antes | Agora |
+|---|---|
+| `3 - Gerar EXE.bat` gera o programa antigo | **Desativado**: mostra um aviso e manda usar o `8` |
+| Gerar os DOIS `.exe` (~3 min) | **Só o `8 - Gerar o EXE da tela nova.bat`** (~90 s) |
+| Dois programas na Área de Trabalho | **Um só** |
+
+### O que NÃO mudou
+
+- **`pesquisa_ia.py` continua aqui e é onde vive o MOTOR** (memória,
+  busca, corretor, conversa, imagens). A tela nova usa esse mesmo motor.
+- **Os testes continuam todos** (355). Apagar os testes da tela antiga
+  seria desligar o alarme do programa novo, porque é o mesmo motor.
+- O `.exe` antigo está em `_arquivo_morto` com "ANTIGO (tkinter)" no
+  nome. **Não foi apagado.**
+
+### Como voltar, se um dia quiser
+
+Copie `_arquivo_morto\Pesquisa IA ANTIGO (tkinter) - ....exe` para a
+Área de Trabalho. Para voltar a *gerar* o antigo, o
+`Pesquisa IA.spec` continua no projeto — só o `.bat` que estava
+desativado.
+
 # Próximos passos (o que falta e o que NÃO foi testado)
 
 Atualizado em 15/10/2026 (depois das Tarefas A, B e C do
