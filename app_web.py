@@ -608,7 +608,8 @@ class Ponte:
                 "Gosta muito de jogar videogames",
             ], "datas": {}}
         fatos = p.carregar_memoria()
-        return {"fatos": fatos, "datas": p.carregar_memoria_datas()}
+        return {"fatos": fatos, "datas": p.carregar_memoria_datas(),
+                "gavetas": p.carregar_memoria_gavetas()}
 
     # --- 2. as conversas de verdade (este passo) ---
 

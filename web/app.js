@@ -1265,6 +1265,15 @@ async function abaMemoria(corpo) {
         if (rr.datas) datas = rr.datas;
     if (rr.datas) datas = rr.datas;
   };
+  const gavetas = r.gavetas || {};
+  const gavetasEl = el("div", "gavetas");
+  for (const k of ["nome", "mora", "idade", "outros"]) {
+    if (gavetas[k] && gavetas[k].length) {
+      const b = el("span", "badge-gaveta");
+      b.textContent = k + " · " + gavetas[k].length;
+      gavetasEl.append(b);
+    }
+  }
   const topo = el("div", "memoria-topo");
   const busca = el("input", "busca");
   busca.placeholder = "Buscar na memória...";
@@ -1385,7 +1394,8 @@ async function abaMemoria(corpo) {
     const rr = await chamar("memoria_apagar_tudo");
     pegar(rr); desenhar();
   });
-  corpo.append(topo, novo, contador, lista);
+  if (gavetasEl.children && gavetasEl.children.length) corpo.append(gavetasEl);
+corpo.append(topo, novo, contador, lista);
   desenhar();
 }
 

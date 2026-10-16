@@ -101,6 +101,29 @@ def _gaveta(fato):
     return None
 
 
+def gavetas_de(fatos):
+    """Devolve {nome: [...], mora: [...], idade: [...], outros: [...]}.
+
+    Fatos sem gaveta reconhecida (ou de terceiros) caem no 'outros'.
+    Nao remove nada, serve para a tela agrupar/exibir chests.
+    """
+    saida = {
+        "nome": [], "mora": [], "idade": [], "outros": [],
+    }
+    for fato in fatos or []:
+        g = _gaveta(fato)
+        if g in saida and g is not None:
+            saida[g].append(fato)
+        else:
+            saida["outros"].append(fato)
+    # tira gavetas vazias
+    return {k: v for k, v in saida.items() if v}
+
+def gavetas_nomes():
+    """Labels disponiveis (para ordenar a tela)."""
+    return ["nome", "mora", "idade", "outros"]
+
+
 def _relacao(velho, novo):
     """'diferente' | 'repetido' | 'melhor' | 'contradiz' (do ponto de vista
     do fato NOVO em relacao ao VELHO)."""

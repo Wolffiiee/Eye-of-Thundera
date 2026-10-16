@@ -446,6 +446,11 @@ def _mesclar_memoria(novos):
     return nova
 
 
+def carregar_memoria_gavetas():
+    """Memoria agrupada por gaveta (read-only)."""
+    return memoria.gavetas_de(carregar_memoria())
+
+
 def organizar_memoria():
     """Tira os fatos repetidos da memoria que ja existe.
 
