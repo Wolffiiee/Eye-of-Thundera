@@ -1857,6 +1857,53 @@ def testes_tela_nova(p):
         # fim da secao exige ele vazio, entao limpar aqui
         p.salvar_conversas([])
 
+        # 8c. CONVERSA PRIVADA: nada e' salvo e nada entra na memoria
+        p.salvar_conversas([])
+        p.salvar_memoria([])
+        ponte_p = app_web.Ponte(None)
+        ponte_p.iniciar()
+        antes_hist = len(p.carregar_conversas())
+        r = ponte_p.definir_privada(True)
+        if r.get("privada") is True and r.get("atual") is None \
+                and not ponte_p.mensagens:
+            ok("tela nova: ligar a conversa privada começa uma conversa limpa")
+        else:
+            falha("tela nova: ligar a conversa privada devolveu %r" % (r,))
+        ponte_p.mensagens = [{"role": "user", "text": "segredo do Wolf"},
+                             {"role": "model", "text": "ok"}]
+        ponte_p._gravar_conversa()
+        if p.carregar_conversas() == []:
+            ok("tela nova: a conversa privada NÃO é gravada no arquivo")
+        else:
+            falha("tela nova: a conversa privada foi gravada (%r)"
+                  % (p.carregar_conversas(),))
+        p._mesclar_memoria(["fato que o Wolf mandou não guardar"])
+        ponte_p._aprender("pergunta", "resposta", {"aprender": True}, "AIza-x")
+        if p.carregar_memoria() == ["fato que o Wolf mandou não guardar"]:
+            ok("tela nova: a conversa privada não faz a IA aprender")
+        else:
+            falha("tela nova: a memória mudou na conversa privada (%r)"
+                  % (p.carregar_memoria(),))
+        # O VAZAMENTO IMPORTANTE: desligar o modo com a conversa privada
+        # na tela nao pode deixar a conversa ser gravada depois. Por isso
+        # `definir_privada` comeca uma conversa nova nos dois sentidos.
+        ponte_p.definir_privada(False)
+        ponte_p.mensagens.append({"role": "user", "text": "agora pode salvar"})
+        ponte_p._gravar_conversa()
+        salvas = p.carregar_conversas()
+        textos = [m.get("text") for c in salvas for m in (c.get("mensagens") or [])]
+        if textos == ["agora pode salvar"]:
+            ok("tela nova: desligar o modo privado não vaza o que foi dito antes")
+        else:
+            falha("tela nova: VAZOU conversa privada: %r" % (textos,))
+        if len(p.carregar_conversas()) == antes_hist + 1:
+            ok("tela nova: desligar o modo privado volta a salvar normalmente")
+        else:
+            falha("tela nova: depois de desligar o privado, %d conversa(s)"
+                  % len(p.carregar_conversas()))
+        p.salvar_conversas([])
+        p.salvar_memoria([])
+
         # 10. a memoria que a tela mostra vem do arquivo, sem mudar nada
         p.salvar_memoria(["Gosta de RPG", "Mora em Santa Maria"])
         antes_mem = p.carregar_memoria()

@@ -18,7 +18,7 @@ function el(tag, cls, texto) {
   return e;
 }
 
-const estado = { mensagens: [], conversas: [], atual: null, ocupado: false, gravando: false, cfg: {}, aba: "chaves", rascunho: {} };
+const estado = { mensagens: [], conversas: [], atual: null, ocupado: false, gravando: false, privada: false, cfg: {}, aba: "chaves", rascunho: {} };
 const ROTULO_WEB = { auto: "Web: automática", sempre: "Web: sempre", nunca: "Web: desligada" };
 
 async function chamar(nome, ...args) {
@@ -144,8 +144,7 @@ function desenharMensagens() {
   lista.replaceChildren();
   for (const m of estado.mensagens) lista.append(criarMensagem(m));
   $("#vazio").classList.toggle("oculto", estado.mensagens.length > 0);
-  const primeira = estado.mensagens.find((m) => m.role === "user");
-  $("#titulo-conversa").textContent = primeira ? primeira.text.slice(0, 70) : "";
+  mostrarPrivada();          // escreve o titulo E o aviso de conversa privada
   rolarParaOFim();
 }
 
@@ -153,7 +152,7 @@ function anexarMensagem(m) {
   estado.mensagens.push(m);
   $("#vazio").classList.add("oculto");
   $("#mensagens").append(criarMensagem(m));
-  if (estado.mensagens.length === 1 && m.role === "user") $("#titulo-conversa").textContent = m.text.slice(0, 70);
+  if (estado.mensagens.length === 1 && m.role === "user") mostrarPrivada();
   rolarParaOFim();
 }
 
@@ -387,6 +386,44 @@ document.addEventListener("click", (e) => {
     chamar("abrir_link", link.dataset.url);
   }
 });
+
+/* ---------------- conversa privada ----------------
+   Ligada, o que for dito NAO e' salvo e a IA nao aprende nada. Quando
+   liga ou desliga, comeca uma conversa nova de proposito: sem isso a
+   pergunta seguinte gravaria a conversa inteira, incluindo a parte
+   que o Wolf mandou nao guardar (ver `definir_privada` no Python). */
+async function alternarPrivada() {
+  const ligando = !estado.privada;
+  const r = await chamar("definir_privada", ligando);
+  if (r.erro) return aviso(r.erro, true);
+  estado.privada = !!r.privada;
+  estado.atual = r.atual ?? null;
+  estado.mensagens = r.mensagens || [];
+  estado.conversas = r.conversas || estado.conversas;
+  mostrarPrivada();
+  desenharConversas();
+  desenharMensagens();
+  $("#entrada").focus();
+  aviso(ligando
+    ? "Conversa privada ligada: isto não será salvo nem entra na memória."
+    : "Conversa privada desligada: a partir de agora tudo é salvo de novo.");
+}
+
+function mostrarPrivada() {
+  const b = $("#btn-privada");
+  b.classList.toggle("ligada", !!estado.privada);
+  b.title = estado.privada
+    ? "Conversa privada LIGADA: nada é salvo nem entra na memória (clique para desligar)"
+    : "Conversa privada: o que for dito aqui não é salvo nem entra na sua memória (clique para ligar)";
+  // marca a conversa na tela, para nunca ficar na duvida
+  $("#titulo-conversa").classList.toggle("privada", !!estado.privada);
+  $("#titulo-conversa").textContent = estado.privada
+    ? "Conversa privada (não será salva)"
+    : (() => {
+        const primeira = estado.mensagens.find((m) => m.role === "user");
+        return primeira ? primeira.text.slice(0, 70) : "";
+      })();
+}
 
 /* ---------------- tamanho da letra ----------------
    Ctrl + (ou =) aumenta, Ctrl - diminui, Ctrl 0 volta ao normal. O
@@ -912,6 +949,7 @@ function ligarEventos() {
   });
   $("#btn-enviar").addEventListener("click", () => enviar());
   $("#btn-mic").addEventListener("click", () => alternarMicrofone());
+  $("#btn-privada").addEventListener("click", () => alternarPrivada());
   $("#btn-nova").addEventListener("click", novaConversa);
   $("#btn-config").addEventListener("click", () => abrirConfig());
   $("#btn-fechar-config").addEventListener("click", fecharConfig);
@@ -949,6 +987,7 @@ function ligarEventos() {
   // nao so quando ele aperta o atalho. Sem isto a tela abriria sempre no
   // tamanho normal e so mudaria depois do primeiro Ctrl +.
   try { aplicarTamanho(tamanhoAtual()); } catch (_e) { /* sem armazenamento */ }
+  mostrarPrivada();
 }
 
 async function iniciar() {

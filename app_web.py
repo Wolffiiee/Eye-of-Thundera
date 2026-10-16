@@ -297,6 +297,11 @@ class Ponte:
         # programa esqueceria que ja trocou e voltaria a insistir na chave
         # morta a cada mensagem.
         self.chaves = {"falhou": False}
+        # CONVERSA PRIVADA (ideia 3 da IDEIAS.md): enquanto estiver ligada,
+        # a conversa NAO e' gravada e a IA nao aprende nada sobre o que
+        # foi dito. serve para assunto que o Wolf nao quer deixar
+        # registrado. Ver `definir_privada`.
+        self.privada = False
 
     # --- 1. o que a tela precisa para comecar ---
 
@@ -450,6 +455,26 @@ class Ponte:
             "conversas": _conversas_para_a_tela(),
         }
 
+    def definir_privada(self, ligada):
+        """Liga ou desliga a conversa privada.
+
+        Ligada, a conversa **nao e' gravada** e a IA **nao aprende nada**
+        do que for dito nela (nada vai parar na memoria do Wolf).
+
+        Detalhe de seguranca, e' o mais importante aqui: **ligar OU
+        DESLIGAR comeca uma conversa nova**, jogando fora o que estava na
+        tela. Sem isso haveria um vazamento: o Wolf faria uma pergunta
+        privada, desligaria o modo e a pergunta seguinte gravaria a
+        conversa INTEIRA, incluindo a parte privada. Verificamos isso no
+        `verificar.py`.
+        """
+        ligada = bool(ligada)
+        self.privada = ligada
+        self.id_atual = None
+        self.mensagens = []
+        return {"privada": ligada, "atual": None, "mensagens": [],
+                "conversas": _conversas_para_a_tela()}
+
     def excluir_conversa(self, identificador):
         """Apaga uma conversa da lista.
 
@@ -489,8 +514,13 @@ class Ponte:
 
         Mesma regra do programa antigo: a conversa só ganha id (e só vai
         para o arquivo) quando tem mensagem de verdade.
+
+        Na **conversa privada** nada é gravado — é exatamente esse o
+        combinado (ver `definir_privada`).
         """
         if DEMO:
+            return None
+        if self.privada:
             return None
         if not self.mensagens:
             return None
@@ -657,8 +687,10 @@ class Ponte:
                          and str(m.get("text") or "").strip()]
 
             # "lembra que ...": guarda direto, sem gastar chamada de IA
-            # (igual ao programa antigo). No modo exemplo nao guarda nada.
-            if not DEMO:
+            # (igual ao programa antigo). No modo exemplo nao guarda nada,
+            # e NEM NA CONVERSA PRIVADA — senao a memoria do Wolf
+            # receberia o que ele pediu para nao registrar.
+            if not DEMO and not self.privada:
                 try:
                     fato = p.roteador.fato_pedido(texto)
                     if fato:
@@ -853,6 +885,10 @@ class Ponte:
         a cada mensagem.
         """
         if DEMO or not cfg.get("aprender", True) or not chave:
+            return
+        # Na conversa privada a IA nao aprende nada: e' o outro lado do
+        # combinado (ver `definir_privada`).
+        if self.privada:
             return
 
         def tarefa():

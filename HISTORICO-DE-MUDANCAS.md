@@ -5,6 +5,28 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Tela nova: conversa privada
+
+Ideia 3 da `IDEIAS.md`: um botão para o que o Wolf fala **não ficar
+guardado**. Botao "Privada" (cadeado) na barra de escrever; ligado, o
+titulo da conversa fica amarelo dizendo **"Conversa privada (não será
+salva)"**, para nunca ficar na duvida.
+
+- **A conversa não vai para o arquivo** e **a IA não aprende nada** do
+  que for dito nela.
+- **A ARMADILHA (que quase ficou):** se o Wolf fizesse uma pergunta
+  privada, **desligasse** o modo e fizesse outra pergunta, o programa
+  gravaria a conversa **inteira** — incluindo a parte privada. A
+  conversa privada mentiria. Por isso **ligar OU desligar começa uma
+  conversa nova**, sempre.
+- **Um vazamento real encontrado no caminho:** o atalho "lembra que ..."
+  grava na memoria **direto**, furando o `aprender` por dentro. Se so o
+  `_aprender` fosse desligado, a conversa privada ainda vazaria memoria
+  por esse caminho. Fechado e coberto por teste.
+- **5 testes**, e o mais importante deles reproduz a armadilha: conversa
+  privada, desligar o modo, mandar outra mensagem e conferir que **só a
+  mensagem nova** foi salva — a privada **nao** aparece.
+
 ## 2026-10-16 — Tela nova: tamanho da letra e "fixar no topo"
 
 Duas ideias da `IDEIAS.md` que nao existiam em NENHUM dos dois programas.

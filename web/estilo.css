@@ -163,6 +163,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   color: var(--texto-2); border: 1px solid var(--borda); }
 .pilula:hover { background: var(--superficie-2); color: var(--texto); }
 .pilula.ligada { color: #b8c8ff; border-color: #34458f; background: #1c2447; }
+#btn-privada.ligada { color: #ffd39a; border-color: #7a5a22; background: #2f2513; }
 /* tamanho da letra: botoes da aba Conversa */
 .grupo-letra { display: flex; align-items: center; gap: 6px; }
 .grupo-letra .btn.letra { min-width: 40px; font-weight: 700; }
@@ -171,6 +172,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .enviar:hover:not(:disabled) { background: var(--azul-2); }
 .enviar:disabled { background: var(--superficie-2); color: var(--texto-3); opacity: 1; }
 #dica { max-width: 780px; margin: 7px auto 0; text-align: center; font-size: 11.5px; color: var(--texto-3); }
+/* conversa privada: o botao acende e o titulo avisa, para nunca ficar
+   na duvida de se o que foi dito esta sendo salvo ou nao */
+#btn-privada svg { flex: none; }
+#titulo-conversa.privada { color: #ffcf8a; }
 
 /* ---------- janela de configuracoes ---------- */
 #modal { position: fixed; inset: 0; z-index: 40; background: rgba(5, 5, 9, .62); display: grid; place-items: center;

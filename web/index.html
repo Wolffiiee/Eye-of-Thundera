@@ -22,6 +22,8 @@
   <symbol id="i-fixar" viewBox="0 0 24 24"><path d="M12 20V6M6 12l6-6 6 6"/></symbol>
   <symbol id="i-soltar" viewBox="0 0 24 24"><path d="M12 4v14M6 12l6 6 6-6"/></symbol>
   <symbol id="i-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <!-- conversa privada: cadeado -->
+  <symbol id="i-privado" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol>
   <symbol id="i-lixo" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
   <symbol id="i-globo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 2.6 15.4 0 18M12 3c-2.6 2.6-2.6 15.4 0 18"/></symbol>
 </svg>
@@ -69,6 +71,7 @@
         <textarea id="entrada" rows="1" placeholder="Pergunte qualquer coisa..." spellcheck="true" lang="pt-BR" autofocus></textarea>
         <div class="barra-compositor">
           <button id="btn-web" class="pilula" title="Quando pesquisar na web (clique para trocar)"><svg style="width:15px;height:15px"><use href="#i-globo"/></svg><span id="rotulo-web">Web: automática</span></button>
+          <button id="btn-privada" class="pilula" title="Conversa privada: o que for dito aqui não é salvo nem entra na sua memória (clique para ligar)"><svg style="width:15px;height:15px"><use href="#i-privado"/></svg><span>Privada</span></button>
           <span class="espaco"></span>
           <button id="btn-mic" class="icone" title="Falar: clique para gravar, clique de novo para parar (Ctrl+M)"><svg><use href="#i-mic"/></svg></button>
           <button id="btn-enviar" class="enviar" title="Enviar (Enter)" disabled><svg><use href="#i-enviar"/></svg></button>
