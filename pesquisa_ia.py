@@ -118,7 +118,7 @@ SERVICOS_RESERVA = [
     },
 ]
 
-PASTA_CONFIG = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "EyeOfThundera"
+PASTA_CONFIG = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "PesquisaIA"
 ARQUIVO_CONFIG = PASTA_CONFIG / "config.json"
 # Quando o programa roda como executável, grava o log junto das configurações
 # (a pasta do .exe pode ser só leitura, como a Área de Trabalho).
@@ -3306,7 +3306,7 @@ def fazer_backup_dados(destino=None, quantos=15):
     import zipfile
 
     if destino is None:
-        destino = Path.home() / "OneDrive" / "Backup Eye of Thundera" / "dados"
+        destino = Path.home() / "OneDrive" / "Backup Pesquisa IA" / "dados"
     destino = Path(destino)
     destino.mkdir(parents=True, exist_ok=True)
     arquivos = sorted(x for x in PASTA_CONFIG.iterdir() if x.is_file())

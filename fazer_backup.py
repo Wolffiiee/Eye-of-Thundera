@@ -29,7 +29,7 @@ if sys.stdout is not None:
         pass
 
 # Onde ficam as cópias. OneDrive é sincronizado com a nuvem.
-DESTINO = Path.home() / "OneDrive" / "Backup Eye of Thundera"
+DESTINO = Path.home() / "OneDrive" / "Backup Pesquisa IA"
 NOME_DESTINO = "pesquisa-ia"
 MAXIMO_DE_COPIAS = 10          # só as 10 últimas, para não encher o OneDrive
 

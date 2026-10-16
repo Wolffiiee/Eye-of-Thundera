@@ -373,7 +373,7 @@ try:
         ok("backup dos dados: sem arquivos, avisa e não cria zip vazio")
     else:
         falha("backup dos dados: criou um zip sem nenhum arquivo")
-    if _pi2.PASTA_CONFIG == _pasta_orig and _pasta_orig.name == "EyeOfThundera":
+    if _pi2.PASTA_CONFIG == _pasta_orig and _pasta_orig.name == "PesquisaIA":
         ok("backup dos dados: a pasta de verdade do Wolf não foi trocada")
     else:
         falha("backup dos dados: a pasta de dados ficou %r" % (_pi2.PASTA_CONFIG,))
