@@ -364,6 +364,7 @@ def _cfg_tela():
         "web_corretor": bool(cfg.get("corretor", True)),
         "voz_enviar": bool(cfg.get("voz_enviar", True)),
         "usar_plano_b": bool(cfg.get("usar_plano_b", True)),
+        "usar_gemini": bool(cfg.get("usar_gemini", True)),
         "gemini": _tem_chave(cfg.get("api_key", "")),
         "gemini_reserva": _tem_chave(cfg.get("api_key_reserva", "")),
         "servicos": servicos,
@@ -380,6 +381,7 @@ def _cfg_tela_demo():
         "web_corretor": True,
         "voz_enviar": True,
         "usar_plano_b": True,
+        "usar_gemini": True,
         "gemini": {"definida": True, "final": "a1b2"},
         "gemini_reserva": {"definida": False, "final": ""},
         "servicos": [{
@@ -704,8 +706,12 @@ class Ponte:
             return self._demo_nada()
         cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
         chave = (cfg.get("api_key") or "").strip()
-        if not chave:
+        _servicos_ok = p._servicos_prontos(cfg)
+        _usar_gemini = bool(cfg.get("usar_gemini", True))
+        if _usar_gemini and not chave and not _servicos_ok:
             return {"erro": "sem_chave"}
+        if not _usar_gemini and not _servicos_ok:
+            return {"erro": "sem_servico"}
         if self.ocupado:
             return {"erro": "Aguarde a resposta terminar."}
         try:
@@ -1330,7 +1336,7 @@ class Ponte:
         if dados.get("modo_pesquisa") in ("auto", "sempre", "nunca"):
             cfg["modo_pesquisa"] = dados["modo_pesquisa"]
         for campo in ("usar_contexto", "aprender", "voz_enviar",
-                      "usar_plano_b"):
+                      "usar_plano_b", "usar_gemini"):
             if campo in dados:
                 cfg[campo] = bool(dados[campo])
         if "web_corretor" in dados:

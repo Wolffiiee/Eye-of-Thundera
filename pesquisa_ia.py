@@ -296,6 +296,7 @@ def carregar_config():
     cfg.setdefault("modelo", MODELO_PADRAO)
     cfg.setdefault("usar_contexto", True)
     cfg.setdefault("usar_plano_b", True)
+    cfg.setdefault("usar_gemini", True)
     cfg.setdefault("modo_pesquisa", "auto")
     cfg.setdefault("aprender", True)
     cfg.setdefault("voz_enviar", False)
@@ -1372,7 +1373,8 @@ def _gerar_texto(api_key, modelo, prompt, historico, cfg=None,
     from google.genai import types
 
     amigo = (modo == "amigo")
-    cliente = _criar_cliente(api_key)
+    usar_gemini = True if not cfg else bool(cfg.get("usar_gemini", True))
+    cliente = _criar_cliente(api_key) if usar_gemini else None
     ordem = [modelo] + [m for m in MODELOS_RESERVA if m != modelo]
     ultimo_erro = None
 
@@ -1386,31 +1388,32 @@ def _gerar_texto(api_key, modelo, prompt, historico, cfg=None,
         )
     conteudo.append(types.Content(role="user", parts=[types.Part(text=prompt)]))
 
-    for _rodada in range(2):
-        for nome in ordem:
-            try:
-                config = types.GenerateContentConfig(
-                    temperature=0.7 if amigo else 0.3,
-                    system_instruction=instrucoes_da_ia(modo),
-                )
-                resposta = cliente.models.generate_content(
-                    model=nome, contents=conteudo, config=config
-                )
-                texto = (getattr(resposta, "text", "") or "").strip()
-                if not texto:
-                    texto = _juntar_partes(resposta)
-                if texto:
-                    return texto, "Gemini"
-                ultimo_erro = RuntimeError("a IA não devolveu texto")
-            except Exception as erro:
-                ultimo_erro = erro
-                continue
-        time.sleep(1.5)
+    if usar_gemini:
+        for _rodada in range(2):
+            for nome in ordem:
+                try:
+                    config = types.GenerateContentConfig(
+                        temperature=0.7 if amigo else 0.3,
+                        system_instruction=instrucoes_da_ia(modo),
+                    )
+                    resposta = cliente.models.generate_content(
+                        model=nome, contents=conteudo, config=config
+                    )
+                    texto = (getattr(resposta, "text", "") or "").strip()
+                    if not texto:
+                        texto = _juntar_partes(resposta)
+                    if texto:
+                        return texto, "Gemini"
+                    ultimo_erro = RuntimeError("a IA nao devolveu texto")
+                except Exception as erro:
+                    ultimo_erro = erro
+                    continue
+            time.sleep(1.5)
 
     # O Gemini não respondeu: entra o plano B (se estiver configurado).
     # Na corrida entre as IAs quem chama este ponto já cuida do plano B em
     # outra thread, então ele é pulado para não repetir a mesma chamada.
-    if com_plano_b:
+    if com_plano_b or not usar_gemini:
         servicos = _servicos_prontos(cfg)
         if servicos:
             erros = []
@@ -1498,14 +1501,17 @@ def _gerar_texto_rapido(
     Devolve (texto, origem) igual ao _gerar_texto, mas sem esperar a mais
     lenta: quem responder primeiro vence.
     """
+    usar_gemini = True if not cfg else bool(cfg.get("usar_gemini", True))
     servicos = _servicos_prontos(cfg) if cfg else []
+    if not servicos and not usar_gemini:
+        raise RuntimeError("Gemini desligado e nenhum servico de plano B ativo.")
     if not servicos:
         # sem plano B nao ha corrida: e so o Gemini mesmo
         return _gerar_texto(api_key, modelo, prompt, historico, cfg)
 
     resultados = queue.Queue()
     erros = []
-    andamento = {"gemini": True, "plano_b": True}
+    andamento = {"gemini": usar_gemini, "plano_b": bool(servicos)}
 
     def avisar_fim(chave, texto="", origem="", erro=None):
         """Guarda a resposta ou o erro e diz se acabou a corrida."""
@@ -1547,7 +1553,8 @@ def _gerar_texto_rapido(
         except Exception as erro:
             avisar_fim("plano_b", erro=erro)
 
-    threading.Thread(target=correr_gemini, daemon=True).start()
+    if usar_gemini and api_key:
+        threading.Thread(target=correr_gemini, daemon=True).start()
     relogio = threading.Timer(max(0.0, antecipacao), ligar_plano_b)
     relogio.daemon = True
     relogio.start()

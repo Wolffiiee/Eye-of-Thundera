@@ -1248,6 +1248,11 @@ function abaChaves(corpo) {
   const plano = el("div", "cartao");
   plano.append(linhaToggle("Usar o plano B", "Se o Gemini não responder, tenta estes serviços de reserva.", "usar_plano_b"));
   corpo.append(plano);
+  const geminiCard = el("div", "cartao");
+  geminiCard.append(linhaToggle("Usar o Gemini (principal)",
+    "Desliga o Gemini e usa so o plano B (ChatGPT/Groq/OpenRouter).",
+    "usar_gemini"));
+  corpo.append(geminiCard);
   for (const s of cfg.servicos) {
     corpo.append(cartaoChave(s.nome, s.resumo ? "Grátis — " + s.resumo : "", s.campo, s, { passos: s.passos, pagina: s.pagina }));
   }
@@ -1585,6 +1590,7 @@ async function abrirConfig(aba) {
   estado.rascunho = {
     modo_pesquisa: r.modo_pesquisa, usar_contexto: r.usar_contexto, aprender: r.aprender,
     web_corretor: r.web_corretor, voz_enviar: r.voz_enviar, usar_plano_b: r.usar_plano_b,
+    usar_gemini: r.usar_gemini,
   };
   $("#modal").classList.remove("oculto");
   mostrarAba(aba || estado.aba);
