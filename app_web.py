@@ -1,54 +1,24 @@
-# -*- coding: utf-8 -*-
-"""
-Tela nova do Eye of Thundera, feita em HTML (PASSO 1: so a tela, sem a IA).
-
-POR QUE EXISTE
-    O programa de sempre e' feito com o Tk (tkinter), que e' antigo: ele
-    so desenha emoji de UMA cor, deixa o texto selectionsseo estranha e
-    obriga a desenhar cada icone na mao. A tela nova e' uma pagina de
-    navegador dentro de uma janela do Windows (o pywebview), que resolve
-    isso de graca. O teste em `web\\spike_webview.py` ja provou que
-    funciona nesta maquina (inclusive com emoji COLORIDO).
-
-O QUE ESTE PASSO FAZ
-    - abre a janela onde o Wolf fechou o programa da ultima vez, e se
-      ainda nao houver posicao guardada, no MEIO da tela principal
-      (16/10/2026: ele pediu para acabar com a regra do segundo
-      monitor, que so existia enquanto a tela era teste);
-    - mostra as conversas que ele ja tem, lendo os MESMOS arquivos do
-      programa antigo;
-    - abrir, criar e excluir conversa;
-    - ENVIAR PERGUNTA: a IA de verdade responde, e o que ela esta
-      fazendo aparece na tela enquanto trabalha (passo 3);
-    - abre as quatro abas de Configuracoes (so leitura);
-    - o botao de salvar a resposta em .txt ja funciona de verdade.
-
-O QUE AINDA NAO FUNCIONA (e avisa na tela, sem quebrar)
-    - microfone (passo 4);
-    Tudo que for isso devolve um aviso honesto. No modo exemplo
-    (`--demo`) nada e gravado nunca.
-
-REGRA DE OURO
-    O `pesquisa_ia.py` NAO foi tocado e o atalho da Area de Trabalho
-    continua apontando para ele. A tela nova nasce ao lado da antiga; so
-    trocamos quando ela estiver igual ou melhor. Assim nunca sobra o Wolf
-    sem programa funcionando.
-
-Como rodar (esta e' a forma normal, o que o Wolf vai usar):
-    .venv\\Scripts\\python.exe app_web.py
-"""
-
-import base64
-import io
-import json
 import sys
-import threading
-import time
 import webbrowser
+import time
 from datetime import datetime
+import json
+import io
+import base64
+import threading
 from pathlib import Path
+import sys as _sys_web
+if getattr(_sys_web, "frozen", False) and hasattr(_sys_web, "_MEIPASS"):
+    RAIZ = Path(_sys_web._MEIPASS)
+else:
+    RAIZ = Path(__file__).resolve().parent
+WEB = RAIZ / "web"
+if not WEB.exists():
+    WEB = Path.cwd() / "web"
+INDEX = WEB / "index.html"
+ESTILO = WEB / "estilo.css"
+SCRIPT = WEB / "app.js"
 
-RAIZ = Path(__file__).resolve().parent
 sys.path.insert(0, str(RAIZ))
 if sys.stdout is not None:
     try:

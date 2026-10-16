@@ -50,4 +50,10 @@ type "_arquivo_morto\ultimo_backup_dados.txt"
 echo.
 echo ================================================================
 echo.
+rem --- Backup do executavel pronto ---
+if exist dist\Eye of Thundera.exe (
+    copy /Y "dist\Eye of Thundera.exe" "Backup\Eye of Thundera.exe" 2>nul
+    echo O executavel pronto foi copiado para Backup\.
+)
+
 pause

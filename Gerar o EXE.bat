@@ -41,4 +41,13 @@ echo     dist\Eye of Thundera.exe
 echo.
 echo Copie para a Area de Trabalho.
 echo.
+rem
+rem --- Atualiza Area de Trabalho ---
+".venv\Scripts\python.exe" atualizar_area_trabalho.py
+if errorlevel 1 (
+    echo Falha ao atualizar a Area de Trabalho.
+    pause
+    exit /b 1
+)
+
 pause

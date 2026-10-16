@@ -14,4 +14,4 @@ if not exist ".venv\Scripts\pythonw.exe" (
     exit /b 1
 )
 
-start "" ".venv\Scripts\pythonw.exe" "pesquisa_ia.py"
+start "" ".venv\Scripts\pythonw.exe" "app_web.py"
