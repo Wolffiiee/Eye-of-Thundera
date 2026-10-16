@@ -195,7 +195,7 @@ def _guardar_posicao(x, y):
     except Exception:
         pass
 
-TITULO_JANELA = "Eye of Thundera (tela nova - em construção)"
+TITULO_JANELA = "Eye of Thundera"
 
 
 # ---------------- imagens: da busca para a tela -------------------------
