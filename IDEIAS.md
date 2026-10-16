@@ -8,9 +8,15 @@ com o nosso app (local, grátis, em português, simples de usar).
 
 ## As que eu mais gostei
 
-### 1. Fontes citadas na resposta
-Hoje o app junta a resposta mas não mostra de onde veio nada. Seria legal
-mostrar uma letrinha discreta embaixo da resposta, tipo:
+### 1. ~~Fontes citadas na resposta~~ **FEITA em 16/10/2026**
+Hoje o app junta a resposta mas mostra de onde veio. Agora, quando a
+resposta veio da web, aparece uma letrinha discreta embaixo dela:
+`sites consultados: 3`. Clicar abre a lista, e cada site abre no
+navegador.
+Chamei de "sites consultados", e **não** de "fontes", de propósito: são os
+**resultados da busca**, não citações — o programa não confere se o que
+o site diz é verdade. O link está ali para você conferir com os próprios
+olhos. Link `javascript:` é descartado por segurança.
 
     Fontes usadas: 3   [ver]
 
@@ -26,6 +32,14 @@ com as fontes citadas. Pode ser um botão ao lado do de enviar, ou um atalho.
 Hoje tudo o que você pergunta fica salvo. Um botão "conversa privada" faria o
 app não salvar aquela conversa e não usar a memória — tipo a "conversa
 temporária" do ChatGPT. Bom para assuntos que você não quer deixar registrado.
+
+### 3. ~~Modo conversa privada~~ **FEITA em 16/10/2026**
+Botão "Privada" na barra de escrever. Ligado, o que for dito **não é
+salvo** e a IA **não aprende nada** — e o título da conversa fica
+amarelo avisando, para nunca ficar na dúvida.
+Um detalhe de segurança: ligar **ou desligar** começa uma conversa nova,
+senão desligar gravaria a conversa inteira junto e a parte privada
+vazaria para o arquivo.
 
 ### 4. Perguntas para continuar
 Depois da resposta, o app sugere 3 perguntas de continuação que você pode

@@ -124,7 +124,7 @@ function criarMensagem(m) {
       else if (r && r.erro) aviso(r.erro, true);
     });
     acoes.append(bCopiar, bSalvar);
-    corpo.append(acoes);
+    corpo.append(linhaFontes(m.fontes), acoes);
     // O texto CRU fica guardado na propria mensagem: e' ele que o
     // Ctrl+S precisa salvar (o que aparece na tela ja vem formatado,
     // com link e negrito).
@@ -154,6 +154,42 @@ function anexarMensagem(m) {
   $("#mensagens").append(criarMensagem(m));
   if (estado.mensagens.length === 1 && m.role === "user") mostrarPrivada();
   rolarParaOFim();
+}
+
+/* ---------------- sites consultados ----------------
+   A letra discreta embaixo da resposta (ideia 1 da IDEIAS.md). Clicar
+   abre a lista, e cada site abre no navegador.
+
+   IMPORTANTE: estes sao os resultados da BUSCA, nao citacoes. O
+   programa nao confere se o que o site diz e' verdade - por isso o
+   texto e' "sites consultados" e o link esta ali para o Wolf conferir
+   com os proprios olhos. */
+function linhaFontes(fontes) {
+  const lista = (fontes || []).filter((f) => f && f.url);
+  if (!lista.length) return el("span");
+  const caixa = el("div", "fontes");
+  const botao = el("button", "ver-fontes");
+  botao.append(ico("i-globo"), el("span", "", `sites consultados: ${lista.length}`));
+  const ul = el("div", "lista-fontes oculto");
+  for (const f of lista) {
+    const a = el("a", "", f.titulo || f.url);
+    a.href = f.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.title = f.url;
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      chamar("abrir_link", f.url);
+    });
+    ul.append(a);
+  }
+  botao.addEventListener("click", (e) => {
+    e.stopPropagation();
+    ul.classList.toggle("oculto");
+  });
+  caixa.append(botao, ul);
+  return caixa;
 }
 
 /* ---------------- espera / envio ---------------- */
@@ -197,7 +233,7 @@ function aplicarEvento(o) {
     $("#etapa").textContent = o.texto;
   } else if (o.tipo === "resposta") {
     esperar(false);
-    anexarMensagem({ role: "model", text: o.texto });
+    anexarMensagem({ role: "model", text: o.texto, fontes: o.fontes });
   } else if (o.tipo === "erro") {
     esperar(false);
     anexarMensagem({ role: "erro", text: o.texto });

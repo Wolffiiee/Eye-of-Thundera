@@ -5,6 +5,36 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Tela nova: "sites consultados" embaixo da resposta
+
+Ideia **numero 1** da `IDEIAS.md` (a que o Wolf mais gostou): a resposta
+nao mostrava de onde tinha vindo. Agora, quando a resposta veio da web,
+aparece uma letrinha discreta embaixo dela:
+
+    sites consultados: 3
+
+Clicar abre a lista; clicar num site abre no navegador.
+
+- **Chamei de "sites consultados", e nao "fontes", de proposito.** Sao
+  os **resultados da busca**, e nao citacoes: o programa nao confere se
+  o que o site diz e' verdadeiro. Dizer "fonte" seria mentir — o mesmo
+  cuidado que a regra do apelido ("Imortal" e' apelido do Gremio, nao
+  invencao)idou no mesmo dia. O link esta ali justamente para o Wolf
+  conferir com os proprios olhos.
+- **Nunca aceita link perigoso:** so entram `http` e `https`; um
+  `javascript:` e' descartado (e' assim que um site tentaria rodar codigo
+  na tela). Link repetido e link vazio tambem saem fora. No maximo 6.
+- **O `pesquisar` do programa antigo passou a devolver a lista** (antes
+  devolvia vazia de proposito). O programa de sempre ignora esse valor,
+  entao **nao mudou nada** para ele.
+- As fontes vao **guardadas junto da mensagem**: fechar e reabrir a
+  conversa nao faz a lista sumir.
+- **4 testes**: tira repetido e o que nao e' link, nunca aceita
+  `javascript:`, todo site tem titulo, e sem resultados a lista fica
+  vazia (nada e' inventado).
+
+Verificacao: `TUDO CERTO`, **283 testes, 0 falhas** (34 s).
+
 ## 2026-10-16 — Tela nova: conversa privada
 
 Ideia 3 da `IDEIAS.md`: um botão para o que o Wolf fala **não ficar

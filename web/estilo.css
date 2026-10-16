@@ -172,6 +172,17 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .enviar:hover:not(:disabled) { background: var(--azul-2); }
 .enviar:disabled { background: var(--superficie-2); color: var(--texto-3); opacity: 1; }
 #dica { max-width: 780px; margin: 7px auto 0; text-align: center; font-size: 11.5px; color: var(--texto-3); }
+/* sites consultados (ideia 1): letra discreta, abre a lista ao clicar */
+.fontes { margin: 12px 0 2px; }
+.ver-fontes { display: inline-flex; align-items: center; gap: 6px; font-size: 12px;
+  color: var(--texto-3); padding: 3px 8px; border-radius: 999px; }
+.ver-fontes:hover { color: var(--texto-2); background: var(--superficie-2); }
+.ver-fontes svg { width: 13px; height: 13px; flex: none; }
+.lista-fontes { display: flex; flex-direction: column; gap: 5px; margin-top: 6px;
+  padding-left: 10px; border-left: 2px solid var(--borda); }
+.lista-fontes a { color: var(--texto-3); font-size: 12.5px; text-decoration: none;
+  overflow-wrap: anywhere; }
+.lista-fontes a:hover { color: #b8c8ff; text-decoration: underline; }
 /* conversa privada: o botao acende e o titulo avisa, para nunca ficar
    na duvida de se o que foi dito esta sendo salvo ou nao */
 #btn-privada svg { flex: none; }

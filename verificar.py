@@ -211,7 +211,43 @@ try:
 except Exception as erro:
     falha("escurecer a barra levantou erro: %r" % (erro,))
 
-# --- 4d. a janela de "Salvar como" tem que nascer NA MESMA TELA do programa --
+# --- 4d. sites consultados: o que a busca traz, limpo e honesto ---------
+# Sao os RESULTADOS DA BUSCA, nao citacoes: por isso a tela escreve
+# "sites consultados" e mostra o link, para o Wolf conferir com os
+# proprios olhos. O que nao pode: repetir link, trazer link quebrado, nem
+# aceitar link perigoso (javascript:).
+try:
+    _pi = importlib.import_module("pesquisa_ia")
+    _sites = _pi._sites_consultados(
+        [{"title": "Globo", "href": "https://ge.globo.com/x", "body": "a"},
+         {"title": "UOL", "url": "http://uol.com.br/y", "body": "b"},
+         {"title": "Repetido", "href": "https://ge.globo.com/x"},
+         {"title": "Perigo", "href": "javascript:alerta(1)"},
+         {"title": "Nem link", "href": ""},
+         {"body": "sem titulo e sem link"}],
+        [{"title": "Noticia", "url": "https://cnn.com/z"}])
+    if [s["url"] for s in _sites] == ["https://ge.globo.com/x",
+                                      "http://uol.com.br/y",
+                                      "https://cnn.com/z"]:
+        ok("sites consultados: tira o link repetido e o que não é link")
+    else:
+        falha("sites consultados: sobrou %r" % ([s["url"] for s in _sites],))
+    if not any(s["url"].startswith("javascript:") for s in _sites):
+        ok("sites consultados: nunca aceita link perigoso (javascript:)")
+    else:
+        falha("sites consultados: aceitou um link perigoso")
+    if _sites and all(s["titulo"] for s in _sites):
+        ok("sites consultados: todo site tem um título para aparecer na tela")
+    else:
+        falha("sites consultados: entrou site sem título")
+    if _pi._sites_consultados([], []) == []:
+        ok("sites consultados: sem resultados, a lista fica vazia")
+    else:
+        falha("sites consultados: inventou site sem busca nenhuma")
+except Exception as erro:
+    falha("a lista de sites consultados deu erro: %r" % (erro,))
+
+# --- 4e. a janela de "Salvar como" tem que nascer NA MESMA TELA do programa --
 # Defeito de 16/10/2026: a janela de "Salvar resposta como..." abria em
 # x=138, y=0 (primeiro monitor) enquanto o programa estava no segundo
 # (x=2000). O Wolf olhava para o segundo monitor, via a janelinha no
@@ -234,7 +270,7 @@ try:
 except Exception as erro:
     falha("conferir a posição da janela de Salvar deu erro: %r" % (erro,))
 
-# --- 4e. tamanho da letra: existe e não mexe em nada do Python --------------
+# --- 4f. tamanho da letra: existe e não mexe em nada do Python --------------
 # A letra e' so aparencia (fica no navegador), mas um erro aqui quebraria
 # a tela INTEIRA na hora de abrir, entao precisa de prova de que os botoes
 # e os atalhos existem e que a funcao nao mexe em arquivo nenhum.

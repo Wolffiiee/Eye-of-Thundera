@@ -1490,7 +1490,36 @@ def perguntar(
     texto, origem = _gerar_texto_rapido(
         api_key, modelo, prompt, historico_para_ia, cfg
     )
-    return _espacar_blocos(_sem_markdown(texto)), [], [], origem
+    return (_espacar_blocos(_sem_markdown(texto)),
+            _sites_consultados(resultados, noticias), [], origem)
+
+
+def _sites_consultados(resultados, noticias, limite=6):
+    """Os sites que a busca trouxe, para a tela mostrar embaixo da
+    resposta (ideia 1 da IDEIAS.md: e' o que da confianca na resposta).
+
+    Sao os **resultados da busca**, e nao citacoes: o programa nao
+    confere se o que o site diz e' verdadeiro, so o que ele entregou.
+    Por isso a tela escreve "sites consultados" e nao "fonte da
+    verdade", e mostra o link para o Wolf conferir com os proprios olhos.
+
+    Sem link repetido e sem link quebrado, na ordem em que apareceram.
+    """
+    vistos = set()
+    sites = []
+    for item in list(resultados or []) + list(noticias or []):
+        titulo = (item.get("title") or "").strip()
+        url = (item.get("href") or item.get("url") or "").strip()
+        if not url or not url.startswith(("http://", "https://")):
+            continue
+        if url in vistos:
+            continue
+        vistos.add(url)
+        sites.append({"titulo": titulo or url, "url": url})
+        if len(sites) >= limite:
+            break
+    return sites
+
 
 def conversar(
     api_key, modelo, historico, pergunta, usar_contexto, progresso=None, cfg=None,

@@ -721,7 +721,7 @@ class Ponte:
             # Mesma troca automatica de chave do programa antigo. O
             # dicionario `self.chaves` e' o mesmo sempre, para a troca
             # durar a sessao toda (e nao recomecar a cada pergunta).
-            resposta, _fontes, _buscas, _origem = p.tentar_com_reserva(
+            resposta, fontes, _buscas, _origem = p.tentar_com_reserva(
                 chamar_a_ia, cfg, self.chaves)
             resposta = (resposta or "").strip() or "(sem resposta)"
             if self.chaves.get("falhou"):
@@ -730,10 +730,17 @@ class Ponte:
                                        "estou usando a chave reserva."})
             resposta = (resposta or "").strip() or "(sem resposta)"
 
-            self.mensagens.append({"role": "model", "text": resposta})
+            # Os sites consultados vaoguardados junto da mensagem (o programa
+            # antigo ignora o campo a mais, entao nao muda nada pra ele).
+            # Sem isso, fechar e reabrir a conversa faria a resposta ficar
+            # sem a lista de onde veio.
+            fontes = fontes or []
+            self.mensagens.append({"role": "model", "text": resposta,
+                                   "fontes": fontes})
             if not DEMO:
                 self._gravar_conversa()
-            self._evento({"tipo": "resposta", "texto": resposta})
+            self._evento({"tipo": "resposta", "texto": resposta,
+                          "fontes": fontes})
             if not DEMO:
                 # A lista da esquerda mostra a conversa nova.
                 self._evento({"tipo": "conversas",
