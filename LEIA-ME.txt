@@ -4,22 +4,18 @@
 
 ATUALIZADO EM 16/10/2026
 -------------------------
-O programa da sua Área de Trabalho agora se chama:
+O programa se chama:
 
       Pesquisa IA Tela Nova.exe
 
-É a versão NOVA, que é a que você usa. O programa antigo (o de janela
-cinza, "Pesquisa IA.exe") foi aposentado em 16/10/2026 e não está mais
-na sua mesa. Ele continua guardado na pasta "_arquivo_morto" (dentro do
-projeto), caso um dia você queira voltar a ele. Nada foi apagado.
-
-Este texto abaixo ainda descreve o programa antigo em alguns lugares.
-Onde for o caso, o que vale hoje é a tela nova.
+É a tela em HTML (escura, com imagens, com memória). É o único
+programa do projeto. O programa antigo (janela cinza, em tkinter)
+foi aposentado e não está mais na sua Área de Trabalho.
 
 
 O que é isto?
 -------------
-É um programinha simples para o seu computador. Você abre uma janelinha,
+É um programinha simples para o seu computador. Você abre uma janela,
 digita uma pergunta e ele:
   1) pesquisa na web de verdade (inclusive sites estrangeiros), e
   2) usa uma inteligência artificial (o Gemini, do Google) para ler tudo,
@@ -28,6 +24,7 @@ digita uma pergunta e ele:
 
 É de graça para uso pessoal e não precisa de cartão de crédito.
 
+
 Atalho pronto na Área de Trabalho:
 ----------------------------------
 O programa está na sua Área de Trabalho. É só dar duplo clique nele.
@@ -35,7 +32,7 @@ Nesse caso você NÃO precisa seguir o PASSO 2 abaixo.
 
 
 ========================================================
- PASSO 1 - Pegar a chave da API (gratuita)
+  PASSO 1 - Pegar a chave da API (gratuita)
 ========================================================
 
 A "chave da API" é como uma senha que deixa o programa usar a
@@ -53,8 +50,8 @@ inteligência do Google. É de graça e leva uns 3 minutos.
  5. Clique no botão "Create API key" (ou "Criar chave de API").
 
  6. Vai aparecer um código comprido. Pode começar com "AIza" ou
-    com "AQ.". Clique no ícone de copiar (ou selecione tudo e
-    aperte Ctrl+C).
+     com "AQ.". Clique no ícone de copiar (ou selecione tudo e
+     aperte Ctrl+C).
 
  7. Guarde esse código. Ele é a sua chave.
 
@@ -63,14 +60,14 @@ inteligência do Google. É de graça e leva uns 3 minutos.
 
 
 ========================================================
- PASSO 2 - Abrir o programa
+  PASSO 2 - Abrir o programa
 ========================================================
 
  1. Na pasta onde está este arquivo, ache o arquivo:
 
       1 - Instalar.bat
 
-    Dê um duplo clique nele. Vai abrir uma janelinha preta.
+    Dê um duplo clique nele. Vai abrir uma janela preta.
     Espere terminar (ele vai baixar o que o programa precisa).
     Quando aparecer "Tudo pronto!", aperte qualquer tecla para fechar.
 
@@ -80,11 +77,11 @@ inteligência do Google. É de graça e leva uns 3 minutos.
 
       2 - Abrir Pesquisa IA.bat
 
-    A janelinha do programa vai abrir.
+    A janela do programa vai abrir.
 
 
 ========================================================
- PASSO 3 - Usar
+  PASSO 3 - Usar
 ========================================================
 
  1. Na primeira vez, clique no botão "Configurações" (no alto, à
@@ -105,89 +102,64 @@ inteligência do Google. É de graça e leva uns 3 minutos.
       imagens de god of war
 
     O programa mostra várias imagens na conversa. Clique em uma delas
-    para ela ampliar na própria conversa (não abre outra janela). Se
-    quiser, clique em "Salvar como..." para guardar no computador.
+    para ampliar e usar as setas do teclado (ou os botões na tela) para
+    passar de uma para outra. Para guardar, use "Salvar como...".
+
 
 Botões do programa (na barra da esquerda):
 
   - "Nova conversa"    -> limpa a tela para começar do zero.
-  - "Conversas"        -> abre uma lista para baixo, logo abaixo do botão,
-                          com as conversas que você já fez (da mais nova para
-                          a mais antiga). Clica no TÍTULO para abrir a conversa.
-                          No "⋯" do canto direito de cada uma fica a opção de
-                          EXCLUIR. A lista abre e fecha sozinha, e o que a IA
-                          aprendeu sobre você continua guardado mesmo quando
-                          você apaga uma conversa.
+  - "Conversas"        -> abre uma lista com as conversas que você
+                         já fez (da mais nova para a mais antiga).
+                         Clica no TÍTULO para abrir. No "⋯" fica a
+                         opção de EXCLUIR.
   - "Configurações"    -> janela com três abas:
-                          "Chave" (a chave do Google, o plano B e as opções),
-                          "Memória" (o que a IA aprendeu sobre você) e
-                          "Ajuda" (como usar).
+                         "Chave", "Memória" e "Ajuda".
 
-Para copiar uma resposta, passe o mouse no iconezinho que fica no canto de
-fora do balão da resposta (embaixo dele). Depois de um tempinho em cima,
-aparece a explicação "Copiar resposta"; um clique copia tudo.
+Para copiar uma resposta, passe o mouse no iconezinho que fica no
+canto de fora do balão da resposta (embaixo dele). Um clique copia
+tudo. Do lado tem um do disquete: um clique abre a janela de
+"Salvar como..." e guarda a resposta num arquivo de texto (.txt).
+Atalho: Ctrl+S salva a última resposta.
 
-Do lado do iconezinho de copiar tem um do disquete: um clique nele abre a
-janela de "Salvar como..." e guarda a resposta num arquivo de texto
-(.txt) para você abrir depois, imprimir ou mandar para alguém. O nome do
-arquivo é sugerido com o começo da resposta (ex.: se a resposta começa com
-"A capital do Pará é Belém", ele se chama "A capital do Pará.txt").
-Atalho: Ctrl+S salva a última resposta, sem precisar ir até o botão.
+Palavras escritas errado aparecem com um sublinhado vermelho. Para
+ver as sugestões, clique com o botão direito na palavra sublinhada.
 
-Palavras escritas errado aparecem só com um sublinhado vermelho (a palavra
-continua na cor normal, para o texto ficar fácil de ler). Para ver as
-sugestões, clique com o botão direito na palavra sublinhada.
-
-As conversas ficam salvas sozinhas no seu computador, na pasta:
+As conversas ficam salvas no seu computador, na pasta:
   %LOCALAPPDATA%\PesquisaIA\historico.json
 O que a IA aprende sobre você fica em:
   %LOCALAPPDATA%\PesquisaIA\memoria.json
-Nada é apagado sozinho: as conversas ficam guardadas até você escolher excluir
-no "⋯" de cada uma.
+Nada é apagado sozinho.
 
-Na barra da esquerda ficam os botões do programa. Ela pode ser escondida
-e mostrada de novo de duas formas: clicando no botão "Menu" (no alto) ou
-apertando Ctrl+B.
+A barra da esquerda pode ser escondida com o botão "Menu" (no alto)
+ou com Ctrl+B. A borda direita da lateral é arrastável para alargar
+ou afinar.
 
-A borda direita da lateral é arrastável: puxe para o lado para alargar a
-lateral (aí os títulos das conversas cabem inteiros) ou para o lado de
-dentro para afinar. Os títulos se ajustam sozinhos ao novo tamanho. Assim a conversa ocupa a tela toda quando você quiser.
+A resposta aparece letra a letra, com um cursor piscando no fim.
+A caixa de digitar mostra um texto de apoio cinza ("Pergunte qualquer
+coisa...") que some quando você começa a digitar.
 
-A resposta aparece letra a letra, com um cursor piscando no fim,
-igual aos aplicativos de conversa modernos.
+Clicando com o botão do DIREITO dentro da caixa aparece o menu de
+edição de sempre (Recortar, Copiar, Colar, Selecionar tudo). Se a
+palavra em que você clicou estiver escrita errada, as correções
+aparecem em cima desse menu.
 
-A caixa de digitar tem os cantos redondinhos e, quando está vazia, mostra
-um texto de apoio cinza ("Pergunte qualquer coisa...") que some assim que
-você começa a digitar. O botão do microfone e o de enviar ficam dentro
-da caixa, no canto direito.
-
-Clicando com o botão do DIREITO dentro da caixa aparece o menu de edição
-de sempre (Recortar, Copiar, Colar, Selecionar tudo). Funciona com a caixa
-vazia ou cheia, e também em cima do texto cinza "Pergunte qualquer
-coisa...". Se a palavra em que você clicou estiver escrita errada, as
-correções aparecem em cima desse menu. O que não dá para usar naquele
-momento (Recortar/Copiar sem nada selecionado, Colar com nada copiado)
-aparece apagado.
-
-Numa janela muito larga, o programa se ocupa com a largura máxima de
-820 pixels e deixa as bordas em branco, para o texto não ficar comprido
-demais de lado a lado. A caixa de digitar acompanha a mesma largura.
+Numa janela muito larga, o programa ocupa no máximo 820 pixels de
+largura e deixa as bordas em branco, para o texto não ficar comprido
+demais.
 
 Falar em vez de digitar:
 
-Tem um botão de microfone ao lado do botão de enviar. Clique nele para
-começar a gravar e clique de novo para parar (o atalho é Ctrl+M).
+  Tem um botão de microfone ao lado do botão de enviar (ou Ctrl+M).
+  Clique para gravar, clique de novo para parar.
 
-  - enquanto grava, o botão fica vermelho e o aviso embaixo da conversa
-    diz que está ouvindo;
+  - enquanto grava, o botão fica vermelho e o aviso diz que está
+    ouvindo;
   - a gravação para sozinha depois de 2 minutos;
-  - depois de parar, o que você falou aparece escrito na caixa de digitar,
-    para você conferir e corrigir antes de apertar Enter. Não é enviado
-    sozinho (se quiser assim, ligue a opção em Configurações);
-  - se você só respirou e não falou nada, o programa avisa "Não ouvi nada"
-    e não gasta nenhuma chamada de IA;
-  - se o Windows reclamar do microfone, vá em Configurações > Privacidade
-    e ative o acesso ao microfone para aplicativos de desktop.
+  - depois de parar, o que você falou aparece escrito na caixa de
+    digitar, para você conferir e corrigir antes de apertar Enter;
+  - se você só respirou, o programa avisa "Não ouvi nada" e não
+    gasta nenhuma chamada de IA.
 
 Atalhos de teclado:
 
@@ -200,25 +172,23 @@ Atalhos de teclado:
   - Ctrl + Z       -> desfaz o que foi escrito.
   - Ctrl + Y       -> refaz.
   - Ctrl + S       -> salva a última resposta num arquivo de texto (.txt).
+  - Ctrl + D       -> "Resumo do dia" (o que a IA aprendeu sobre você).
 
 
 ========================================================
- PERGUNTAS COMUNS
+  PERGUNTAS COMUNS
 ========================================================
 
 "É grátis mesmo?"
-  Sim. Duas partes são gratuitas:
-    - a chave do Google (Gemini), que tem um plano grátis generoso; e
-    - a busca na web, que o próprio programa faz de graça, sem chave
-      extra e sem cartão.
-  Não é preciso cadastrar cartão de crédito.
+  Sim. A chave do Google (Gemini) é gratuita, e a busca na web o
+  próprio programa faz de graça (usando o DuckDuckGo). Não precisa
+  de cartão de crédito.
 
 "Por que não usa a busca do Google?"
   O Google parou de oferecer a "busca do Google" de graça para
-  programas. Agora isso é um recurso pago. Para continuar 100% grátis,
-  este programa pesquisa na web por conta própria (usando o
-  DuckDuckGo) e manda os trechos para o Gemini escrever a resposta.
-  O resultado é bem parecido, com informação atualizada.
+  programas. Para continuar 100% grátis, este programa pesquisa
+  na web por conta própria e manda os trechos para o Gemini escrever
+  a resposta.
 
 "Posso fazer pergunta de acompanhamento?"
   Sim. Se a opção "Lembrar o assunto da conversa" estiver marcada em
@@ -226,39 +196,29 @@ Atalhos de teclado:
      "Quem ganhou?"  e depois  "E quem foi o vice?"
 
 "O que são as palavras sublinhadas?"
-  Enquanto você digita, o programa confere a ortografia do português e
-  sublinha as palavras escritas errado (por exemplo, sem acento). Para
-  ver sugestões de correção, clique com o botão direito na palavra
-  sublinhada. Se não quiser, dá para desligar em Configurações.
+  Enquanto você digita, o programa confere a ortografia do português
+  e sublinha as palavras escritas errado. Para ver sugestões de
+  correção, clique com o botão direito na palavra sublinhada.
 
 "A IA lembra de mim? Como funciona?"
   Sim, e funciona sozinho, sem você preencher nada. Depois de cada
-  resposta, a IA relê a conversa em segundo plano e guarda o que parece
-  duradouro sobre você (seu nome, onde mora, o que gosta, como gosta de
-  receber as respostas). Isso entra automaticamente em todas as respostas
-  seguintes.
+  resposta, a IA relê a conversa em segundo plano e guarda o que
+  parece duradouro sobre você (seu nome, onde mora, o que gosta,
+  como gosta de receber as respostas). Isso entra automaticamente
+  em todas as respostas seguintes.
 
-  Exemplo: se você falar uma vez que mora em Recife e gosta de God of War,
-  depois basta perguntar "qual o melhor jogo da saga que eu gosto?" que ela
-  já sabe de qual saga você está falando.
+  Exemplo: se você falar uma vez que mora em Recife e gosta de
+  God of War, depois basta perguntar "qual o melhor jogo da saga
+  que eu gosto?" que ela já sabe de qual saga você está falando.
 
-  Detalhes que combinam com o jeito "cérebro de verdade":
-    - a IA nunca pergunta nada e nunca avisa que guardou (nem na conversa,
-      nem em mensagem escondida);
-    - ela também usa os assuntos de conversas anteriores como contexto,
-      também sem comentar nada;
+  Detalhes:
+    - a IA nunca pergunta nada e nunca avisa que guardou;
+    - ela também usa os assuntos de conversas anteriores como
+      contexto;
     - ela não guarda dados sensíveis (endereço, telefone, documentos,
       senha, saúde, finanças);
-    - você pode conferir e apagar o que quiser na aba "Memória", dentro de
-      Configurações (botão "X" apaga um item, "Apagar tudo" apaga todos).
-
-"Apagar uma conversa apaga o que a IA sabe de mim?"
-  Não. São duas coisas separadas de propósito:
-    - a CONVERSA é o histórico do que foi perguntado (aparece em "Conversas");
-    - a MEMÓRIA é o que a IA aprendeu sobre você.
-  Ao excluir uma conversa, o programa até avisa isso. Dá para limpar todo
-  o histórico de perguntas e continuar com a IA conhecendo você. E se
-  quiser zerar a memória também, é só usar a aba "Memória" > "Apagar tudo".
+    - você pode conferir e apagar o que quiser na aba "Memória",
+      dentro de Configurações.
 
 "Onde ficam essas coisas?"
   Só no seu usuário do Windows, em:
@@ -268,40 +228,32 @@ Atalhos de teclado:
   responder, como sempre).
 
 "Preciso falar a pergunta?"
-  Sim. Tem um botão de microfone ao lado do botão de enviar (ou Ctrl+M).
-  Clique para gravar, clique de novo para parar. O que você falou aparece
-  escrito na caixa de digitar para você conferir antes de enviar. Usa a
-  sua chave do Gemini de sempre, sem conta nova e sem baixar nada.
-  A gravação para sozinha depois de 2 minutos.
+  Não, mas tem um botão de microfone se preferir. Clique para gravar,
+  clique de novo para parar. O que você falou aparece escrito na
+  caixa de digitar para você conferir antes de enviar.
 
 "Como faço para ver imagens?"
-  Escreva o pedido começando por "imagens de..." ou "fotos de...". Por
-  exemplo:  imagens de god of war   ou   fotos de lobos.
-  Aparecem várias imagens na conversa. Clique em uma para ela ampliar
-  na própria conversa e use "Salvar como..." para guardar no
-  computador. A busca de imagens também é gratuita e não precisa da
-  chave.
+  Escreva o pedido começando por "imagens de..." ou "fotos de...".
+  Por exemplo:  imagens de god of war   ou   fotos de lobos.
+  Aparecem várias imagens na conversa. Clique em uma para ampliar
+  e usar as setas do teclado (ou os botões) para passar de uma para
+  outra. Use "Salvar como..." para guardar no computador.
 
 "E se o Gemini não responder?"
-  Existe um "plano B" opcional. Se o Gemini estiver fora do ar ou você
-  tiver batido no limite do dia, o programa tenta automaticamente outros
-  dois serviços de IA, também gratuitos e sem cartão:
+  Existe um "plano B" opcional. Se o Gemini estiver fora do ar ou
+  você tiver batido no limite do dia, o programa tenta automaticamente
+  outros dois serviços de IA, também gratuitos e sem cartão:
 
      - Groq        (cerca de 1.000 pedidos por dia)
      - OpenRouter  (cerca de 50 pedidos por dia)
 
-  Para ligar: abra Configurações, role até "Plano B (opcional)", cole a
-  chave de um dos dois (ou dos dois) e clique em Salvar. O botão
+  Para ligar: abra Configurações, role até "Plano B (opcional)", cole
+  a chave de um dos dois (ou dos dois) e clique em Salvar. O botão
   "Testar" confirma na hora se a chave está boa. Se você não colocar
   nenhuma chave aí, o programa continua funcionando exatamente igual.
 
   Quando a resposta vier do plano B, aparece um aviso discretinho
   embaixo: "Resposta gerada pelo plano B: Groq".
-
-  Para pegar a chave: clique em "Como conseguir a chave" ao lado de cada
-  serviço (abre a página oficial). É de graça, feito com login do Google
-  ou do GitHub, e o código começa com "gsk_" (Groq) ou "sk-or-"
-  (OpenRouter).
 
 "Apareceu erro falando da chave"
   Confira se copiou a chave inteira (começa com "AIza" ou "AQ.") e
@@ -319,18 +271,15 @@ Atalhos de teclado:
   depois pede a resposta para a IA. Costuma levar de 10 a 30 segundos.
 
 "A chave do Google parou de funcionar"
-  Acontece sem aviso: o Google começa a recusar uma chave que funcionava
-  ontem. Aí o programa abre uma janelinha explicando, com dois botões:
-    - "Criar chave nova": abre a página do Google no navegador;
-    - "Colar chave nova": abre as Configurações já na aba certaina.
+  Acontece sem aviso. O programa abre uma janela explicando, com
+  dois botões: "Criar chave nova" (abre a página do Google) e
+  "Colar chave nova" (abre as Configurações já na aba certa).
 
-  Tem uma rede de segurança melhor: na aba Chave das Configurações existe
-  o campo "Chave reserva (opcional)". Cole ali uma segunda chave (é só
-  criar outra de graça na mesma página do Google). Se um dia a chave
-  principal for recusada, o programa usa a reserva sozinho e avisa embaixo
-  da conversa: "A chave principal do Google parou de valer. Estou usando a
-  chave reserva." Você nem percebe. A troca vale enquanto o programa
-  estiver aberto; no dia seguinte ele tenta a principal de novo.
+  Tem uma rede de segurança melhor: na aba Chave das Configurações
+  existe o campo "Chave reserva (opcional)". Cole ali uma segunda
+  chave (é só criar outra de graça na mesma página do Google). Se
+  um dia a chave principal for recusada, o programa usa a reserva
+  sozinho. A troca vale enquanto o programa estiver aberto.
 
 "A chave fica salva onde?"
   Fica salva apenas no seu usuário do Windows, no arquivo:
@@ -339,140 +288,41 @@ Atalhos de teclado:
 
 
 ========================================================
- O QUE SÃO ESTES ARQUIVOS (para curiosidade)
+  O QUE SÃO ESTES ARQUIVOS (para curiosidade)
 ========================================================
 
-  Pesquisa IA.exe     -> versão pronta (o arquivo que fica na Área de
-                         Trabalho). Não precisa do Python instalado.
-  icone.ico           -> o ícone do programa (o mesmo "rosto" que a IA
-                         mostra na conversa).
-  avatar_usuario.png  -> o seu avatar, que aparece ao lado das suas
-                         perguntas no lugar do "Você". Para trocar, é só
-                         substituir este arquivo por outra imagem (png,
-                         jpg ou webp) com o mesmo nome.
-  PLANO-B.txt         -> guia do "plano B" (a reserva para quando o
-                         Gemini não responde). Opcional.
-  pesquisa_ia.py      -> o programa em si (código-fonte).
-  requirements.txt    -> a lista do que ele precisa baixar.
-  1 - Instalar.bat    -> instala o que falta (rodar uma vez).
+  Pesquisa IA Tela Nova.exe -> versão pronta (o arquivo que fica na
+                             Área de Trabalho). Não precisa do
+                             Python instalado.
+  icone.ico                -> o ícone do programa.
+  avatar_usuario.png       -> o seu avatar, que aparece ao lado das
+                             suas perguntas. Para trocar, substitua
+                             este arquivo por outra imagem (png, jpg
+                             ou webp) com o mesmo nome.
+  pesquisa_ia.py           -> o motor do programa (código-fonte).
+  memoria.py               -> a memória com datas.
+  voz.py                   -> o microfone e a transcrição.
+  app_web.py               -> a tela em HTML (ponte com o Python).
+  web/index.html           -> a estrutura da tela.
+  web/app.js               -> o que a tela faz.
+  web/estilo.css           -> o desenho da tela (sempre escura).
+  fazer_backup.py          -> backup dentro do programa.
+  Gerar o EXE.bat          -> gera o .exe (só precisa rodar se mexer
+                             no código).
+  requirements.txt         -> a lista do que o programa precisa.
+  1 - Instalar.bat         -> instala o que falta (rodar uma vez).
   2 - Abrir Pesquisa IA.bat -> abre o programa pelo código-fonte.
-  LEIA-ME.txt         -> este texto.
-  .venv               -> pasta com as bibliotecas baixadas (não apague).
-  erro.log            -> só aparece se o programa falhar ao abrir.
+  verificar.bat            -> confere se o programa continua inteiro
+                             depois de uma alteração. Tem que terminar
+                             com "TUDO CERTO".
+  4 - Fazer backup.bat     -> cópia de segurança dos dados do programa.
+  9 - Fazer backup dos meus dados.bat -> cópia de segurança das SUAS
+                             coisas (conversas, memória e chaves).
+  10 - Trocar para modelo gratis.bat -> troca o modelo de IA.
+  LEIA-ME.txt              -> este texto.
+  .venv                    -> pasta com as bibliotecas baixadas
+                             (não apague).
+  erro.log                 -> só aparece se o programa falhar ao abrir.
 
 Se algo der errado, mande o conteúdo do arquivo erro.log (se existir)
 para quem te ajudou.
-
-
-
-
-========================================================
- ATUALIZAÇÃO DE 14/10/2026 - NOVA PASTA E NOVOS ARQUIVOS
-========================================================
-
-O projeto agora mora em:   D:\Projetos\PesquisaIA
-
-Em 16/10/2026 o projeto foi do disco C: para o disco D:, porque o C: estava
-quase cheio. A cópia antiga ficou em "C:\Projetos\PesquisaIA" com um aviso
-dentro dela — e pode ser apagada quando você quiser.
-
-Arquivos novos:
-  8 - Gerar o EXE da tela nova.bat -> é ESTE que você usa hoje: gera o
-                              "Pesquisa IA Tela Nova.exe" (o da sua mesa).
-  5 - Ver a tela nova.bat  -> abre a tela nova no MODO EXEMPLO: ela só
-                              mostra, não mexe nas suas conversas, na sua
-                              memória nem nas suas chaves. Serve para ver
-                              como ela está sem arriscar nada.
-  6 - Falar com a tela nova.bat -> a tela nova no modo exemplo, mas com o
-                              MICROFONE de verdade (para testar o som).
-  7 - Usar a tela nova de verdade.bat -> a tela nova com os SEUS dados.
-                              É o mesmo que abrir o .exe da mesa.
-  verificar.bat            -> confere se o programa continua inteiro depois
-                              de uma alteração. Tem que terminar com
-                              "TUDO CERTO".
-  9 - Fazer backup dos meus dados.bat -> copia de segurança das SUAS
-                              coisas (conversas, memória e chaves) num
-                              .zip dentro da pasta "Backup Pesquisa IA" do
-                              seu OneDrive. Só lê e copia, não muda nada.
-                              As cópias com mais de 15 dias são apagadas
-                              sozinhas.
-
-O PROGRAMA ANTIGO FOI APOSENTADO em 16/10/2026
-------------------------------------------------
-O "Pesquisa IA.exe" (o de janela cinza, em tkinter) saiu da sua Área de
-Trabalho. A tela nova ganhou até a última coisa que faltava nele (a
-galeria de imagens), e a partir daí o Wolf passou a usar só a nova.
-
-Ele NÃO foi apagado: está na pasta "_arquivo_morto" do projeto, com
-"ANTIGO (tkinter)" no nome. Para voltar a usar, é só copiar de lá para
-a Área de Trabalho.
-
-Por que o motor NÃO foi junto: o arquivo `pesquisa_ia.py` é o cérebro dos
-DOIS programas. A tela velha foi embora, mas o cérebro continua, e é ele
-que faz a sua memória, a pesquisa na web e a conversa. Por isso os testes
-continuam todos — eles são a rede de segurança do programa que você usa.
-
-Arquivos novos:
-  verificar.bat            -> confere se o programa continua inteiro depois
-                              de uma alteração. Tem que terminar com
-                              "TUDO CERTO".
-  3 - Gerar EXE.bat        -> gera o "Pesquisa IA.exe" novo na pasta "dist".
-                              Depois copie para a Área de Trabalho.
-  5 - Ver a tela nova.bat  -> abre a TELA NOVA (que ainda esta em
-                              construcao) no segundo monitor, para voce ver
-                              como ela vai ficar. Ela so LE: nao mexe nas
-                              suas conversas, na sua memoria nem nas suas
-                              chaves, e as conversas mostradas sao de
-                              exemplo. Para voltar ao programa de sempre,
-                              abra o atalho "Pesquisa IA" da Area de Trabalho.
-  6 - Falar com a tela nova.bat -> a MESMA tela nova, mas para TESTAR O
-                               MICROFONE: ele usa o microfone de verdade
-                               e a IA responde, e mesmo assim NAO salva
-                               nenhuma conversa sua nem mexe na sua
-                               memoria. Clique no botão do microfone (ou
-                               aperte Ctrl+M) para gravar e clique de novo
-                               para parar; o que voce falou aparece na
-                               caixa de digitar para voce conferir antes
-                               de enviar.
-  7 - Usar a tela nova de verdade.bat -> a tela nova NAO mais em modo
-                               exemplo: ela abre com as SUAS conversas de
-                               verdade e salva no mesmo lugar que o
-                               programa de sempre (a barra da esquerda
-                               mostra as duas iguais). Use enquanto ela
-                               esta em construcao e quiser ver como fica
-                               com os seus dados. Se algo parecer errado,
-                               e so fechar: o programa de sempre nao muda.
-  9 - Fazer backup dos meus dados.bat -> copia de segurança das SUAS
-                              coisas (conversas, memória e chaves) num
-                              .zip dentro da pasta "Backup Pesquisa IA" do
-                              seu OneDrive. O "4 - Fazer backup.bat" cuida
-                              do CÓDIGO; este cuida do que não dá para
-                              refazer. Só lê e copia, não muda nada, pode
-                              rodar com o programa aberto. As cópias com
-                              mais de 15 dias são apagadas sozinhas. Vale
-                              a pena rodar depois de cada coisa grande que
-                              o programa ganhar. Para recuperar: abra o
-                              .zip, tire os arquivos e copie para
-                              C:\Users\Igor\AppData\Local\PesquisaIA
-                              (pasta escondida: digite o caminho na barra
-                              de endereço do Explorer).
-  4 - Fazer backup.bat      -> cópia de segurança: salva o código e todo o
-                              histórico do Git num .zip dentro da pasta
-                              "Backup Pesquisa IA" do seu OneDrive (que vai
-                              para a nuvem). Vale a pena rodar de tempos em
-                              tempos (por exemplo, todo fim de semana, ou
-                              depois de cada coisa grande que o programa
-                              ganhar). Se um dia este computador queimar ou a
-                              pasta for apagada, é só descompactar o .zip e o
-                              programa volta inteiro.
-  INSTRUCOES-PARA-IA.md,
-  PASSO-A-PASSO.md,
-  HISTORICO-DE-MUDANCAS.md -> guias para a IA que programa seguir.
-  PROMPT-PARA-A-IA.md      -> texto pronto para colar na IA.
-  requirements-dev.txt     -> ferramentas só para quem mexe no código.
-  _arquivo_morto           -> coisas antigas guardadas por segurança.
-
-IMPORTANTE: o atalho da Área de Trabalho é o próprio "Pesquisa IA.exe".
-Uma correção no código só aparece nele depois de rodar
-"3 - Gerar EXE.bat" e copiar o .exe novo. Já o
-"2 - Abrir Pesquisa IA.bat" abre direto o código atual.
