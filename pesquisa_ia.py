@@ -2445,6 +2445,74 @@ def _tela_virtual():
     return 0, 0, 1920, 1080
 
 
+_MONITORINFO = None
+
+
+def _tela_do_widget(widget):
+    """O monitor em que esta o widget: (x, y, largura, altura).
+
+    Com dois monitores, o "centro da tela" e o centro do monitor onde a
+    janela esta — e nao o centro da tela toda, que seria uma posicao
+    sem sentido.
+    """
+    global _MONITORINFO
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        if _MONITORINFO is None:
+            class MONITORINFO(ctypes.Structure):
+                _fields_ = [
+                    ("cbSize", wintypes.DWORD),
+                    ("rcMonitor", wintypes.RECT),
+                    ("rcWork", wintypes.RECT),
+                    ("dwFlags", wintypes.DWORD),
+                ]
+            _MONITORINFO = MONITORINFO
+        hwnd = ctypes.windll.user32.GetAncestor(widget.winfo_id(), 2)
+        monitor = ctypes.windll.user32.MonitorFromWindow(hwnd, 2)
+        info = _MONITORINFO()
+        info.cbSize = ctypes.sizeof(info)
+        ctypes.windll.user32.GetMonitorInfoW(monitor, ctypes.byref(info))
+        r = info.rcMonitor
+        return int(r.left), int(r.top), int(r.right - r.left), int(r.bottom - r.top)
+    except Exception:
+        return _tela_virtual()
+
+
+
+def _centralizar_sobre(janela, pai):
+    """Coloca `janela` no centro de `pai`, no monitor em que `pai` estiver.
+
+    Pedido do Wolf: as janelas do programa tem que abrir JUNTO com ele,
+    onde quer que ele esteja. Sem isto o Windows abre onde lhe aprouver
+    (num computador com dois monitores, a janela de Configuracoes
+    aparecia no monitor principal mesmo com o programa no segundo).
+
+    Tambem impede que a janela saia da tela: se o programa estiver perto
+    da borda do monitor, a janelinha e puxada para dentro em vez de
+    sumir pela beira.
+    """
+    try:
+        janela.update_idletasks()
+        largura, altura = janela.winfo_width(), janela.winfo_height()
+        if largura <= 1:
+            largura = janela.winfo_reqwidth()
+        if altura <= 1:
+            altura = janela.winfo_reqheight()
+        if largura <= 1 or altura <= 1:
+            return False
+        x = pai.winfo_rootx() + (pai.winfo_width() - largura) // 2
+        y = pai.winfo_rooty() + (pai.winfo_height() - altura) // 2
+        mx, my, mw, mh = _tela_do_widget(pai)
+        x = max(mx, min(x, mx + mw - largura))
+        y = max(my, min(y, my + mh - altura))
+        janela.geometry("+%d+%d" % (x, y))
+        return True
+    except Exception:
+        return False
+
+
 def _deixar_dialogo_do_sistema_escuro(raiz, segundos=10):
     """Tenta deixar escura a janela de escolher arquivo do Windows.
 
@@ -2595,12 +2663,15 @@ def _dialogo_escuro(pai, titulo, texto, botoes=("Ok",), destaque=0,
     pop.update_idletasks()
     largura = pop.winfo_width()
     altura = pop.winfo_height()
-    try:
-        centro_x = pai.winfo_rootx() + (pai.winfo_width() - largura) // 2
-        centro_y = pai.winfo_rooty() + (pai.winfo_height() - altura) // 2
-    except Exception:
-        centro_x = centro_y = 200
-    pop.geometry("+%d+%d" % (centro_x, centro_y))
+    # Pedido do Wolf: a janelinha abre no centro do programa, no monitor
+    # em que ele estiver (e nunca pela beira da tela).
+    if not _centralizar_sobre(pop, pai):
+        try:
+            centro_x = pai.winfo_rootx() + (pai.winfo_width() - largura) // 2
+            centro_y = pai.winfo_rooty() + (pai.winfo_height() - altura) // 2
+            pop.geometry("+%d+%d" % (centro_x, centro_y))
+        except Exception:
+            pass
     if not plain:
         try:
             pop.grab_set()
@@ -5330,6 +5401,11 @@ class Aplicativo:
         jan.geometry("760x800")
         jan.minsize(600, 620)
         jan.transient(self.raiz)
+        # Pedido do Wolf: a janela de Configurações abre JUNTO com o
+        # programa, no monitor em que ele estiver. Sem isto o Windows
+        # escolhe o lugar, e num computador com dois monitores ela
+        # aparecia no principal mesmo com o programa no segundo.
+        jan.after(60, lambda: _centralizar_sobre(jan, self.raiz))
         jan.after(150, lambda: ativar_barra_escura(jan))
 
         # ---- barra de abas no topo ----

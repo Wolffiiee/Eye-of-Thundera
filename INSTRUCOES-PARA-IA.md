@@ -40,6 +40,38 @@ trabalhando.
 - Para abrir o `.exe`: o PyInstaller sobe um processo filho, então o
   `MainWindowHandle` do processo iniciado fica vazio. procure a janela pelo
   TÍTULO ("Pesquisa IA") em todos os processos e mova com `SetWindowPos`.
+- Isso vale para o **teste**; no **programa pronto** as janelas seguem o
+  app (ver `_centralizar_sobre`).
+
+## Teste nenhum pode abrir janela MODAL (15/10/2026)
+
+Janela modal é a de confirmação (o `_dialogo_escuro` com `grab_set()` e
+`wait_window`): ela **segura o programa inteiro até alguém responder**. Num
+teste automático **ninguém responde**, então a verificação trava ali.
+
+O que aconteceu de verdade: um teste novo clicou no "Apagar tudo" da aba
+Memória (que abre confirmação antes de apagar). Resultado: **8 minutos de
+espera e 110 testes que nunca chegaram a rodar** — inclusive todos os da
+tela nova. Pior: a tela mostrava "OK" nas primeiras linhas, então parecia
+que estava tudo bem. Só olhando o **total** de testes e o tempo se nota.
+
+**Como verificar "apagou e a lista continua igual"** sem travar: chame a
+ação **direto**, sem passar pelo botão que abre a confirmação.
+
+**Como saber se a verificação rodou tudo** (confira as três):
+1. a última linha é `TUDO CERTO`;
+2. o total de `[OK]` bate com o de sempre (hoje ~204);
+3. o tempo ficou perto de **95 segundos** — muito mais que isso travou.
+
+## Coisas que custaram tempo (para não repetir)
+- **Nada que leia arquivo pode rodar em evento disparado por centenas de
+  widgets.** A rolagem da memória relê o `memoria.json` a cada evento;
+  mandar a roda do mouse em todos os widgets da janela virou centenas de
+  leituras de disco (minutos). Teste em **poucos** widgets.- **A janela de Configurações leva 5 a 8 s para montar** nesta máquina.
+  Não abra várias vezes no mesmo teste: abra uma e prove o resto com
+  funções soltas (`_centralizar_sobre`, `_acompanhar_largura`).
+- **A verificação pula as seções seguintes se já houve FALHA** (`if not
+  falhas:`). Um teste ruim seu esconde os testes que vêm depois.
 
 ## Regras de trabalho (obrigatórias)
 0. **Nenhuma janela branca, nunca.** Todo aviso, pergunta, confirmação e

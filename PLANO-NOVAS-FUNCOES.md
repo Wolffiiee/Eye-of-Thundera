@@ -5,6 +5,51 @@ código e de ver a tela do programa. Salve este arquivo na pasta do projeto
 (`C:\Projetos\PesquisaIA`) e siga na ordem. O Wolf não programa: explique tudo
 em português simples.
 
+## META (decidido pelo Wolf em 15/10/2026): TUDO EM HTML NO FINAL
+
+O programa de hoje é feito com o Tk (tkinter), que é de 2000 e tem
+limites sem conserto: **só desenha emoji de uma cor**, a seleção de
+texto fica estranha, e cada ícone precisa ser desenhado à mão. Por isso
+a tela está sendo reescrita em **HTML** (uma página de navegador dentro
+de uma janela do Windows, via `pywebview`).
+
+**Quando acabarem os 8 passos, TODA a tela do Pesquisa IA é HTML.** Não
+fica nenhum pedaço de interface no Tk. Pedido do Wolf: "faça com que
+seja, para que seja mais fácil de trabalhar". Faz sentido: em HTML é
+muito mais fácil de mudar,ixa e deixar bonito.
+
+### O que passa a ser HTML (100%)
+- Janela principal: bolhas, caixa de digitar, barra lateral, lista de
+  conversas, microfone, modo "Web".
+- **Janela de Configurações com as 4 abas** (Memória, Conversa, Chaves,
+  Ajuda) — passo 5.
+- Janelinhas de aviso e confirmação (já desenhadas por nós, sem as
+  brancas do Windows).
+- Menu do botão direito, corretor ortográfico, avisos de status.
+
+### O que continua em Python (e é o certo)
+O `pesquisa_ia.py` **não é apagado**: ele vira o **motor**, e a tela
+HTML passa a ser a **cara**. A tela nova já importa esse arquivo e usa
+o que ele tem de melhor (chamar a IA, pesquisar na web, trocar de
+chave, traduzir erro, aprender sobre o usuário, gravar a conversa).
+Continua em Python porque é o que sabe fazer:
+- falar com o Google (e com os serviços de reserva);
+- pesquisar na web;
+- ler e gravar os arquivos do Wolf (conversas, memória, chaves);
+- ouvir o microfone.
+
+### As únicas coisas que continuam sendo do Windows (e tudo bem)
+- **A moldura da janela** (a barra de título com fechar/minimizar). A
+  barra já é escura.
+- **A janela de "Salvar como..."**, que é do próprio Windows (e já é
+  aberta escura pelo que o código faz).
+
+### Como a troca acontece (sem ficar sem programa)
+A tela nova nasce **ao lado** da antiga, nunca no lugar dela. O atalho
+da Área de Trabalho continua no programa de Tk até a tela nova ficar
+igual ou melhor. No fim, o `pesquisa_ia.py` deixa de ser a interface e
+passa a ser só o motor — que já é como ele funciona hoje.
+
 ## 0. Regras que valem para tudo
 - Leia antes: INSTRUCOES-PARA-IA.md, PASSO-A-PASSO.md, HISTORICO-DE-MUDANCAS.md,
   PROXIMOS-PASSOS.md. Siga o método deles (causa primeiro, mudança pequena,
