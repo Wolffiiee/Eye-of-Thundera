@@ -8,7 +8,7 @@ Quem pede as mudanças (o Wolf) não programa. O trabalho tem que vir
 pronto, testado e explicado em português simples.
 
 ## Onde fica o projeto
-`C:\Projetos\PesquisaIA`  (desde 14/10/2026; antes ficava no OneDrive).
+`D:\Projetos\PesquisaIA`  (desde 14/10/2026; antes ficava no OneDrive).
 Não trabalhe na pasta antiga "Projeto Padrão (ANTIGO - pode apagar)".
 
 ## O projeto em uma frase

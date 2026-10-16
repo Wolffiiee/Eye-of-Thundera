@@ -5,7 +5,7 @@ Atualizado em 15/10/2026 (depois das Tarefas A, B e C do
 Claude em outra conversa): leia isto depois do PASSO-A-PASSO.md.
 
 ## Onde as coisas estão agora
-- Projeto oficial: `C:\Projetos\PesquisaIA` (única pasta de trabalho).
+- Projeto oficial: `D:\Projetos\PesquisaIA` (única pasta de trabalho).
 - Pasta antiga do OneDrive (`Documentos\Projeto Padrão`): o conteúdo foi
   apagado em 15/10/2026. Pode sobrar uma pasta VAZIA, travada por algum
   programa; ignore e não use. O Wolf pode apagá-la à mão depois de reiniciar

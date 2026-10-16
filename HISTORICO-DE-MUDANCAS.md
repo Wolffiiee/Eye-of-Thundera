@@ -1482,7 +1482,7 @@ arbitrário, então o texto não preenchia a janela e sobrava vão vazio.
 
 ### Local do projeto
 - **Movido** de `C:\Users\Igor\OneDrive\Documentos\Projeto Padrão`
-  para `C:\Projetos\PesquisaIA`.
+  para `D:\Projetos\PesquisaIA`.
   Motivos: o OneDrive sincronizava a pasta `.venv` (centenas de arquivos,
   lento e pode corromper) e o nome antigo tinha acento (`ã`), que já
   causava texto quebrado em scripts.
@@ -1547,7 +1547,7 @@ foram instaladas junto; não precisam ser listadas.
 ### Substituído fora do projeto
 - `Pesquisa IA.exe` na Área de Trabalho (em
   `C:\Users\Igor\OneDrive\Área de Trabalho`) pelo novo, gerado em
-  `C:\Projetos\PesquisaIA\dist`.
+  `D:\Projetos\PesquisaIA\dist`.
 
 ### Não mexido
 - `%LOCALAPPDATA%\PesquisaIA\` (conversas, memória, chaves do Wolf).

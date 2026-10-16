@@ -2,7 +2,7 @@
 
 Para a IA que programa. Escrito pelo Claude em 15/10/2026, depois de ler o
 código e de ver a tela do programa. Salve este arquivo na pasta do projeto
-(`C:\Projetos\PesquisaIA`) e siga na ordem. O Wolf não programa: explique tudo
+(`D:\Projetos\PesquisaIA`) e siga na ordem. O Wolf não programa: explique tudo
 em português simples.
 
 ## META (decidido pelo Wolf em 15/10/2026): TUDO EM HTML NO FINAL

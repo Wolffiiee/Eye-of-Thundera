@@ -11,7 +11,7 @@ jargão.
 
 ONDE ESTÁ O PROJETO
 A ÚNICA pasta oficial é:
-    C:\Projetos\PesquisaIA
+    D:\Projetos\PesquisaIA
 A pasta antiga do OneDrive ("Documentos\Projeto Padrão") foi apagada em
 15/10/2026. Se aparecer uma pasta vazia com esse nome, ignore: NÃO trabalhe
 nela.
