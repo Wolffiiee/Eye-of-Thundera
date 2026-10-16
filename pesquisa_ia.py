@@ -1573,10 +1573,16 @@ id_atual=None, consulta=None, profundo=False,
     avisar("Procurando na web")
     resultados = _buscar_texto(busca)
     noticias = _buscar_noticias(busca) if _quer_noticias(busca) else []
-    # Pesquisa profunda: fonte extra com variação da busca, sem gastar IA.
+    # Pesquisa profunda: varias queries (sem gastar IA) para cobrir
+    # mais fontes. As variacoes sao simples e baratas.
     if profundo:
-        for _q in ((busca or "") + " noticias",
-                   (busca or "") + " informacoes"):
+        _variacoes = (
+            (busca or ""),
+            (busca or "") + " principais",
+            (busca or "") + " atual",
+            (busca or "") + " detalhes",
+        )
+        for _q in _variacoes:
             try:
                 _extra = _buscar_texto(_q)
                 vistos = {(i.get("href") or i.get("url") or "").strip()
@@ -1588,6 +1594,7 @@ id_atual=None, consulta=None, profundo=False,
                         (resultados or []).append(item)
             except Exception:
                 pass
+
 
     blocos = []
     for indice, item in enumerate(resultados, 1):
@@ -1620,7 +1627,7 @@ id_atual=None, consulta=None, profundo=False,
     # Tenta pegar o texto completo das páginas mais relevantes (melhora muito
     # a qualidade, principalmente em notícias).
     avisar("Lendo as páginas encontradas")
-    conteudos = _conteudo_das_paginas(resultados, quantidade=(8 if profundo else 4))
+    conteudos = _conteudo_das_paginas(resultados, quantidade=(12 if profundo else 4))
     blocos.extend("PÁGINA COMPLETA:\n%s" % texto for texto in conteudos)
 
     if blocos:
