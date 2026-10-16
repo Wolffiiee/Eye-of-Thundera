@@ -1,15 +1,10 @@
 @echo off
 rem ================================================================
-rem  GERAR O .EXE DA TELA NOVA — ESTE E' O PROGRAMA DE HOJE.
+rem  GERAR O .EXE — ESTE E' O PROGRAMA DE HOJE.
 rem
 rem  Isto cria o "Pesquisa IA Tela Nova.exe": a tela em HTML, num
 rem  arquivo so, que roda sem o Python instalado. E' o programa que
 rem  esta na sua Area de Trabalho.
-rem
-rem  Desde 16/10/2026 este e' o UNICO .exe que o OC gera. O programa
-rem  antigo (o de janela cinza, em tkinter) foi aposentado depois que
-rem  a tela nova ganhou a galeria de imagens — a ultima coisa que
-rem  faltava nele. O antigo continua guardado em "_arquivo_morto".
 rem
 rem  So e preciso rodar isto se mexermos no codigo da tela nova.
 rem ================================================================
@@ -32,7 +27,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [2/2] Gerando o .exe da tela nova (leva alguns minutos)...
+echo [2/2] Gerando o .exe (leva alguns minutos)...
 ".venv\Scripts\python.exe" -m PyInstaller --noconfirm --clean "Pesquisa IA Tela Nova.spec"
 if errorlevel 1 (
     echo O PyInstaller falhou. Veja as mensagens acima.
@@ -44,7 +39,6 @@ echo.
 echo Pronto! O arquivo novo esta em:
 echo     dist\Pesquisa IA Tela Nova.exe
 echo.
-echo Copie para a Area de Trabalho, ao lado do programa de sempre
-echo (NAO no lugar dele: os dois convivem).
+echo Copie para a Area de Trabalho.
 echo.
 pause
