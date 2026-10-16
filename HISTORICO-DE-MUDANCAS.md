@@ -5,6 +5,59 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Apelido nao e invencao, e o log de erro agora e' real
+
+Duas correcoes vindas do feedback do Wolf.
+
+### 1. "Imortal" e' o apelido do Grêmio — eu tinha errado
+
+A resposta sobre o proximo jogo do Gremio falou em "Imortal" e eu achei
+que era invencao (o nome perguntado era Gremio). **Errado: "Imortal" e'
+apelido do mesmo time.** A regra que escrevi ("use ESSE nome, nao troque
+por outro parecido") estava partindo de um diagnostico errado e ainda
+podia atrapalhar. Reescrita:
+
+> "- Responda exatamente sobre o que foi perguntado. Se a pergunta citar
+> um time, uma pessoa ou um produto pelo nome, fale DELE, nao de outro
+> parecido. Pode usar o apelido se for o mesmo (Grêmio, por exemplo, também
+> é chamado de Imortal e Tricolor)."
+
+As outras duas regras (nao inventar palavras de outros idiomas e nao
+terminar perguntando de volta) continuam: elas continuam corretas.
+
+**Licao:** antes de "consertar" uma resposta, confirmar se ela estava
+errada mesmo. Aqui a IA estava certa e a regra nova seria o defeito.
+
+### 2. `registrar_erro` nao existia — o conserto nao consertava nada
+
+Para a tela nova deixar rastro de erro (o crash ao arrastar), foi
+chamado `pesquisa_ia.registrar_erro(...)`. **A funcao nao existia nesse
+escopo**: ela era uma funcao *dentro* do `main` do tkinter. O `pyflakes`
+nao acusou nada, e o `try/except` em volta teria engolido o erro em
+silencio — o log nunca apareceria.
+
+So apareceu porque o registro foi **testado de verdade**: gravar um erro
+de mentira num arquivo de teste e conferir que o arquivo foi criado. E
+foi assim que o defeito apareceu.
+
+- **`pesquisa_ia.registrar_erro(onde, erro)` subiu para o nivel do
+  modulo**, agora compartilhada: o `main` do tkinter e a tela nova usam
+  a mesma. Testado: grava mesmo, e nunca levanta erro.
+
+### 3. O crash ao arrastar e' do WebView2 (nao nosso)
+
+Confirmado na documentacao do proprio WebView2: existem varios relatos
+de **"WebView2 crash OnWindowPositionChanged"** e **"Access violation
+after rapid resize"**. O que o Wolf viu bate: **as vezes**, **so
+arrastando** (maximizar nao cai) e **so no modo real**. E' o navegador
+dentro da janela, nao o nosso codigo.
+
+**Nada se perde quando acontece:** cada resposta e' gravada assim que
+chega, antes de aparecer na tela. Se a janela cair, so se perde o que
+estava sendo escrito no exato instante.
+
+Verificação: `TUDO CERTO`, **262 testes, 0 falhas** (36 s).
+
 ## 2026-10-16 — A IA respondia com invenção depois de pesquisar
 
 Com o defeito do prazo corrigido, a pesquisa passou a funcionar de

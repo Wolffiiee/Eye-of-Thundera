@@ -151,8 +151,9 @@ INSTRUCOES = (
     "dos trechos.\n"
     "- Nunca invente números, datas ou fatos.\n"
     "- Responda exatamente sobre o que foi perguntado. Se a pergunta citar "
-    "um time, uma pessoa ou um produto pelo nome, use ESSE nome: não troque "
-    "por outro parecido.\n"
+    "um time, uma pessoa ou um produto pelo nome, fale DELE, não de outro "
+    "parecido. Pode usar o apelido se for o mesmo (Grêmio, por exemplo, "
+    "também é chamado de Imortal e Tricolor).\n"
     "- Nunca invente palavras de outros idiomas e não pergunte ao usuário se "
     "elas significam algo. Escreva a frase normalmente em português.\n"
     "- Não termine fazendo perguntas de volta para quem perguntou: "
@@ -3127,6 +3128,25 @@ def tentar_com_reserva(chamar, cfg, estado):
                 raise
             estado["falhou"] = True
     raise RuntimeError("não foi possível falar com a IA")
+
+
+def registrar_erro(onde, erro):
+    """Grava um erro no erro.log, sem nunca levantar erro ela mesma.
+
+    Fica no nivel do modulo (e nao dentro do `main` do tkinter) para que
+    a tela nova em HTML tambem possa usar: em 16/10/2026 o Wolf viu a tela
+    fechar sem deixar rastro nenhum, porque a tela nova engolia tudo em
+    silencio.
+    """
+    try:
+        ARQUIVO_ERRO.parent.mkdir(parents=True, exist_ok=True)
+        with ARQUIVO_ERRO.open("a", encoding="utf-8") as arquivo:
+            arquivo.write(
+                "\n===== %s | %s =====\n%s\n"
+                % (time.strftime("%d/%m/%Y %H:%M:%S"), onde, erro)
+            )
+    except Exception:
+        pass
 
 
 class Aplicativo:
@@ -6750,17 +6770,10 @@ def main():
 
     # No programa compilado (sem janela preta) qualquer erro ficaria
     # escondido. Aqui tudo que der errado e guardado no erro.log, para
-    # poder ser lido e mandado para quem ajuda.
+    # poder ser lido e mandado para quem ajuda. A funcao `registrar_erro`
+    # e' a do modulo (acima), compartilhada com a tela nova.
     def registrar_erro(onde, erro):
-        try:
-            ARQUIVO_ERRO.parent.mkdir(parents=True, exist_ok=True)
-            with ARQUIVO_ERRO.open("a", encoding="utf-8") as arquivo:
-                arquivo.write(
-                    "\n===== %s | %s =====\n%s\n"
-                    % (time.strftime("%d/%m/%Y %H:%M:%S"), onde, erro)
-                )
-        except Exception:
-            pass
+        globals()["registrar_erro"](onde, erro)
 
     def ao_falhar(tipo, valor, tb):
         registrar_erro("erro na tela", "".join(
