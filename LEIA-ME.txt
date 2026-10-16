@@ -1,328 +1,54 @@
-﻿========================================================
-  EYE OF THUNDERA - seu assistente pessoal de pesquisa na web
-========================================================
-
-ATUALIZADO EM 16/10/2026
--------------------------
-O programa se chama:
-
-      Eye of Thundera.exe
-
-É a tela em HTML (escura, com imagens, com memória). É o único
-programa do projeto. O programa antigo (janela cinza, em tkinter)
-foi aposentado e não está mais na sua Área de Trabalho.
-
-
-O que é isto?
--------------
-É um programinha simples para o seu computador. Você abre uma janela,
-digita uma pergunta e ele:
-  1) pesquisa na web de verdade (inclusive sites estrangeiros), e
-  2) usa uma inteligência artificial (o Gemini, do Google) para ler tudo,
-     traduzir para o português do Brasil e escrever UMA única resposta
-     pronta para você, já organizada e atualizada.
-
-É de graça para uso pessoal e não precisa de cartão de crédito.
-
-
-Atalho pronto na Área de Trabalho:
-----------------------------------
-O programa está na sua Área de Trabalho. É só dar duplo clique nele.
-Nesse caso você NÃO precisa seguir o PASSO 2 abaixo.
-
-
-========================================================
-  PASSO 1 - Pegar a chave da API (gratuita)
-========================================================
-
-A "chave da API" é como uma senha que deixa o programa usar a
-inteligência do Google. É de graça e leva uns 3 minutos.
-
- 1. Abra o navegador (Chrome, Edge, etc.).
-
- 2. Vá para este endereço:
-      https://aistudio.google.com/apikey
-
- 3. Entre com a sua conta Google (a mesma do Gmail).
-
- 4. Aceite os termos, se aparecer.
-
- 5. Clique no botão "Create API key" (ou "Criar chave de API").
-
- 6. Vai aparecer um código comprido. Pode começar com "AIza" ou
-     com "AQ.". Clique no ícone de copiar (ou selecione tudo e
-     aperte Ctrl+C).
-
- 7. Guarde esse código. Ele é a sua chave.
-
- IMPORTANTE: não mande essa chave para ninguém. Quem tiver a chave
- pode usar a sua cota do Google.
-
-
-========================================================
-  PASSO 2 - Abrir o programa
-========================================================
-
- 1. Na pasta onde está este arquivo, ache o arquivo:
-
-      1 - Instalar.bat
-
-    Dê um duplo clique nele. Vai abrir uma janela preta.
-    Espere terminar (ele vai baixar o que o programa precisa).
-    Quando aparecer "Tudo pronto!", aperte qualquer tecla para fechar.
-
-    (Isso só precisa ser feito UMA vez.)
-
- 2. Agora, duplo clique no arquivo:
-
-      2 - Abrir Eye of Thundera.bat
-
-    A janela do programa vai abrir.
-
-
-========================================================
-  PASSO 3 - Usar
-========================================================
-
- 1. Na primeira vez, clique no botão "Configurações" (no alto, à
-    direita). Cole a sua chave no campo (aperte Ctrl+V) e clique em
-    "Salvar".
-
- 2. Clique em "Testar chave" para confirmar que a chave está certa.
-    Se aparecer "Tudo certo", está tudo funcionando.
-
- 3. Digite a sua pergunta na caixa de baixo e aperte a tecla Enter
-    (ou clique no botão azul de enviar).
-
- 4. A resposta aparece na tela, já reunida em um texto único em
-    português, com base nas informações mais atuais da web.
-
- 5. Para ver imagens, escreva o que quer ver. Por exemplo:
-
-      imagens de god of war
-
-    O programa mostra várias imagens na conversa. Clique em uma delas
-    para ampliar e usar as setas do teclado (ou os botões na tela) para
-    passar de uma para outra. Para guardar, use "Salvar como...".
-
-
-Botões do programa (na barra da esquerda):
-
-  - "Nova conversa"    -> limpa a tela para começar do zero.
-  - "Conversas"        -> abre uma lista com as conversas que você
-                         já fez (da mais nova para a mais antiga).
-                         Clica no TÍTULO para abrir. No "⋯" fica a
-                         opção de EXCLUIR.
-  - "Configurações"    -> janela com três abas:
-                         "Chave", "Memória" e "Ajuda".
-
-Para copiar uma resposta, passe o mouse no iconezinho que fica no
-canto de fora do balão da resposta (embaixo dele). Um clique copia
-tudo. Do lado tem um do disquete: um clique abre a janela de
-"Salvar como..." e guarda a resposta num arquivo de texto (.txt).
-Atalho: Ctrl+S salva a última resposta.
-
-Palavras escritas errado aparecem com um sublinhado vermelho. Para
-ver as sugestões, clique com o botão direito na palavra sublinhada.
-
-As conversas ficam salvas no seu computador, na pasta:
-  %LOCALAPPDATA%\EyeOfThundera\historico.json
-O que a IA aprende sobre você fica em:
-  %LOCALAPPDATA%\EyeOfThundera\memoria.json
-Nada é apagado sozinho.
-
-A barra da esquerda pode ser escondida com o botão "Menu" (no alto)
-ou com Ctrl+B. A borda direita da lateral é arrastável para alargar
-ou afinar.
-
-A resposta aparece letra a letra, com um cursor piscando no fim.
-A caixa de digitar mostra um texto de apoio cinza ("Pergunte qualquer
-coisa...") que some quando você começa a digitar.
-
-Clicando com o botão do DIREITO dentro da caixa aparece o menu de
-edição de sempre (Recortar, Copiar, Colar, Selecionar tudo). Se a
-palavra em que você clicou estiver escrita errada, as correções
-aparecem em cima desse menu.
-
-Numa janela muito larga, o programa ocupa no máximo 820 pixels de
-largura e deixa as bordas em branco, para o texto não ficar comprido
-demais.
-
-Falar em vez de digitar:
-
-  Tem um botão de microfone ao lado do botão de enviar (ou Ctrl+M).
-  Clique para gravar, clique de novo para parar.
-
-  - enquanto grava, o botão fica vermelho e o aviso diz que está
-    ouvindo;
-  - a gravação para sozinha depois de 2 minutos;
-  - depois de parar, o que você falou aparece escrito na caixa de
-    digitar, para você conferir e corrigir antes de apertar Enter;
-  - se você só respirou, o programa avisa "Não ouvi nada" e não
-    gasta nenhuma chamada de IA.
-
-Atalhos de teclado:
-
-  - Enter          -> envia a pergunta.
-  - Shift + Enter  -> quebra a linha sem enviar.
-  - F5             -> começa uma conversa nova.
-  - Ctrl + B       -> mostra/esconde a barra da esquerda.
-  - Ctrl + M       -> liga/desliga a gravação do microfone.
-  - Ctrl + A       -> seleciona tudo o que está na caixa de digitar.
-  - Ctrl + Z       -> desfaz o que foi escrito.
-  - Ctrl + Y       -> refaz.
-  - Ctrl + S       -> salva a última resposta num arquivo de texto (.txt).
-  - Ctrl + D       -> "Resumo do dia" (o que a IA aprendeu sobre você).
-
-
-========================================================
-  PERGUNTAS COMUNS
-========================================================
-
-"É grátis mesmo?"
-  Sim. A chave do Google (Gemini) é gratuita, e a busca na web o
-  próprio programa faz de graça (usando o DuckDuckGo). Não precisa
-  de cartão de crédito.
-
-"Por que não usa a busca do Google?"
-  O Google parou de oferecer a "busca do Google" de graça para
-  programas. Para continuar 100% grátis, este programa pesquisa
-  na web por conta própria e manda os trechos para o Gemini escrever
-  a resposta.
-
-"Posso fazer pergunta de acompanhamento?"
-  Sim. Se a opção "Lembrar o assunto da conversa" estiver marcada em
-  Configurações, você pode perguntar por exemplo:
-     "Quem ganhou?"  e depois  "E quem foi o vice?"
-
-"O que são as palavras sublinhadas?"
-  Enquanto você digita, o programa confere a ortografia do português
-  e sublinha as palavras escritas errado. Para ver sugestões de
-  correção, clique com o botão direito na palavra sublinhada.
-
-"A IA lembra de mim? Como funciona?"
-  Sim, e funciona sozinho, sem você preencher nada. Depois de cada
-  resposta, a IA relê a conversa em segundo plano e guarda o que
-  parece duradouro sobre você (seu nome, onde mora, o que gosta,
-  como gosta de receber as respostas). Isso entra automaticamente
-  em todas as respostas seguintes.
-
-  Exemplo: se você falar uma vez que mora em Recife e gosta de
-  God of War, depois basta perguntar "qual o melhor jogo da saga
-  que eu gosto?" que ela já sabe de qual saga você está falando.
-
-  Detalhes:
-    - a IA nunca pergunta nada e nunca avisa que guardou;
-    - ela também usa os assuntos de conversas anteriores como
-      contexto;
-    - ela não guarda dados sensíveis (endereço, telefone, documentos,
-      senha, saúde, finanças);
-    - você pode conferir e apagar o que quiser na aba "Memória",
-      dentro de Configurações.
-
-"Onde ficam essas coisas?"
-  Só no seu usuário do Windows, em:
-    %LOCALAPPDATA%\EyeOfThundera\historico.json   (as conversas)
-    %LOCALAPPDATA%\EyeOfThundera\memoria.json     (o que ela sabe de você)
-  Nada é enviado para lugar nenhum além dos serviços de IA (para a IA
-  responder, como sempre).
-
-"Preciso falar a pergunta?"
-  Não, mas tem um botão de microfone se preferir. Clique para gravar,
-  clique de novo para parar. O que você falou aparece escrito na
-  caixa de digitar para você conferir antes de enviar.
-
-"Como faço para ver imagens?"
-  Escreva o pedido começando por "imagens de..." ou "fotos de...".
-  Por exemplo:  imagens de god of war   ou   fotos de lobos.
-  Aparecem várias imagens na conversa. Clique em uma para ampliar
-  e usar as setas do teclado (ou os botões) para passar de uma para
-  outra. Use "Salvar como..." para guardar no computador.
-
-"E se o Gemini não responder?"
-  Existe um "plano B" opcional. Se o Gemini estiver fora do ar ou
-  você tiver batido no limite do dia, o programa tenta automaticamente
-  outros dois serviços de IA, também gratuitos e sem cartão:
-
-     - Groq        (cerca de 1.000 pedidos por dia)
-     - OpenRouter  (cerca de 50 pedidos por dia)
-
-  Para ligar: abra Configurações, role até "Plano B (opcional)", cole
-  a chave de um dos dois (ou dos dois) e clique em Salvar. O botão
-  "Testar" confirma na hora se a chave está boa. Se você não colocar
-  nenhuma chave aí, o programa continua funcionando exatamente igual.
-
-  Quando a resposta vier do plano B, aparece um aviso discretinho
-  embaixo: "Resposta gerada pelo plano B: Groq".
-
-"Apareceu erro falando da chave"
-  Confira se copiou a chave inteira (começa com "AIza" ou "AQ.") e
-  clique em Salvar de novo.
-
-"Apareceu erro de limite"
-  Você fez muitas perguntas em pouco tempo. Espere alguns minutos
-  (ou volte amanhã) que o limite grátis se renova.
-
-"Apareceu erro de internet"
-  Confira se está conectado à internet.
-
-"Às vezes demora um pouco"
-  É normal: o programa procura na web, abre algumas páginas e só
-  depois pede a resposta para a IA. Costuma levar de 10 a 30 segundos.
-
-"A chave do Google parou de funcionar"
-  Acontece sem aviso. O programa abre uma janela explicando, com
-  dois botões: "Criar chave nova" (abre a página do Google) e
-  "Colar chave nova" (abre as Configurações já na aba certa).
-
-  Tem uma rede de segurança melhor: na aba Chave das Configurações
-  existe o campo "Chave reserva (opcional)". Cole ali uma segunda
-  chave (é só criar outra de graça na mesma página do Google). Se
-  um dia a chave principal for recusada, o programa usa a reserva
-  sozinho. A troca vale enquanto o programa estiver aberto.
-
-"A chave fica salva onde?"
-  Fica salva apenas no seu usuário do Windows, no arquivo:
-    %LOCALAPPDATA%\EyeOfThundera\config.json
-  Ninguém mais no computador vê essa pasta.
-
-
-========================================================
-  O QUE SÃO ESTES ARQUIVOS (para curiosidade)
-========================================================
-
-  Eye of Thundera.exe -> versão pronta (o arquivo que fica na
-                             Área de Trabalho). Não precisa do
-                             Python instalado.
-  icone.ico                -> o ícone do programa.
-  avatar_usuario.png       -> o seu avatar, que aparece ao lado das
-                             suas perguntas. Para trocar, substitua
-                             este arquivo por outra imagem (png, jpg
-                             ou webp) com o mesmo nome.
-  pesquisa_ia.py           -> o motor do programa (código-fonte).
-  memoria.py               -> a memória com datas.
-  voz.py                   -> o microfone e a transcrição.
-  app_web.py               -> a tela em HTML (ponte com o Python).
-  web/index.html           -> a estrutura da tela.
-  web/app.js               -> o que a tela faz.
-  web/estilo.css           -> o desenho da tela (sempre escura).
-  fazer_backup.py          -> backup dentro do programa.
-  Gerar o EXE.bat          -> gera o .exe (só precisa rodar se mexer
-                             no código).
-  requirements.txt         -> a lista do que o programa precisa.
-  1 - Instalar.bat         -> instala o que falta (rodar uma vez).
-  2 - Abrir Eye of Thundera.bat -> abre o programa pelo código-fonte.
-  verificar.bat            -> confere se o programa continua inteiro
-                             depois de uma alteração. Tem que terminar
-                             com "TUDO CERTO".
-  4 - Fazer backup.bat     -> cópia de segurança dos dados do programa.
-  9 - Fazer backup dos meus dados.bat -> cópia de segurança das SUAS
-                             coisas (conversas, memória e chaves).
-  10 - Trocar para modelo gratis.bat -> troca o modelo de IA.
-  LEIA-ME.txt              -> este texto.
-  .venv                    -> pasta com as bibliotecas baixadas
-                             (não apague).
-  erro.log                 -> só aparece se o programa falhar ao abrir.
-
-Se algo der errado, mande o conteúdo do arquivo erro.log (se existir)
-para quem te ajudou.
+EYE OF THUNDERA — GUIA DO USUÁRIO
+Atualizado em 16/10/2026
+
+O Eye of Thundera é um assistente de conversa e pesquisa com interface escura. Ele usa Python e uma interface HTML dentro de uma janela pywebview.
+
+COMO ABRIR
+Na Área de Trabalho, dê duplo clique em Eye of Thundera. O atalho abre o código-fonte em D:\Projetos\PesquisaIA. Se a janela estiver aberta mas não responder, feche-a e abra o atalho novamente; se continuar, peça para verificar o arquivo de erro antes de reinstalar qualquer coisa.
+
+PRIMEIRO USO
+1. Abra Configurações > Chaves.
+2. Cole sua chave do provedor desejado no campo correspondente.
+3. Use o botão Testar, quando disponível, e clique em Salvar.
+4. Digite a pergunta na caixa inferior e aperte Enter ou clique no botão de enviar.
+
+Nunca compartilhe uma chave de API em mensagens, capturas de tela ou logs.
+
+TELA PRINCIPAL
+- Nova conversa: começa uma conversa nova.
+- Conversas: lista e busca no histórico; use o menu da conversa para opções disponíveis.
+- Configurações: abre as abas Memória, Conversa, Chaves e Ajuda.
+- Web: alterna entre pesquisa automática, sempre e desligada.
+- Pesquisa séria: liga/desliga o modo de pesquisa profunda para a próxima pergunta.
+- Privada: inicia uma conversa que não deve ser salva no histórico nem usada para aprender memória.
+- Resumo do dia: pede um resumo das notícias atuais.
+- Microfone: clique para começar a gravar e clique novamente para parar. O texto transcrito aparece na caixa para revisão antes do envio.
+- Soltar um arquivo de texto compatível na janela pode carregar seu conteúdo para a caixa de pergunta. Confira o conteúdo antes de enviar.
+
+CONFIGURAÇÕES
+- Memória: veja, organize, edite ou exporte os fatos guardados pelo assistente. Confira antes de apagar.
+- Conversa: preferências de contexto, pesquisa, corretor e voz.
+- Chaves: configure os provedores e serviços de reserva. Os campos de chave devem permanecer protegidos.
+- Ajuda: informações de uso e atalhos.
+
+ATALHOS
+- Enter: envia a pergunta.
+- Shift+Enter: quebra a linha.
+- Ctrl+N: nova conversa.
+- Ctrl+F: buscar conversas.
+- Ctrl+M: microfone.
+- Ctrl+S: salvar a última resposta como texto.
+- Ctrl+D: resumo do dia.
+- Ctrl+B: mostrar ou esconder a barra lateral.
+- Ctrl+Shift+S: pesquisa séria.
+
+DADOS E PRIVACIDADE
+Configurações, histórico e memória ficam no perfil local do Windows, em %LOCALAPPDATA%\PesquisaIA. O programa envia a pergunta e o contexto necessário ao provedor de IA escolhido quando você pede uma resposta; não trate conversas privadas como substituto para não enviar informações sensíveis a serviços externos. Faça backup antes de alterações importantes.
+
+SE ALGO NÃO FUNCIONAR
+1. Feche e abra novamente o atalho.
+2. Se os cliques continuarem sem resposta, não reinstale nem apague dados. Informe o que clicou e peça para consultar %LOCALAPPDATA%\PesquisaIA\erro.log.
+3. Não envie chaves de API junto com o log.
+
+ARQUIVOS DO PROJETO
+README.md descreve a arquitetura. ONDE-PARAMOS.md registra o estado da manutenção. INSTRUCOES-PARA-IA.md e PASSO-A-PASSO.md orientam alterações. HISTORICO-DE-MUDANCAS.md guarda o histórico técnico.

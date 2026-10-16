@@ -1,78 +1,40 @@
-# GUIA DO OPENCODE (leia ANTES de mexer em qualquer coisa)
+# Guia do OpenCode para este projeto
 
-Escrito pelo Claude em 16/10/2026 a pedido do Wolf. O Wolf nao programa:
-fale em portugues simples, chame-o de Wolf, nunca use jargao sem explicar.
+Leia primeiro README.md e ONDE-PARAMOS.md. Este guia complementa as instruções do projeto; não substitui o estado atual descrito nesses arquivos.
 
-## 1. Regra de ouro: SO EXISTE A VERSAO NOVA
-- O programa e' o **Eye of Thundera** (tela em HTML: `app_web.py` + pasta `web/`).
-- O programa antigo (tkinter, `Pesquisa IA.exe`) esta APOSENTADO. NAO mexa nele,
-  NAO gere .exe dele, NAO crie atalho para ele, NAO crie teste novo para ele.
-  Copias antigas ficam em `_arquivo_morto/` (nao apague, nao use).
-- `pesquisa_ia.py` ainda e' o MOTOR (memoria, busca, conversa, chaves). Pode e
-  deve ser usado/editado quando a tela nova precisar. So o pedaco de TELA
-  (classes Tk: Aplicativo, Dica, Botao, Chip, Avatar...) e' lixo morto.
-  Proxima limpeza combinada: mover o motor para `nucleo.py` SEM tkinter e deixar
-  `pesquisa_ia.py` como ponte fina. Faca em passos pequenos, com `verificar.bat`
-  verde entre cada um, e so depois de avisar o Wolf.
+## Versão e atalho em uso
 
-## 2. Area de Trabalho: UM icone so
-- Deve existir somente `Eye of Thundera.exe`. NADA de `.lnk` extra, nada de
-  "Pesquisa IA", nada de "Wolf.lnk".
-- Quem cuida disso e' `atualizar_area_trabalho.py` (chamado por `Gerar o EXE.bat`).
-  Nao crie outros scripts que mexam na Area de Trabalho.
-- Antes de dizer "pronto": liste a Area de Trabalho e CONFIRA com os olhos.
-- Confira tambem que o hash do .exe da mesa == `dist\Eye of Thundera.exe`.
+O programa do dia a dia é Eye of Thundera: app_web.py + web/. O atalho Eye of Thundera.lnk na Área de Trabalho aponta para .venv/Scripts/pythonw.exe, passa app_web.py e usa D:/Projetos/PesquisaIA como pasta de trabalho. Portanto, alterações no código-fonte aparecem ao fechar e reabrir o atalho; não gere um EXE automaticamente.
 
-## 3. Como trabalhar sem errar
-1. `git status` e `git log -5` primeiro. Leia `ONDE-PARAMOS.md`.
-2. Mude o MINIMO. Um assunto por vez. Um commit por assunto.
-3. Rode `verificar.bat`. So diga que terminou se a ultima linha for TUDO CERTO.
-   NUNCA apague teste para "passar".
-4. Mexeu em `web/` ou `app_web.py`? Gere o .exe (`Gerar o EXE.bat`), abra-o de
-   verdade e confira a tela. Teste no codigo nao enxerga tela quebrada.
-5. Caminhos: o projeto vive em `D:\Projetos\PesquisaIA`. Nao escreva caminho
-   fixo em codigo novo (use `Path(__file__)`). Nunca use `C:\Projetos`.
-6. Nunca apague arquivos do Wolf (conversas, memoria, config). Para "sumir"
-   algo, MOVA para `_arquivo_morto/`.
-7. Nunca mostre nem grave chave de API em arquivo do projeto, log ou commit.
-8. Termine SEMPRE atualizando `ONDE-PARAMOS.md` (estado) e
-   `HISTORICO-DE-MUDANCAS.md` (o que mudou e por que).
+O EXE distribuível, quando necessário, é construído por Gerar o EXE.bat e fica em dist/Eye of Thundera.exe. Não presuma que ele seja o alvo do atalho.
 
-## 4. LIMITE DE USO: trocar para modelo GRATIS antes de parar
-Quando aparecer erro 429, "rate limit", "quota", "credits", ou voce sentir que
-o contexto esta acabando:
-1. Termine o passo atual em estado seguro (verificar verde, commit feito).
-2. Escreva em `ONDE-PARAMOS.md` onde parou e o proximo passo.
-3. Rode `.venv\Scripts\python.exe ferramentas\trocar_modelo_gratis.py`
-   (ou peça ao Wolf o duplo clique em `10 - Trocar para modelo gratis.bat`).
-   Ele testa, em ordem, a lista de `ferramentas\modelos-gratis.txt` e grava no
-   `opencode.json` o primeiro que responder (com copia de seguranca).
-4. Diga ao Wolf: "Troquei para <modelo> (gratis). Abra uma sessao nova e
-   mande 'continuar'." Na sessao aberta, `/models` troca na hora.
-5. Se a lista ficar velha: `opencode models | findstr /i "free"` e ajuste o txt.
-6. Modelo gratis e' mais fraco: faca tarefas pequenas, leia o codigo antes de
-   editar, rode `verificar.bat` com mais frequencia.
-Observacao: o 9router (`9router/Arsenal`) e o Ollama so funcionam se estiverem
-ligados; o script pula sozinho o que nao responder.
+## Como trabalhar
 
-### Troca automatica (16/10: agora e o plugin PROPRIO gratis-sempre)
-O plugin gratis-sempre esta instalado em %USERPROFILE%\.config\opencode\plugin\gratis-sempre.js
-(codigo: ferramentas\opencode-gratis-sempre.js; testes: node ferramentas\teste-gratis-sempre.mjs).
-Quando aparece erro de limite, ele marca o modelo como descansando por 15 min, troca para o
-proximo gratis de ferramentas\modelos-gratis.txt e repete o ultimo pedido (max 6 trocas por sessao).
-O opencode-runtime-fallback foi RETIRADO do opencode.json (plugin: []) para nao brigar com ele.
-Copia do arquivo antigo: opencode.json.bak-antes-gratis-sempre. NAO use os dois ao mesmo tempo.
-Lista velha? `opencode models | findstr /i free` e ajuste modelos-gratis.txt (so linhas opencode/...).
-Se o plugin der problema: apague gratis-sempre.js da pasta plugin e volte
-"plugin": ["opencode-runtime-fallback"] no opencode.json.
+1. Confira git status --short e git log -5 --oneline.
+2. Leia INSTRUCOES-PARA-IA.md e PASSO-A-PASSO.md.
+3. Descubra a causa antes de editar.
+4. Faça uma mudança pequena e adicione uma verificação que a proteja.
+5. Rode .venv/Scripts/python.exe verificar.py.
+6. Se mexeu na interface, abra-a e confira o fluxo real.
+7. Atualize ONDE-PARAMOS.md e HISTORICO-DE-MUDANCAS.md.
+8. Faça commit somente dos arquivos da tarefa; preserve arquivos não rastreados.
 
-## 5. Checklist de entrega
-[ ] verificar.bat = TUDO CERTO   [ ] .exe novo aberto e olhado
-[ ] Area de Trabalho = 1 icone   [ ] ONDE-PARAMOS + HISTORICO atualizados
-[ ] commit feito                 [ ] avisei o Wolf em portugues simples
+## Dados pessoais
 
-## 6. Armadilhas ja vistas (16/10)
-- Os arquivos Eye of Thundera.spec e Eye of Thundera (debug).spec DEVEM empacotar **app_web.py**. Com pesquisa_ia.py o .exe abre o programa ANTIGO.
-- Depois de gerar o .exe: ABRA e confira (titulo da janela Eye of Thundera, sem caixa de erro). Nunca deixe codigo de depuracao (gravar em eyethundera_debug.txt) no app_web.py.
-- webview.start() so pode ser chamado UMA vez, no fim de principal().
+Conversas, memória, configurações e chaves ficam em %LOCALAPPDATA%/PesquisaIA. Não os leia ou modifique em testes, não imprima chaves e não os inclua no Git.
 
+## Troca manual de modelo no OpenCode
+
+Se o OpenCode chegar ao limite, termine o passo atual em estado seguro, rode verificar.py e registre onde parou. O script ferramentas/trocar_modelo_gratis.py testa a lista ferramentas/modelos-gratis.txt e tenta escolher um modelo gratuito disponível. Só execute essa troca quando necessário; não altere a configuração do OpenCode como parte de uma correção do Eye of Thundera.
+
+## Plugin de troca automática de modelo do OpenCode
+
+O plugin local gratis-sempre fica em %USERPROFILE%/.config/opencode/plugin/gratis-sempre.js; a cópia-fonte e os testes ficam em ferramentas/opencode-gratis-sempre.js e ferramentas/teste-gratis-sempre.mjs. Quando recebe erro de limite, ele marca o modelo como temporariamente indisponível e tenta o próximo modelo gratuito de ferramentas/modelos-gratis.txt. Não ative ao mesmo tempo esse plugin e opencode-runtime-fallback. Se houver problema, confira primeiro a configuração atual do OpenCode antes de mudar qualquer coisa.
+
+## Checklist de entrega
+
+- [ ] Verificação concluída sem falhas.
+- [ ] Interface aberta e conferida quando relevante.
+- [ ] Histórico e estado atual atualizados.
+- [ ] Commit seletivo feito.
+- [ ] Usuário informado sobre o que mudou e o que não foi testado.

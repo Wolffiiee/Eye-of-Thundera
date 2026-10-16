@@ -58,7 +58,3 @@ if err:
     print("ERRO: " + err)
 print("[OK] Atalho final: " + str(LNK))
 print("     -> UM icone de Eye of Thundera na Area de Trabalho.")
-
-
-def foo():
-    return 'x'

@@ -1,4 +1,6 @@
-# Resumo da madrugada de 16/10/2026 (para o Wolf)
+# Resumo da madrugada de 16/10/2026 (para o Wolf) — DOCUMENTO HISTÓRICO
+
+**Atenção:** este resumo descreve o estado daquela madrugada, não o estado atual. Para a situação atual, leia README.md e ONDE-PARAMOS.md.
 
 O Wolf foi dormir e deixou o programa "nas mãos do OC". Este arquivo é
 o resumo de tudo que foi feito, para ele revisar de manhã sem precisar

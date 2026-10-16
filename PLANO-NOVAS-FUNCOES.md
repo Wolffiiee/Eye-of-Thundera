@@ -1,4 +1,6 @@
-# Plano das novas funções do Pesquisa IA
+# Plano das novas funções do Pesquisa IA — DOCUMENTO HISTÓRICO
+
+**Atenção:** este plano foi escrito antes da conclusão da interface HTML e não descreve o estado atual. Consulte README.md, ONDE-PARAMOS.md e PROXIMOS-PASSOS.md antes de decidir o que falta. O arquivo é mantido como registro das decisões e da motivação original.
 
 Para a IA que programa. Escrito pelo Claude em 15/10/2026, depois de ler o
 código e de ver a tela do programa. Salve este arquivo na pasta do projeto

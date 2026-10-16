@@ -47,28 +47,55 @@ ARQUIVO = PASTA / "pesquisa_ia.py"
 
 falhas = []
 avisos = []
+verificacoes = 0
 
 
 def ok(msg):
+    global verificacoes
+    verificacoes += 1
     print("[OK]     " + msg)
 
 
 def falha(msg):
+    global verificacoes
+    verificacoes += 1
     print("[FALHA]  " + msg)
     falhas.append(msg)
 
 
 def aviso(msg):
+    global verificacoes
+    verificacoes += 1
     print("[AVISO]  " + msg)
     avisos.append(msg)
 
 
 # --- 1. sintaxe -------------------------------------------------------------
 try:
-    py_compile.compile(str(Path("pesquisa_ia.py")), doraise=True)
+    py_compile.compile(str(PASTA / "pesquisa_ia.py"), doraise=True)
     ok("pesquisa_ia.py sem erro de sintaxe")
 except py_compile.PyCompileError as erro:
     falha("erro de sintaxe: %s" % erro)
+
+# A tela depende deste JavaScript inteiro ser interpretado. Uma única chave
+# sobrando impede todos os botões de receberem eventos, embora a janela abra.
+node = shutil.which("node")
+if node:
+    try:
+        r_js = subprocess.run(
+            [node, "--check", str(PASTA / "web" / "app.js")],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            cwd=str(PASTA), timeout=15,
+        )
+        if r_js.returncode == 0:
+            ok("web/app.js sem erro de sintaxe (Node.js)")
+        else:
+            detalhe = (r_js.stderr or r_js.stdout or "erro desconhecido").strip()
+            falha("erro de sintaxe em web/app.js: " + detalhe.splitlines()[0])
+    except Exception as erro:
+        aviso("não consegui verificar a sintaxe de web/app.js: %r" % (erro,))
+else:
+    aviso("Node.js não encontrado; sintaxe de web/app.js não foi verificada")
 
 # --- 2. bibliotecas ---------------------------------------------------------
 NOME_NO_CODIGO = {
@@ -1188,7 +1215,7 @@ else:
 
 # --- resumo -----------------------------------------------------------------
 print()
-print('TESTES: %d | FALHA: %d | AVISO: %d' % (len(falhas) + len(avisos), len(falhas), len(avisos)))
+print('VERIFICACOES: %d | FALHA: %d | AVISO: %d' % (verificacoes, len(falhas), len(avisos)))
 if falhas:
     print('RESULTADO: %d FALHA(S). Corrija antes de entregar.' % len(falhas))
     sys.exit(1)

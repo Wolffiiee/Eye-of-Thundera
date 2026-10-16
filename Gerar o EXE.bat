@@ -1,12 +1,13 @@
 @echo off
 rem ================================================================
-rem  GERAR O .EXE — ESTE E' O PROGRAMA DE HOJE.
+rem  GERAR O .EXE DISTRIBUIVEL (NAO E' O ATALHO DE DESENVOLVIMENTO).
 rem
-rem  Isto cria o "Eye of Thundera.exe": a tela em HTML, num
-rem  arquivo so, que roda sem o Python instalado. E' o programa que
-rem  esta na sua Area de Trabalho.
+rem  Isto cria dist\Eye of Thundera.exe: a tela em HTML empacotada
+rem  para distribuicao, sem exigir o Python instalado.
+rem  O atalho de desenvolvimento na Area de Trabalho continua abrindo
+rem  app_web.py pelo ambiente .venv, para usar o codigo-fonte atual.
 rem
-rem  So e preciso rodar isto se mexermos no codigo da tela nova.
+rem  Rode somente quando quiser atualizar o pacote distribuivel.
 rem ================================================================
 chcp 65001 >nul
 cd /d "%~dp0"
@@ -36,10 +37,11 @@ if errorlevel 1 (
 )
 
 echo.
-echo Pronto! O arquivo novo esta em:
+echo Pronto! O pacote distribuivel esta em:
 echo     dist\Eye of Thundera.exe
 echo.
-echo Copie para a Area de Trabalho.
+echo O atalho da Area de Trabalho continua abrindo app_web.py pelo ambiente .venv.
+echo O script seguinte garante que esse atalho continue sendo o unico icone do app.
 echo.
 rem
 rem --- Atualiza Area de Trabalho ---

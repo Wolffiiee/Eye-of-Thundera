@@ -38,10 +38,8 @@ Sem ela o antigo não podia ser aposentado.
 - Clicar abre a foto por cima de tudo, com botão de fechar (Esc fecha) e
   link para a página original.
 
-### 2. Pesquisa profunda
-Um modo "pesquisa séria" para quando a pergunta é importante: o app procura
-em mais sites, lê mais páginas e devolve uma resposta organizada em tópicos,
-com as fontes citadas. Pode ser um botão ao lado do de enviar, ou um atalho.
+### 2. Pesquisa profunda — IMPLEMENTADA em 16/10/2026
+O botão "Pesquisa séria" liga/desliga o modo profundo na barra de escrita. A tela envia a opção para o motor, que executa o caminho de pesquisa profunda e devolve a resposta organizada com sites consultados. O que falta é validar manualmente o comportamento com perguntas reais e melhorar a clareza visual do estado ligado/desligado.
 
 ### 3. ~~Modo conversa privada~~ **FEITA em 16/10/2026**
 Botão "Privada" na barra de escrever. Ligado, o que for dito **não é
@@ -92,13 +90,10 @@ conversa de semana passada ("aquela do bolo de cenoura").
 
 ## Ideias maiores (valem para depois)
 
-- **Entrar com a voz** — falar a pergunta em vez de digitar (o app já tem
-  ferramentas de voz no sistema).
-- **Arrastar um arquivo para a conversa** — jogar um .txt ou .pdf na janela e
-  perguntar sobre ele ("o que este documento diz?").
-- ~~**Memória com data**~~ - **FEITA em 16/10/2026**: cada item da aba Memória mostra "aprendeu em dd/mm/aaaa". As datas vão num arquivo **ao lado** do `memoria.json`, nunca dentro dele (esse é lido pelos dois programas e tem regra de ouro). Item antigo fica sem data — a tela mostra isso em vez de inventar um dia.
-- (Ideia original) **Memória com data** — na aba Memória, mostrar quando cada fato foi aprendido,
-  para você saber se está atualizado.
+- ~~**Entrar com a voz**~~ — IMPLEMENTADO: microfone na barra de escrita; a transcrição entra na caixa para revisão antes do envio.
+- **Arrastar um arquivo para a conversa** — parcialmente implementado: a janela aceita `.txt`, `.md`, `.csv` e `.json` e carrega o texto para a caixa. PDF, imagens e extração de texto desses formatos ainda não estão implementados.
+- ~~**Memória com data**~~ — FEITA em 16/10/2026: cada item da aba Memória mostra a data quando ela existe; as datas ficam em arquivo separado de `memoria.json`. Itens antigos sem data não recebem uma data inventada.
+- ~~**Gavetas por assunto na memória**~~ — IMPLEMENTADAS: os fatos podem ser agrupados e filtrados por assunto na aba Memória.
 - ~~**Exportar tudo**~~ - **FEITO em 16/10/2026**: botão "Fazer cópia agora" em Configurações > Conversa, que copia conversas, memória e chaves num `.zip` no OneDrive. É o mesmo que o `9 - Fazer backup dos meus dados.bat`, com a mesma função.
 - (Ideia original) **Exportar tudo** — um botão para salvar a memória e as conversas num
   arquivo só, como backup.

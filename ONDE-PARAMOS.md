@@ -1,67 +1,48 @@
-# ONDE A GENTE PAROU (leia isto primeiro)
+# Onde paramos
 
-> Escrito em 16/10/2026. Se você é uma IA lendo isto: o Wolf não programa.
-> Fale com ele em português simples, sem jargão, e chame-o de Wolf.
+Atualizado em 16/10/2026, após corrigir a interface sem resposta.
 
-## Uma linha de resumo
-O Eye of Thundera tem UMA tela só: a **tela nova** (HTML/JS/pywebview).
-O programa antigo (tkinter) foi aposentado. O projeto agora foca
-100% na versão nova.
+## Resumo do estado atual
 
-## Como ver o programa
-- **.**`Eye of Thundera.exe`** na Área de Trabalho (o .exe pronto).
-- **.**`2 - Abrir Eye of Thundera.bat`** abre pelo código-fonte (para desenvolvimento).
-- **.**`Gerar o EXE.bat`** gera o .exe (só precisa rodar se mexer no código).
+O Eye of Thundera usa a interface HTML/JavaScript em web/ e a janela Python em app_web.py. O atalho real da Área de Trabalho é Eye of Thundera.lnk e aponta para .venv/Scripts/pythonw.exe com o argumento app_web.py, usando D:/Projetos/PesquisaIA como pasta de trabalho.
 
-## Leia nesta ordem antes de mexer em qualquer coisa
-1. `INSTRUCOES-PARA-IA.md` — as regras e as armadilhas já descobertas
-2. `PASSO-A-PASSO.md` — o método (achar a causa, mudar o mínimo, testar)
-3. `HISTORICO-DE-MUDANCAS.md` — tudo que foi feito, com a causa de cada bug
-4. `PROXIMOS-PASSOS.md` — o plano de desenvolvimento
-5. `web/LEIA-ME.md` — como a tela nova conversa com o Python
+### Problema encontrado e corrigido nesta rodada
 
-Depois rode `verificar.bat`. **Só diga que terminou se a última linha for
-"TUDO CERTO"**.
+Um commit recente inseriu uma chave de fechamento extra em web/app.js, imediatamente depois da função abaChaves. O Node.js reportava SyntaxError: Unexpected token '}' na linha 1278. Como o navegador não consegue interpretar o arquivo JavaScript, nenhuma função de inicialização ou registro de cliques era executada: a janela abria, mas os botões não respondiam.
 
-## Estado atual (confie, foi conferido)
-- `verificar.bat` = **TUDO CERTO**, com **120 verificações** (7 segundos).
-- O `.exe` da Área de Trabalho está atualizado (gerado em 16/10/2026).
-- O `.git` está limpo; último commit `ada7e8b` (simplificação dos scripts .bat).
-- O programa antigo (tkinter) está em `_arquivo_morto` — não é mais usado.
+A chave extra foi removida. Também foram corrigidos um texto quebrado na descrição do Gemini e uma duplicação na atualização das datas da memória.
 
-## Regras que não podem ser quebradas
-1. **Nenhuma janela branca.** Todo aviso/erro/pergunta é
-   `_dialogo_escuro(...)` (ou `_confirmar`). `messagebox`, `simpledialog`
-   e `tk_optionMenu` são PROIBIDOS — o `verificar.py` reprova.
-2. **Janela de teste (PREVIA) sempre no segundo monitor** (X >= 1950).
-   O programa de verdade abre onde o Wolf fechou da última vez.
-3. **Nada de `unbind_all("<Button-1>")`.** Menus usam
-   `_registrar_clique_global` / `_remover_clique_global`.
-4. **Nunca mexer nos dados do Wolf** (`%LOCALAPPDATA%\EyeOfThundera`) nos
-   testes: aponte `p.ARQUIVO_HISTORICO`, `p.ARQUIVO_MEMORIA` e
-   `p.ARQUIVO_CONFIG` para uma pasta em `_tmp` e restaure no fim.
-5. **Nunca apagar nem renomear o `pesquisa_ia.py`.** É o motor do programa.
-6. Nada de API key escrita no projeto; nada de mexer no histórico/git do
-   usuário.
-7. Depois de mexer: `verificar.bat` verde, commit, e atualizar
-   `HISTORICO-DE-MUDANCAS.md` + este arquivo + `PROXIMOS-PASSOS.md`.
+A verificação automática agora executa node --check web/app.js quando Node.js está disponível. O contador final também foi corrigido: antes imprimia TESTES: 0 mesmo depois de registrar dezenas de verificações; agora imprime VERIFICACOES e conta as mensagens OK, FALHA e AVISO.
 
-## Armadilhas já descobertas (não repetidas)
-- O Tk desenha emoji de **uma cor só**. Na tela HTML sai colorido.
-- A ponte do pywebview é **assíncrona**: `window.pywebview.api.algo(...)`
-  devolve uma Promise (o `app.js` já usa `await`).
-- O `pywebview` precisa estar no `requirements.txt` **e** no spec, senão o
-  `.exe` gerado não abre.
-- O horário da conversa (`%d/%m/%Y as %H:%M`) só tem minuto: **não
-  ordenar a lista por ele**. Use `list(reversed(carregar_conversas()))`.
-- A memória não pode perder informação: `memoria.py` tem a regra de ouro
-  "organizar nunca pode apagar palavra" e o `autoteste()` barra a volta do
-  defeito.
-- `ctypes.wintypes` **NAO vem junto com `import ctypes`**: sem o
-  `from ctypes import wintypes`, a função de contar telas levanta
-  `AttributeError`.
+### Verificação executada
 
----
-## ATUALIZACAO (16/10, Claude): LEIA GUIA-DO-OPENCODE.md
-Area de Trabalho agora tem 1 icone (so o .exe); atalhos extras e o Wolf.lnk velho foram para _arquivo_morto. Existe ferramentas/trocar_modelo_gratis.py para trocar de modelo quando o limite chegar.
+- JavaScript: sintaxe aprovada com Node.js.
+- Python: app_web.py, pesquisa_ia.py, memoria.py e roteador.py passaram na compilação de sintaxe.
+- verificar.py: VERIFICACOES: 126 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO.
+- Teste de abertura: o comando usado pelo atalho foi iniciado novamente, a janela com título Eye of Thundera ficou visível no Windows e não foi criado erro.log.
+- Ainda falta confirmar manualmente que os cliques respondem. A suíte automatizada e a abertura da janela não substituem esse teste manual completo.
 
+## Arquivos centrais
+
+- README.md: entrada principal e mapa do projeto.
+- INSTRUCOES-PARA-IA.md: regras obrigatórias para quem altera o código.
+- PASSO-A-PASSO.md: método de diagnóstico, correção e teste.
+- HISTORICO-DE-MUDANCAS.md: registro cronológico das mudanças.
+- PROXIMOS-PASSOS.md: tarefas pendentes confirmadas.
+- web/LEIA-ME.md: detalhes da interface e da ponte pywebview.
+
+## Dados e segurança
+
+Os dados do usuário ficam em %LOCALAPPDATA%/PesquisaIA, fora do repositório. Não ler, alterar ou apagar os dados reais durante testes. Use pastas temporárias em _tmp. Não exiba chaves de API nem as grave em código, logs ou commits.
+
+## Próximos passos imediatos
+
+1. Fechar qualquer janela de demonstração ou versão antiga e abrir novamente o atalho Eye of Thundera na Área de Trabalho.
+2. Testar Nova conversa, Configurações, alternância Web e envio de uma pergunta curta. Não enviar uma pergunta real sem confirmar que a chave está configurada e que o usuário deseja gastar cota.
+3. Se qualquer clique falhar, consultar %LOCALAPPDATA%/PesquisaIA/erro.log e registrar o erro sem incluir chaves.
+4. Conferir manualmente as quatro abas de Configurações e validar se as descrições correspondem aos controles reais.
+5. Avaliar melhorias visuais em mudanças separadas, depois de validar os fluxos principais.
+
+## Estado do Git
+
+Antes de continuar, confira git status. Os arquivos de diagnóstico não rastreados check_lnk.py, check_lnk2.py, test_shortcut.py, show.png, verify_err.txt e verify_out.txt já existiam antes desta revisão; não foram apagados nem incluídos no commit automaticamente.

@@ -1,86 +1,26 @@
-# Passo a passo: como corrigir coisas neste projeto
+# Passo a passo para corrigir o Eye of Thundera
 
-Este arquivo ensina o MÉTODO. Foi escrito a partir de uma correção real
-(14/10/2026, bug da seleção de texto). Siga na mesma ordem.
+## Método obrigatório
 
-## O método (sempre igual)
+1. **Entender o sintoma.** Registre o que a pessoa clicou, o que esperava e o que aconteceu.
+2. **Verificar o estado do projeto.** Rode git status --short e git log -5 --oneline. Preserve arquivos modificados e não rastreados.
+3. **Encontrar a causa.** Leia a função completa e procure logs, traceback e erros de sintaxe. Não corrija no chute.
+4. **Proteger os dados.** Não altere %LOCALAPPDATA%/PesquisaIA durante testes. Use cópias temporárias em _tmp.
+5. **Adicionar uma verificação de regressão.** O teste deve falhar antes da correção e passar depois, sempre que possível.
+6. **Corrigir o mínimo necessário.** Evite misturar correção de bug com reformulação visual.
+7. **Executar a suíte:** .venv\Scripts\python.exe verificar.py. Confirme RESULTADO: TUDO CERTO e FALHA: 0.
+8. **Validar a interface real.** O atalho Eye of Thundera.lnk abre .venv/Scripts/pythonw.exe com app_web.py, então as mudanças no código-fonte entram em vigor ao fechar e reabrir esse atalho. Não gere um EXE a menos que a tarefa seja especificamente sobre o pacote distribuível.
+9. **Atualizar documentos.** Registre a causa e a correção em HISTORICO-DE-MUDANCAS.md; atualize ONDE-PARAMOS.md e PROXIMOS-PASSOS.md quando o estado mudar.
+10. **Commit seletivo.** Inclua só os arquivos desta tarefa. Não adicione automaticamente arquivos não rastreados que já estavam no projeto.
+11. **Relatar com clareza.** Diga o que mudou, quais testes passaram e o que ainda precisa de confirmação manual.
 
-1. **Entender o relato.** O que o Wolf viu, em qual tela, o que esperava.
-   Se faltar informação essencial, faça UMA pergunta curta.
-2. **Achar a causa no código.** Busque palavras-chave no `pesquisa_ia.py`
-   (ex.: `select_from`, `bind_all`, `_criar_bolha`). Leia o trecho inteiro.
-   Escreva a causa em 1 ou 2 frases. Sem causa, não corrija.
-3. **Proteger o que existe.** `git status`; se estiver sujo, commit à parte.
-   O Git é o backup (não precisa copiar arquivos).
-4. **Escrever o teste que falha** em `verificar.py` (simule cliques com
-   `event_generate`). Se não der para testar (algo só visual), anote como o
-   Wolf confere com os olhos.
-5. **Corrigir com a menor mudança possível.** Sem refatorar o resto.
-6. **Rodar `verificar.bat`** até a última linha ser `TUDO CERTO`.
-7. **Se o Wolf usa o atalho da Área de Trabalho:** `3 - Gerar EXE.bat` e
-   copiar `dist\Pesquisa IA.exe` para a Área de Trabalho.
-8. **Commit** com mensagem clara em português (o quê e por quê).
-9. **Relatar** em português simples: o que estava errado, o que mudou,
-   como conferir, o que não foi testado.
+## Quando a interface abre, mas nenhum botão funciona
 
-## O exemplo real (bug da seleção de texto)
+- Verifique a sintaxe completa de web/app.js com node --check web/app.js se Node.js estiver instalado.
+- Inspecione o console/erro.log e confirme se ligarEventos() e iniciar() são executados.
+- Uma chave ou parêntese extra pode impedir o JavaScript inteiro de ser interpretado, mesmo que a janela pywebview abra normalmente.
+- Depois de corrigir, acrescente a checagem ao verificar.py para detectar regressões futuras.
 
-- **Relato:** "seleciono um pedaço do texto, mas ao clicar fora a seleção
-  não some".
-- **Causa (passo 2):** cada bolha é um Canvas. O clique só chamava
-  `select_from`, que move o ponto de partida mas NÃO apaga a seleção antiga.
-  E clicar fora das bolhas (caixa de digitar, fundo) não tinha tratamento.
-- **Correção (passo 5):** `_limpar_selecoes()` em todo clique na bolha, e
-  `_ao_clicar_fora` ligado com `raiz.bind(..., add="+")` para o resto da
-  janela. O Ctrl+C e o menu Copiar passaram a usar só a seleção da própria
-  bolha (`_selecao_propria`).
-- **Problema vizinho achado no caminho:** três menus usavam
-  `unbind_all("<Button-1>")`, que apaga o atalho de TODOS os menus. Troquei
-  por um único `bind_all` (o `_despachar_clique`) e uma lista de ouvintes
-  (`_registrar_clique_global` / `_remover_clique_global`).
-- **Testes criados (passo 4):** 5 jeitos de clicar que têm que apagar a
-  seleção, arrastar para selecionar, menus que fecham ao clicar fora,
-  um menu não desligar o outro, janela de Configurações abrir e trocar de
-  aba sem erro escondido.
-- **Auditoria automática:** o `pyflakes` achou uma função morta que
-  citava um nome inexistente (`tela_ajuda`); removi.
+## Segurança
 
-## Como agir em pedidos comuns
-
-**"Apareceu um erro / o programa fechou"**
-Leia `%LOCALAPPDATA%\PesquisaIA\erro.log` (a última entrada). Procure o nome
-da função no traceback, leia o trecho, siga o método acima.
-
-**"Quero uma função nova"**
-Confirme em 1 frase o que ele quer. Veja `IDEIAS.md` (talvez já esteja
-descrita). Faça em pedaços pequenos; a cada pedaço, `verificar.bat`. Adicione
-um teste que use a função nova.
-
-**"Atualizar/instalar uma biblioteca"**
-Instale no `.venv` com `.venv\Scripts\python.exe -m pip install ...`, fixe a
-versão exata em `requirements.txt` (ou `requirements-dev.txt` se for só
-ferramenta), rode `verificar.bat`, registre no `HISTORICO-DE-MUDANCAS.md`.
-
-**"Está lento / estranho depois de mexer"**
-Compare com o último commit bom (`git diff`, `git log`). Volte só o trecho
-problemático. Nunca reescreva o arquivo todo.
-
-**"Mexeu e quebrou"**
-`git stash` ou `git checkout -- pesquisa_ia.py` volta ao último commit.
-Explique ao Wolf o que foi desfeito.
-
-## Comandos úteis (PowerShell, na pasta do projeto)
-
-    .venv\Scripts\python.exe verificar.py         # conferência completa
-    .venv\Scripts\python.exe -m pyflakes pesquisa_ia.py   # só análise
-    .venv\Scripts\python.exe pesquisa_ia.py       # abrir o programa
-    git status ; git log --oneline -5             # estado do projeto
-    git diff                                      # o que mudou
-
-## O que NUNCA fazer
-
-- Mexer em `%LOCALAPPDATA%\PesquisaIA\` (conversas, memória e chaves dele).
-- Escrever chave de API em qualquer arquivo do projeto.
-- Apagar arquivos (mova para `_arquivo_morto`).
-- Dizer "pronto" sem rodar `verificar.bat`.
-- Usar `unbind_all("<Button-1>")`.
+Nunca apagar arquivos de dados, chaves, backups ou arquivos antigos. Não usar dados reais nos testes. Não imprimir chaves em logs. Não rodar scripts de instalação ou limpeza sem entender o efeito.

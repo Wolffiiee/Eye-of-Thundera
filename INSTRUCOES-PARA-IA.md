@@ -1,257 +1,50 @@
-# Instruções para a IA que programa o Pesquisa IA
-## ATUALIZADO EM 16/10/2026 — O PROGRAMA ANTIGO FOI APOSENTADO
+# Instruções para IA — Eye of Thundera
 
-O `Pesquisa IA.exe` (o de janela cinza, em tkinter) saiu da Área de
-Trabalho. O Wolf passou a usar **só a tela nova**.
+Atualizado em 16/10/2026. Leia README.md e ONDE-PARAMOS.md antes de mexer no código.
 
-**A tela nova ganhou a última coisa que faltava nele** (a galeria de
-imagens) — foi isso que destravou a aposentadoria.
+## Estado atual e arquitetura
 
-### O que ficou valendo
+O programa em uso é a interface HTML/JavaScript aberta por app_web.py com pywebview. O atalho da Área de Trabalho aponta para .venv/Scripts/pythonw.exe, com app_web.py como argumento e D:/Projetos/PesquisaIA como pasta de trabalho. Não presuma que dist/Eye of Thundera.exe é o programa em uso.
 
-| Antes | Agora |
-|---|---|
-| `3 - Gerar EXE.bat` gera o programa antigo | **Desativado**: mostra um aviso e manda usar o `8` |
-| Gerar os DOIS `.exe` (~3 min) | **Só o `8 - Gerar o EXE da tela nova.bat`** (~90 s) |
-| Dois programas na Área de Trabalho | **Um só** |
+- app_web.py: janela, ponte Python/JavaScript, integração com o motor.
+- web/index.html, web/app.js, web/estilo.css: interface.
+- pesquisa_ia.py: motor compartilhado de conversa, pesquisa, chaves e funções legadas. Embora a interface Tkinter esteja aposentada, o arquivo ainda contém código antigo e não deve ser apagado nem reescrito inteiro.
+- memoria.py, roteador.py, voz.py: memória, decisão de modo e voz.
+- verificar.py: verificação automatizada.
+- Dados pessoais: %LOCALAPPDATA%\PesquisaIA, fora do repositório.
 
-### O que NÃO mudou
+## Regras obrigatórias
 
-- **`pesquisa_ia.py` continua aqui e é onde vive o MOTOR** (memória,
-  busca, corretor, conversa, imagens). A tela nova usa esse mesmo motor.
-- **Os testes continuam todos** (355). Apagar os testes da tela antiga
-  seria desligar o alarme do programa novo, porque é o mesmo motor.
-- O `.exe` antigo está em `_arquivo_morto` com "ANTIGO (tkinter)" no
-  nome. **Não foi apagado.**
+1. Leia git status --short e git log -5 antes de editar. Nunca sobrescreva mudanças não rastreadas ou arquivos que já existiam sem entender o motivo.
+2. Ache a causa no código antes de corrigir. Faça mudanças pequenas, com contexto suficiente para reverter.
+3. Nunca apague dados, chaves, histórico, memória, backups ou arquivos do usuário. Não inclua arquivos temporários preexistentes em commits.
+4. Nunca grave nem mostre chaves de API em código, logs, documentação ou commits.
+5. Testes de memória, histórico e configuração devem usar arquivos em _tmp e restaurar os caminhos e caches no fim. Nunca apontar testes para os dados reais.
+6. Depois de alterar código, rode .venv\Scripts\python.exe verificar.py. A última linha deve ser RESULTADO: TUDO CERTO, sem falhas.
+7. Alterações em web/app.js precisam passar na verificação de sintaxe JavaScript. Uma única chave extra impede o arquivo inteiro de executar e deixa a janela aberta sem botões funcionais.
+8. Quando a mudança afetar a interface, abra a aplicação e valide visualmente. Testes estáticos não substituem a conferência manual.
+9. Atualize HISTORICO-DE-MUDANCAS.md e ONDE-PARAMOS.md. Faça commit somente dos arquivos relacionados à mudança e explique a alteração em português simples.
+10. Não faça uma grande reescrita da interface ou do motor sem dividir em etapas e validar cada etapa.
 
-### Como voltar, se um dia quiser
+## Armadilhas conhecidas da interface atual
 
-Copie `_arquivo_morto\Pesquisa IA ANTIGO (tkinter) - ....exe` para a
-Área de Trabalho. Para voltar a *gerar* o antigo, o
-`Pesquisa IA.spec` continua no projeto — só o `.bat` que estava
-desativado.
+- A ponte pywebview é assíncrona. As chamadas da tela devem passar por chamar(), que espera window.pywebview.api ficar pronta.
+- Não exponha a janela nativa como atributo público da ponte. Use o atributo privado _janela; o pywebview pode percorrer objetos públicos e entrar em recursão em objetos nativos.
+- O JavaScript deve iniciar depois de pywebviewready. Preserve o mecanismo de espera da ponte.
+- Não esconda exceções importantes com except pass. Erros de execução devem ficar visíveis em avisos ou no log de erro.
+- Links exibidos na interface precisam ser validados; nunca aceite javascript: como URL de navegação.
+- A memória tem cache no módulo. Em testes que mudem o caminho do arquivo, limpe e restaure o cache junto com os caminhos. Use sempre as funções de mesclagem de memoria.py; não acrescente fatos diretamente com append.
+- O código Tkinter legado ainda tem menus e eventos compartilhados: nunca use unbind_all("<Button-1>"), pois isso remove os ouvintes de outros menus.
+- A tela de demonstração usa --demo. Não use --voz a menos que seja intencional ativar o microfone real.
 
-Leia este arquivo ANTES de mexer em qualquer coisa. Depois leia
-`PASSO-A-PASSO.md` (o método de trabalho) e `HISTORICO-DE-MUDANCAS.md`
-(o que já foi mudado e por quê).
+## Comandos úteis
 
-Quem pede as mudanças (o Wolf) não programa. O trabalho tem que vir
-pronto, testado e explicado em português simples.
+- Verificar: .venv\Scripts\python.exe verificar.py
+- Verificar sintaxe JS manualmente, se Node.js estiver instalado: node --check web\app.js
+- Estado do Git: git status --short
+- Histórico recente: git log -5 --oneline
+- Diferenças: git diff
 
-## Onde fica o projeto
-`D:\Projetos\PesquisaIA`  (desde 14/10/2026; antes ficava no OneDrive).
-Não trabalhe na pasta antiga "Projeto Padrão (ANTIGO - pode apagar)".
+## Encerramento de cada tarefa
 
-## O projeto em uma frase
-Programa de janela (Python 3.12 + tkinter) que pesquisa na web, manda os
-trechos para o Gemini e mostra a resposta num chat. Todo o código está em
-`pesquisa_ia.py` (classe `Aplicativo`). Cada mensagem é uma "bolha"
-desenhada num Canvas (`_criar_bolha`). Dados do usuário (conversas, memória,
-chaves) ficam em `%LOCALAPPDATA%\PesquisaIA\` e NUNCA entram no projeto.
-
-## Mapa dos arquivos
-- `pesquisa_ia.py` — o programa inteiro.
-- `roteador.py` — decide se a mensagem é papo ou pesquisa (não importa o programa).
-- `voz.py` — grava o microfone e transcreve com o Gemini (não importa o programa).
-- `verificar.py` / `verificar.bat` — a conferência automática (obrigatória).
-- `3 - Gerar EXE.bat` + `Pesquisa IA.spec` — geram `dist\Pesquisa IA.exe`.
-- `1 - Instalar.bat`, `2 - Abrir Pesquisa IA.bat` — instalar e abrir.
-- `requirements.txt` (programa) e `requirements-dev.txt` (ferramentas).
-- `.venv\` — ambiente Python (não editar, não versionar).
-- `_arquivo_morto\` — coisas antigas guardadas; ignorar, não usar.
-- `_tmp\` — sobras dos testes (prints, áudios). Ignorada pelo Git; quando
-  acabar o trabalho, pode esvaziar.
-
-## Tela de teste: sempre no SEGUNDO monitor
-O segundo monitor do Wolf começa em **X=1920** (vai até X=3840). Qualquer
-janela de teste ou `.exe` aberto para conferir precisa nascer em `X >= 1950`
-(ex.: `+2000+100`), **nunca** no monitor principal, que é onde ele está
-trabalhando.
-- No `verificar.py` isso já está pronto: `POSICAO_TESTE = "+2000+100"`.
-- Para abrir o `.exe`: o PyInstaller sobe um processo filho, então o
-  `MainWindowHandle` do processo iniciado fica vazio. procure a janela pelo
-  TÍTULO ("Pesquisa IA") em todos os processos e mova com `SetWindowPos`.
-- Isso vale para o **teste**; no **programa pronto** as janelas seguem o
-  app (ver `_centralizar_sobre`).
-
-## Teste nenhum pode abrir janela MODAL (15/10/2026)
-
-Janela modal é a de confirmação (o `_dialogo_escuro` com `grab_set()` e
-`wait_window`): ela **segura o programa inteiro até alguém responder**. Num
-teste automático **ninguém responde**, então a verificação trava ali.
-
-O que aconteceu de verdade: um teste novo clicou no "Apagar tudo" da aba
-Memória (que abre confirmação antes de apagar). Resultado: **8 minutos de
-espera e 110 testes que nunca chegaram a rodar** — inclusive todos os da
-tela nova. Pior: a tela mostrava "OK" nas primeiras linhas, então parecia
-que estava tudo bem. Só olhando o **total** de testes e o tempo se nota.
-
-**Como verificar "apagou e a lista continua igual"** sem travar: chame a
-ação **direto**, sem passar pelo botão que abre a confirmação.
-
-## Como saber se a verificação rodou tudo (confira as três):
-1. a última linha é `TUDO CERTO`;
-2. o total de `[OK]` bate com o de sempre (hoje ~274);
-3. o tempo ficou perto de **35 segundos** — muito mais que isso travou,
-   **e muito menos que isso pulou teste**.
-
-**O item 3 é o que mais pega.** Aconteceu duas vezes (15/10 e 16/10/2026):
-um teste com FALHA faz a verificação **pular todas as seções seguintes**,
-e aí ela termina em poucos segundos com pouquíssimos `[OK]`. A tela mostra
-"TUDO CERTO" quando não há falha nenhuma, mas com uma falha no meio o
-resultado é "RESULTADO: 1 FALHA(S)" — e **é justamente a falha logo
-depois da qual os testes somem** que importa. Por isso: leia o **total**,
-não só a última linha.
-
-## Coisas que custaram tempo (para não repetir)
-- **Nada que leia arquivo pode rodar em evento disparado por centenas de
-  widgets.** A rolagem da memória relê o `memoria.json` a cada evento;
-  mandar a roda do mouse em todos os widgets da janela virou centenas de
-  leituras de disco (minutos). Teste em **poucos** widgets.- **A janela de Configurações leva 5 a 8 s para montar** nesta máquina.
-  Não abra várias vezes no mesmo teste: abra uma e prove o resto com
-  funções soltas (`_centralizar_sobre`, `_acompanhar_largura`).
-- **A verificação pula as seções seguintes se já houve FALHA** (`if not
-  falhas:`). Um teste ruim seu esconde os testes que vêm depois.
-
-## Regras de trabalho (obrigatórias)
-0. **Nenhuma janela branca, nunca.** Todo aviso, pergunta, confirmação e
-   erro tem que sair pela `_dialogo_escuro(pai, titulo, texto,
-   botoes=(...))` — ou pelo `_confirmar(titulo, texto)`, que já usa essa
-   função. **Proibidos:** `messagebox`, `simpledialog`, `tk_optionMenu` e
-   qualquer outra janela do tkinter/sistema (elas abrem brancas e
-   destoam). O `verificar.py` **falha** se qualquer um desses aparecer.
-   A única exceção é a janela de "Salvar como...", que é do Windows e não
-   dá para trocar as cores — para ela existe
-   `_deixar_dialogo_do_sistema_escuro(raiz)`, que pede ao Windows o tema
-   escuro (pode não funcionar em toda versão do Windows).
-1. **Nunca** tente criar, adivinhar ou "consertar" a chave de API do
-   Google por conta própria. O Google não tem API pública para criar
-   chaves no AI Studio, e qualquer contorno exigiria a senha do Wolf.
-   O que o programa faz é avisar com clareza e oferecer a chave reserva.
-1. Leia `git status` e `git log --oneline -5` antes de começar. Se houver
-   mudança solta, pergunte ao Wolf ou faça commit dela separado.
-2. Mudanças pequenas, uma de cada vez. Nada de reescrever o arquivo inteiro
-   nem "aproveitar para melhorar" o que não foi pedido.
-3. Depois de TODA alteração: `verificar.bat` (ou
-   `.venv\Scripts\python.exe verificar.py`). Só diga que terminou se a
-   última linha for `TUDO CERTO` e não houver `[FALHA]`.
-4. Bug relatado = primeiro ache a CAUSA no código e diga qual é. Não chute.
-5. Bug corrigido de verdade = existe um teste novo no `verificar.py` que
-   falharia sem a correção. Se for só visual, explique como o Wolf confere.
-6. Se aparecer erro na tela, leia `%LOCALAPPDATA%\PesquisaIA\erro.log`.
-7. Depois que `verificar.py` passar, faça commit com mensagem clara.
-8. Se a mudança afeta o que o Wolf vê ao abrir o programa pelo atalho
-   (a Área de Trabalho usa o .exe!), rode `3 - Gerar EXE.bat` e copie
-   `dist\Pesquisa IA.exe` para a Área de Trabalho. Sem isso, a correção só
-   existe em `2 - Abrir Pesquisa IA.bat`. Diga ao Wolf qual dos dois ele
-   está usando.
-9. Nunca apague arquivos do Wolf. Para "remover", mova para `_arquivo_morto`.
-10. Instalou ou removeu biblioteca? Atualize `requirements.txt` (ou
-    `-dev`) com a versão exata (`==`) e registre no
-    `HISTORICO-DE-MUDANCAS.md`.
-11. Termine sempre com um relato curto em português simples: o que estava
-    errado, o que mudou, como conferir, e o que NÃO foi testado.
-
-## Armadilhas já encontradas (não repita)
-- **Seleção de texto (Canvas):** `select_from` só move o ponto de partida,
-  não apaga a seleção antiga. Todo clique chama `_limpar_selecoes()`;
-  clique fora das bolhas cai em `_ao_clicar_fora` (ligado com
-  `raiz.bind(..., add="+")`).
-- **Cliques globais / menus que fecham ao clicar fora:** existe UM
-  `bind_all("<Button-1>")` (o `_despachar_clique`). Menu novo usa
-  `_registrar_clique_global(fn)` ao abrir e `_remover_clique_global(fn)` ao
-  fechar. **Proibido** `unbind_all("<Button-1>")` (apagava o atalho de todos
-  os outros menus). O `verificar.py` falha se isso aparecer.
-- **Widgets que devolvem "break":** as bolhas devolvem `"break"` no clique,
-  então o clique não chega ao `bind_all`. Por isso `_on_click` chama
-  `_despachar_clique(event)` à mão.
-- **Opção `fg` em Canvas:** Canvas não aceita `fg` (`unknown option "-fg"`
-  já aconteceu). Em Canvas use `itemconfigure`.
-- **`winfo_screenwidth` só devolve o monitor PRINCIPAL.** Com dois
-  monitores, um menu posicionado com ele sai na tela errada (no PC do
-  Wolf: janela no segundo monitor, menu aparecia em x=1779, na primeira
-  tela). Use sempre `_tela_virtual()` (métricas de tela virtual do
-  Windows; aqui 3840x1080). Tem teste.
-- **Widget por cima de outro engole os cliques:** o texto de apoio da
-  caixa de digitar é um `Label` com `place()` por cima do `Text`. Tudo
-  que fica por cima precisa repassar o clique (`_clique_no_apoio`,
-  `_menu_no_apoio`) e traduzir a coordenada, porque o Label está
-  deslocado dentro da caixa.
-- **O primeiro clique num programa que não está em primeiro plano só o
-  ativa:** em teste automatizado, dê um clique esquerdo antes do direito.
-- **Texto de `Label` sem `anchor` fica CENTRADO:** um `tk.Label` com
-  várias linhas e sem `anchor="w"` centraliza o bloco, mesmo com
-  `justify="left"` (o `justify` alinha as linhas entre si, não o bloco).
-- **Janela com `grab_set`/`wait_window` trava a chamada:** para printar
-  uma dessas janelinhas, agende o print com `after()` de dentro — depois
-  que a função voltar, a janela já foi destruída.
-- **Nome de parâmetro tem que ser igual:** o Python 3 aceita acento em
-  identificadores, então um `cor_bolao` escrito `cor_bolão` passa ileso
-  na hora de compilar, mas o `pyflakes` acusa "undefined name" e o
-  `verificar.py` trava. Confira o nome byte a byte.
-- **`PIL.ImageGrab` em tela com dois monitores:** para conferir o desenho
-  de um botão, é mais seguro gerar o PNG direto com o Pillow (mesma arte
-  da função `_foto_*`) do que tentar capturar a tela — `ImageGrab` no
-  segundo monitor devolveu imagem preta. Para capturar a janela de verdade
-  use `PrintWindow` (veja `_tmp`/histórico): janela de Tk no Windows ->
-  `GetAncestor(winfo_id(), GA_ROOT)` dá o HWND certo.
-- **Canto arredondado "por cima" e o que fica embaixo:** as tampinhas de
-  canto são `Label` criadas **depois** da entrada e dos botões, então
-  ficam na frente. Se o respiro do botão for menor que `RAIO_CANTO`, a
-  tampinha come um pedaço do botão. Regra: respiro do botão >= raio.
-- **`place` + `anchor`: não some deslocamento.** O `anchor` JÁ põe o canto
-  do widget no ponto indicado. Escrever `place(relx=1.0, x=-raio,
-  anchor="ne")` empurra a coisa 12 px para dentro (o `x` é do canto da
-  âncora, não do centro). Use só `relx/rely` + `anchor`.
-- **A curva do canto tem o centro no canto OPOSTO** (`_dentro_do_canto`):
-  o bico do canto fica FORA (é o que a tampinha pinta) e o miolo fica
-  DENTRO. Invertido, a tampinha come o miolo da caixa em vez de arredondar.
-- **`tkinter` NÃO tem widget transparente.** O `bg` de um `Label`
-  preenche o retângulo inteiro, então uma imagem com "buraco"
-  (alpha=0) não deixa ver o que está embaixo: o buraco sai com a cor do
-  `bg`. Por isso `_imagem_canto` pinta a imagem **inteira** (dentro = cor
-  da caixa, fora = cor de fundo) e não usa transparência. Tem teste que
-  falha se aparecer qualquer pixel transparente.
-- **`PrintWindow` engana com antialiasing:** nos meus prints o canto
-  "parecia" curva mesmo estando quadrado. **O que vale é a tela de verdade
-  do Wolf.** Quando ele reclamar de algo visual, ache o pixel exato no
-  print que ele mandou e confira os valores RGB — foi assim que o quadrado
-  apareceu.
-- **Mudar a altura da caixa de digitar redesenha a conversa:** o `Text`
-  encolhe/engrandece, o rodapé muda de tamanho, o Canvas recebe
-  `<Configure>` e agenda `_agendar_redesenho`, que **recria todas as
-  bolhas**. Nos testes, pegue `app._telas_bolha` de novo depois de mexer
-  na caixa, senão o teste vai mexer em widget já destruído.
-- **`undo=True` no `tk.Text`:** sem isso `edit_undo()`/`edit_redo()` não
-  fazem nada e o Ctrl+Z parece quebrado.
-- **Erros escondidos:** erro dentro de botão/evento não derruba o programa;
-  vai para o `erro.log`. O `verificar.py` captura esses erros durante o
-  teste (`report_callback_exception`).
-- **Corrida de redesenho:** a janela redesenha as bolhas logo depois de
-  abrir. Em testes, espere ~1 s antes de pegar referências às bolhas.
-- **Emojis:** as bolhas removem emojis de propósito (`_remover_emojis`).
-- **Chaves de API:** só em `%LOCALAPPDATA%\PesquisaIA\config.json`. Nunca no
-  código nem em arquivo da pasta do projeto.
-- **`carregar_memoria()` tem um cache dentro do módulo** (`_memoria_cache`):
-  ele só é relido do arquivo quando é `None`. Um teste que aponte
-  `ARQUIVO_MEMORIA` para uma pasta de teste **tem que zerar
-  `p._memoria_cache`** e devolver o valor no fim — senão a memória do
-  teste anterior aparece como se fosse do Wolf. (Já enganou um teste da
-  tela nova: sobrou "Gosta de RPG" e "Mora em Santa Maria".)
-- **Avatar no .exe:** `avatar_usuario.png` e `icone.ico` são embutidos no
-  .exe pelo `Pesquisa IA.spec`. Trocou a imagem? Gere o .exe de novo.
-
-## Ainda não resolvido / ideias
-- Texto das bolhas: duplo clique (palavra) e triplo clique (texto todo) ja funcionam desde 15/10/2026. Faltam seleção por parágrafo e arrastar mantendo a palavra. Trocar por `tk.Text` somente leitura é o caminho de menor esforço; alternativa maior: interface em HTML com `pywebview` (ver PROXIMOS-PASSOS.md).
-- Não há backup do código fora deste computador. Sugerir ao Wolf um
-  repositório privado (GitHub) ou cópia periódica da pasta.
-- Nomes de modelos Gemini em `MODELOS_RESERVA` não foram conferidos na
-  documentação oficial; o programa já tenta o próximo se um falhar.
-
-## Emoji colorido no Tk (armadilha conhecida)
-- O Tk no Windows só desenha emoji em UMA cor. Colorido = figurinha (imagem)
-  no meio de um `tk.Text`, NUNCA por cima de um item de texto do Canvas (foi
-  isso que deslocava tudo em 15/10/2026). Guia completo e testado:
-  `PLANO-NOVAS-FUNCOES.md`, Tarefa E. Não religue emoji sem seguir a Tarefa E.
-- A memória do Wolf não deve repetir fatos: use sempre `memoria.mesclar`
-  (arquivo `memoria.py`), nunca `lista.append` direto.
+Relate o que estava errado, a causa, os arquivos alterados, os testes executados, o que não foi testado e como o usuário pode conferir. Não diga que está totalmente resolvido sem validar o caminho que o usuário realmente usa.

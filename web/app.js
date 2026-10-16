@@ -1171,7 +1171,7 @@ function abaConversa(corpo) {
 function cartaoBackup() {
   const c = el("div", "cartao");
   c.append(el("h4", "", "Cópia de segurança dos seus dados"));
-  c.append(el("p", "desc", "Guava as conversas, a memória e as chaves num arquivo .zip dentro do OneDrive. Só lê e copia: não muda nada."));
+  c.append(el("p", "desc", "Guarda as conversas, a memória e as chaves num arquivo .zip dentro do OneDrive. Só lê e copia: não muda nada."));
   const b = el("button", "btn", "Fazer cópia agora");
   const onde = el("p", "nota-backup");
   b.addEventListener("click", async () => {
@@ -1257,24 +1257,22 @@ function abaChaves(corpo) {
   const cfg = estado.cfgTela;
   const geminiCard = el("div", "cartao");
   geminiCard.append(linhaToggle("Usar o Gemini (principal)",
-    "Desliga o Gemini e usa so o plano B (ChatGPT/Groq/OpenRouter).",
+    "Desliga o Gemini e usa só o plano B (ChatGPT/Groq/OpenRouter).",
     "usar_gemini"));
   corpo.append(geminiCard);
   corpo.append(
-    cartaoChave("Google Gemini (principal)", "% ela que pesquisa e escreve as respostas.", "api_key", cfg.gemini, {
+    cartaoChave("Google Gemini (principal)", "É ela que pesquisa e escreve as respostas.", "api_key", cfg.gemini, {
       testar: true,
       pagina: "https://aistudio.google.com/apikey",
     }),
     cartaoChave("Google Gemini (reserva, opcional)", "Se a principal parar de funcionar, o programa troca sozinho para esta.", "api_key_reserva", cfg.gemini_reserva, { testar: true })
   );
   const plano = el("div", "cartao");
-  plano.append(linhaToggle("Usar o plano B", "Se o Gemini nao responder, tenta estes servicos de reserva.", "usar_plano_b"));
+  plano.append(linhaToggle("Usar o plano B", "Se o Gemini não responder, tenta estes serviços de reserva.", "usar_plano_b"));
   corpo.append(plano);
   for (const s of cfg.servicos) {
-    corpo.append(cartaoChave(s.nome, s.resumo ? "Gratis: " + s.resumo : "", s.campo, s, { passos: s.passos, pagina: s.pagina }));
+    corpo.append(cartaoChave(s.nome, s.resumo ? "Grátis: " + s.resumo : "", s.campo, s, { passos: s.passos, pagina: s.pagina }));
   }
-}
-
 }
 
 async function abaMemoria(corpo) {
@@ -1287,12 +1285,11 @@ async function abaMemoria(corpo) {
   // ficaria velha depois de adicionar ou apagar um item.
   const pegar = (rr) => {
     if (rr.fatos) fatos = rr.fatos;
-        if (rr.datas) datas = rr.datas;
     if (rr.datas) datas = rr.datas;
   };
   const gavetas = r.gavetas || {};
   let filtroGaveta = ""; // "" = todos
-let filtroAssunto = ""; // "" = todos
+  let filtroAssunto = ""; // "" = todos
   const gavetasEl = el("div", "gavetas gavetas-filtro");
   const allBtn = el("button", "badge-gaveta ativo", "todos · " + fatos.length);
   allBtn.title = "Mostrar todas as gavetas";
@@ -1385,7 +1382,7 @@ let filtroAssunto = ""; // "" = todos
           const cancelar = el("button", "btn", "Cancelar");
           ok.addEventListener("click", async () => {
             const novoTexto = caixa.value.trim();
-            if (!novoTexto) return aviso("O item nao pode ficar vazio.", true);
+            if (!novoTexto) return aviso("O item não pode ficar vazio.", true);
             const rr = await chamar("memoria_editar", f, novoTexto);
             if (rr.erro) return aviso(rr.erro, true);
             pegar(rr);
@@ -1707,7 +1704,7 @@ async function tratarArquivoSolto(arquivo) {
   if (!arquivo) return;
   const ext = String(arquivo.name.split('.').pop() || "").toLowerCase();
   if (["txt","md","csv","json"].indexOf(ext) === -1) {
-    aviso("Formato " + ext + " ainda nao suportado. Solte .txt/.md/.csv/.json.", true);
+    aviso("Formato " + ext + " ainda não suportado. Solte .txt/.md/.csv/.json.", true);
     return;
   }
   const texto = (await lerArquivoTexto(arquivo)).slice(0, 30000);
@@ -1732,23 +1729,27 @@ function ligarEventos() {
   const entrada = $("#entrada");
   entrada.addEventListener("input", () => { ajustarAltura(); atualizarEnviar(); });
   entrada.addEventListener("keydown", (e) => {
-    if (e.key === "S" && e.ctrlKey && e.shiftKey) { e.preventDefault(); enviar(undefined, true); return; }
-  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+    if (e.key === "S" && e.ctrlKey && e.shiftKey) {
+      e.preventDefault();
+      enviar(undefined, true);
+      return;
+    }
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
       e.preventDefault();
       enviar();
     }
   });
   $("#btn-enviar").addEventListener("click", () => enviar());
-$("#btn-serio").addEventListener("click", () => enviar(undefined, true));
-$("#btn-deep").addEventListener("click", () => {
-  estado.profundo = !estado.profundo;
-  const b = $("#btn-deep");
-  b.classList.toggle("ligada", !!estado.profundo);
-  b.title = estado.profundo
-    ? "Pesquisa profunda LIGADA (clique para desligar)"
-    : "Pesquisa profunda: mais sites, resposta em topicos com fontes (clique para ligar)";
-  aviso(estado.profundo ? "Pesquisa profunda LIGADA." : "Pesquisa profunda desligada.");
-});
+  $("#btn-serio").addEventListener("click", () => enviar(undefined, true));
+  $("#btn-deep").addEventListener("click", () => {
+    estado.profundo = !estado.profundo;
+    const b = $("#btn-deep");
+    b.classList.toggle("ligada", !!estado.profundo);
+    b.title = estado.profundo
+      ? "Pesquisa profunda LIGADA (clique para desligar)"
+      : "Pesquisa profunda: mais sites, resposta em tópicos com fontes (clique para ligar)";
+    aviso(estado.profundo ? "Pesquisa profunda LIGADA." : "Pesquisa profunda desligada.");
+  });
   $("#btn-mic").addEventListener("click", () => alternarMicrofone());
   $("#btn-privada").addEventListener("click", () => alternarPrivada());
   $("#btn-resumo").addEventListener("click", () => resumoDoDia());

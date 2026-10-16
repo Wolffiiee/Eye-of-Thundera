@@ -5,6 +5,17 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Correção: janela abria, mas nenhum botão respondia
+
+- **Causa:** um commit adicionou uma chave `}` extra em `web/app.js`, logo após `abaChaves`. O navegador apontava `SyntaxError: Unexpected token '}'` na linha 1278 e não executava nenhum JavaScript do arquivo; por isso os eventos dos botões nunca eram registrados.
+- **Correção:** removida a chave extra. Corrigidos também um texto quebrado na descrição do Gemini e uma linha duplicada na atualização das datas da memória.
+- **Prevenção:** `verificar.py` agora roda `node --check web/app.js` quando Node.js está disponível. O teste falha se houver erro de sintaxe no JavaScript.
+- **Relatório:** corrigido o contador final que mostrava `TESTES: 0` apesar das verificações executadas; agora conta as verificações reportadas por `ok`, `falha` e `aviso`.
+- **Documentação:** criado `README.md` como entrada principal e alinhados `ONDE-PARAMOS.md`, `PROXIMOS-PASSOS.md`, `ROADMAP.md`, `AGENTS.md`, `INSTRUCOES-PARA-IA.md`, `PASSO-A-PASSO.md`, `GUIA-DO-OPENCODE.md`, `LEIA-ME.txt` e `web/LEIA-ME.md` ao atalho real, que executa `app_web.py` pelo ambiente `.venv`. Os comentários e mensagens de `Gerar o EXE.bat` agora distinguem o pacote distribuível do atalho de desenvolvimento; removida também uma função `foo()` sem uso no atualizador do atalho.
+- **Verificação:** `verificar.py` passou com 126 verificações reportadas, 0 falhas e 0 avisos. O comando do atalho foi iniciado de novo, a janela `Eye of Thundera` apareceu no Windows e não surgiu `erro.log`; ainda falta confirmar manualmente os cliques.
+
+---
+
 ## 2026-10-16 — A janela lembra onde foi fechada (e dois defeitos)
 
 Tres coisas que o Wolf pediu ou viu com o programa na mao.
