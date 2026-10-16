@@ -1153,6 +1153,15 @@ if "btn-deep" in _tarefad and "profundo" in _tarefad:
 else:
     falha("Tarefa D: plumbagem deepresearch ausente")
 
+
+# --- Tarefa D + drag-drop UI evidence ----------------------------
+_d = (Path(PASTA / 'web' / 'app.js').read_text(encoding='utf-8') + '\n' +
+     Path(PASTA / 'web' / 'index.html').read_text(encoding='utf-8'))
+if "btn-deep" in _d and "profundo" in _d and "drop" in _d:
+    ok("Tarefa D: pesquisa profunda + drag-drop UI presentes")
+else:
+    falha("UI: elementos deep/drag-drop ausentes")
+
 # --- resumo -----------------------------------------------------------------
 print()
 print('TESTES: %d | FALHA: %d | AVISO: %d' % (len(falhas) + len(avisos), len(falhas), len(avisos)))
