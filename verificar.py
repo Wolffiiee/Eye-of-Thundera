@@ -1162,6 +1162,30 @@ if "btn-deep" in _d and "profundo" in _d and "drop" in _d:
 else:
     falha("UI: elementos deep/drag-drop ausentes")
 
+
+# --- gavetas por assunto / memoria evidence ----------------------
+try:
+    import memoria as _mem
+    _f = _mem.gavetas_por_assunto([
+        "Gosta de jogar videogame", "Mora em Santa Maria",
+        "Prefere ser chamado de Wolf"])
+    if isinstance(_f, dict) and len(_f) >= 1:
+        ok("gavetas por assunto: agrupa fatos em dict")
+    else:
+        falha("gavetas por assunto: resultado inesperado %r" % (_f,))
+    if _mem.assunto_de("Gosta de jogar videogame"):
+        ok("assunto_de: retorna rotulo nao vazio")
+    else:
+        falha("assunto_de: retornou vazio")
+except Exception as _e:
+    falha("gavetas por assunto quebrou: %r" % (_e,))
+
+_g = Path(PASTA / "web" / "app.js").read_text(encoding="utf-8")
+if "assuntos" in _g and "gavetas" in _g:
+    ok("UI: assuntos e gavetas presentes na tela")
+else:
+    falha("UI: assuntos/gavetas ausentes")
+
 # --- resumo -----------------------------------------------------------------
 print()
 print('TESTES: %d | FALHA: %d | AVISO: %d' % (len(falhas) + len(avisos), len(falhas), len(avisos)))
