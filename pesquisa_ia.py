@@ -1570,17 +1570,19 @@ id_atual=None, consulta=None, profundo=False,
     noticias = _buscar_noticias(busca) if _quer_noticias(busca) else []
     # Pesquisa profunda: fonte extra com variação da busca, sem gastar IA.
     if profundo:
-        try:
-            _extra = _buscar_texto((busca or "") + " noticias")
-            vistos = {(i.get("href") or i.get("url") or "").strip()
-                      for i in (resultados or [])}
-            for item in (_extra or []):
-                u = (item.get("href") or item.get("url") or "").strip()
-                if u and u not in vistos:
-                    vistos.add(u)
-                    (resultados or []).append(item)
-        except Exception:
-            pass
+        for _q in ((busca or "") + " noticias",
+                   (busca or "") + " informacoes"):
+            try:
+                _extra = _buscar_texto(_q)
+                vistos = {(i.get("href") or i.get("url") or "").strip()
+                          for i in (resultados or [])}
+                for item in (_extra or []):
+                    u = (item.get("href") or item.get("url") or "").strip()
+                    if u and u not in vistos:
+                        vistos.add(u)
+                        (resultados or []).append(item)
+            except Exception:
+                pass
 
     blocos = []
     for indice, item in enumerate(resultados, 1):
