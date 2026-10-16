@@ -5,6 +5,63 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — O defeito que travou a tela: a ponte se perdia dentro da janela
+
+O Wolf abriu a tela nova, perguntou "quem venceu o jogo ontem?" e levou
+`TypeError: api[nome] is not a function`. Depois disso o "pensando" ficou
+aceso para sempre e ele nao conseguiu mais perguntar NADA.
+
+### A pista que enganava
+
+Todas as 24 funcoes que a tela pede **existem** na ponte ( conferido de
+tres maneiras diferentes: no fonte, dentro de uma janela de verdade, e no
+que o proprio `.exe` descompacta). O erro dizia "funcao inexistente", mas
+a funcao estava la. A mensagem so estava certa sobre o **sintoma**.
+
+### A causa de verdade
+
+O pywebview monta a ponte andando por `dir(ponte)`. Quando acha um
+atributo que nao e' funcao **mas tem `__module__`**, ele **entra dentro
+dele** procurando mais funcoes. A janela do WebView2 tem:
+
+    janela.native.AccessibilityObject.Bounds.Empty.Empty.Empty.Empty...
+
+Cada coisa leva na mesma coisa, sem fim. O pywebviestoura `maximum
+recursion depth exceeded` e fica segundos dentro disso. **Enquanto isso a
+ponte fica VAZIA** — e a tela, que ja estava pronta, perguntou nesse
+intervalo.
+
+### Os dois consertos
+
+1. **`self.janela` virou `self._janela`.** Tudo que comeca com underscore
+   o pywebview pula, entao ele nunca mais entra na janela. Confirmado que
+   e' o **unico** atributo com esse problema: `dict`, `list`, `str`, `bool`
+   e `None` nao tem `__module__`, entao nao Sao visitados.
+2. **A tela passou a esperar a ponte encher** (`esperarPonte()` no
+   `app.js`), em vez de confiar na ordem de chegada. E, se alguma chamada
+   falhar, ela **destrava** o "pensando" — antes um erro so deixava a tela
+   travada.
+
+### A licao
+
+Duas, e as duas vem do mesmo jeito:
+
+- **"Funcao inexistente" nem sempre significa funcao inexistente.**
+  `api[nome] is not a function` aparece tanto quando a funcao nao existe
+  quanto quando ela existe **mas ainda nao chegou**. Um `TypeError` tao
+  generico devia ter levado direto a "e so timing?".
+- **Confundir "o programa respondeu" com "o programa respondeu bem".**
+  A tela mostrava a lista de conversas normalmente — porque `iniciar()`
+  tinha rodado. O defeito so aparecia na **primeira pergunta depois**,
+  quando a janela ja estava exposta. A tela "funcionando" enganou.
+
+### O teste que protege
+
+A secao 4c5 do `verificar.py` tem um **controle**: uma ponte com a janela
+exposta DEVE entrar em loop, e se nao entrar o teste reprova ("o controle
+nao entrou em loop — o teste nao serve para provar nada"). Teste que so
+passa quando o defeito existe **nao serve para nada**.
+
 ## 2026-10-16 — Tela nova: resumo do dia, backup no programa e memória com data
 
 Mais tres ideias da `IDEIAS.md`, feitas enquanto o Wolf dormia.

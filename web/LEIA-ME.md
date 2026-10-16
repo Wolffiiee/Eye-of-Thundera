@@ -84,6 +84,19 @@ de graça (no Tk ele só sai de uma cor).
 - A ponte do pywebview é **assíncrona**: a chamada devolve uma Promise, e
   o `app.js` já usa `await` (`async function chamar`). Do lado do Python,
   tudo pode ser normal.
+- **A ponte nasce vazia e só enche depois** (`window.pywebview.api = {}`).
+  Por isso o `chamar()` do `app.js` passa antes por `esperarPonte()`: ela
+  fica de olho até existir pelo menos uma função. Sem isso, perguntar cedo
+  demais leva `TypeError: api[nome] is not a function` — e foi o que travou
+  a tela do Wolf em 16/10/2026.
+- **Nada de objeto do Python como atributo público da ponte.** O pywebview
+  monta a lista de funções andando por `dir(ponte)` e, quando acha algo que
+  não é função mas tem `__module__`, ele **entra dentro** procurando mais
+  funções. A janela do WebView2 tem `native` → `AccessibilityObject` →
+  `Bounds` → `Empty` → `Empty` → … sem fim: o pywebview estoura
+  `maximum recursion depth` e, enquanto isso, a ponte fica vazia. Por isso
+  a janela se chama `self._janela` (com underscore = pulada pelo pywebview).
+  `dict`, `list`, `str`, `bool` e `None` são seguros: não têm `__module__`.
 - Para o Python **falar com a tela**, use o `self._evento(...)` da ponte
   (é ele que faz `janela.evaluate_js("window.PIA.evento(" + json + ")")`).
   O `json.dumps(..., ensure_ascii=False)` evita que acento e emoji virem

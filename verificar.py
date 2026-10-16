@@ -415,6 +415,132 @@ try:
 except Exception as erro:
     falha("os testes das datas da memória quebraram: %r" % (erro,))
 
+# --- 4c5. a ponte nao se perde dentro da janela (16/10/2026) --------------
+# ESTE FOI O DEFÉITO QUE TRAVOU A TELHA DO WOLF:
+# a janela ficava exposta na ponte e o pywebview, ao montar a lista de
+# funções, ENTRAVA dentro dela — `native` -> `AccessibilityObject` ->
+# `Bounds` -> `Empty` -> `Empty` -> ... sem fim ("maximum recursion depth
+# exceeded"). Enquanto isso a ponte ficava VAZIA, e a tela, ja pronta,
+# perguntava e levava "TypeError: api[nome] is not a function". Depois
+# disso o "pensando" ficava aceso e nao dava mais para perguntar nada.
+#
+# O teste tem um CONTROLE: uma ponte com a janela exposta DEVE entrar em
+# loop. Se o controle nao entrar, o teste nao esta testando nada.
+try:
+    import inspect as _inspect
+    import app_web as _aw
+
+    class _EspelhoInfinito:
+        """Imita o `Bounds.Empty.Empty.Empty...` do WebView2: cada coisa
+        leva na mesma coisa, para sempre."""
+
+        __module__ = "falso"
+
+        def __dir__(self):
+            return ["Empty", "native"]
+
+        def __getattr__(self, _nome):
+            return self
+
+    class _JanelaComoWebView2:
+        __module__ = "falso"
+
+        def __init__(self):
+            self.native = _EspelhoInfinito()
+
+    class _EntrouNoInfinito(Exception):
+        pass
+
+    # O orcamento conta nos VISITADOS, e nao a profundidade: a arvore do
+    # WebView2 se divide em DOIS a cada nivel (os dois nomes apontam para
+    # o mesmo objeto), entao a profundidade sozinha nao diz nada — da para
+    # "achar" um limite raso e nao será o defeito real. Com este orcamento
+    # o controle estoura em milissegundos.
+    ORCAMENTO = 5000
+
+    def _caminhar(obj, restantes=ORCAMENTO):
+        """A MESMA caminhada que o pywebview faz (webview/util.py,
+        `get_functions`): nada de underline, e se o atributo nao e' funcao
+        mas tem `__module__`, entra dentro dele procurando funcoes.
+
+        Devolve quantos atributos visitou (menos = melhor)."""
+        if restantes <= 0:
+            raise _EntrouNoInfinito()
+        for nome in dir(obj):
+            if nome.startswith("_"):
+                continue
+            restantes -= 1
+            try:
+                attr = getattr(obj, nome)
+            except Exception:
+                continue
+            if _inspect.ismethod(attr) or _inspect.isfunction(attr):
+                continue
+            if hasattr(attr, "__module__"):
+                _caminhar(attr, restantes)
+        return ORCAMENTO - restantes
+
+    # --- o CONTROLE: com a janela exposta, a caminhada TEM de se perder
+    _controle = _aw.Ponte()
+    _controle.janela = _JanelaComoWebView2()      # o defeito, de proposito
+    try:
+        _caminhar(_controle)
+        _controle_entrou = False
+    except _EntrouNoInfinito:
+        _controle_entrou = True
+    except Exception:
+        _controle_entrou = True
+    if _controle_entrou:
+        ok("ponte: o teste sabe detectar a janela envenenada (controle)")
+    else:
+        falha("ponte: o controle NÃO entrou em loop — o teste não serve "
+              "para provar nada")
+
+    # --- e agora a ponte de verdade, que tem a janela ESCONDIDA
+    _p = _aw.Ponte()
+    if "janela" not in [n for n in dir(_p) if not n.startswith("_")]:
+        ok("ponte: a janela não fica exposta para o pywebview entrar nela")
+    else:
+        falha("ponte: a janela está exposta (o defeito do dia 16/10)")
+    _p._janela = _JanelaComoWebView2()
+    try:
+        _vistos = _caminhar(_p)
+        _entrou = False
+    except _EntrouNoInfinito:
+        _entrou = True
+        _vistos = -1
+    except Exception:
+        # qualquer outro problema tambem e' a ponte se perdendo
+        _entrou = True
+        _vistos = -1
+    if not _entrou:
+        ok("ponte: montar a ponte não se perde dentro da janela "
+           "(%d atributos)" % _vistos)
+    else:
+        falha("ponte: a caminhada entrou em loop mesmo com a janela "
+              "escondida")
+    # a janela continua guardada: sem isso a tela nao receberia nada
+    _p._janela = "JANELA-TESTE"
+    if _p._janela == "JANELA-TESTE":
+        ok("ponte: a janela continua guardada (com nome escondido)")
+    else:
+        falha("ponte: a janela sumiu")
+
+    # --- e a tela espera a ponte encher, em vez de confiar na ordem
+    _js = Path(PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    if "esperarPonte" in _js and "ESPERA_PONTE_MS" in _js:
+        ok("ponte: a tela espera a ponte ficar pronta antes de perguntar")
+    else:
+        falha("ponte: a tela não espera a ponte (pode levar "
+              "api[nome] is not a function)")
+    if "esperar(false)" in _js:
+        ok("ponte: se a chamada falhar, a tela destrava em vez de "
+           "ficar esperando para sempre")
+    else:
+        falha("ponte: a tela pode ficar travada depois de um erro")
+except Exception as erro:
+    falha("os testes da ponte quebraram: %r" % (erro,))
+
 # --- 4d. sites consultados: o que a busca traz, limpo e honesto ---------
 # Sao os RESULTADOS DA BUSCA, nao citacoes: por isso a tela escreve
 # "sites consultados" e mostra o link, para o Wolf conferir com os
@@ -2759,7 +2885,7 @@ def testes_tela_nova_microfone(p):
 
         # 8. SILENCIO: "não ouvi nada" e nenhum texto na caixa
         ponte = ja_gravando(microfone_de_mentira(wav_tem_som=lambda wav: False))
-        janela = ponte.janela
+        janela = ponte._janela
         janela.eventos.clear()
         resposta = ponte.mic_alternar()
         if "Não ouvi nada" in str(resposta.get("erro", "")) and \
@@ -2773,7 +2899,7 @@ def testes_tela_nova_microfone(p):
             raise RuntimeError("API key not valid: 401 UNAUTHENTICATED")
 
         ponte = ja_gravando(microfone_de_mentira(transcrever=transcrever_quebrado))
-        janela = ponte.janela
+        janela = ponte._janela
         janela.eventos.clear()
         ponte.mic_alternar()
         erro = janela.unico("voz_erro")

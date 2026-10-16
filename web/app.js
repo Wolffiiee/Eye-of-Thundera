@@ -21,14 +21,60 @@ function el(tag, cls, texto) {
 const estado = { mensagens: [], conversas: [], atual: null, ocupado: false, gravando: false, privada: false, sugerindo: false, ultimaPergunta: "", ultimaResposta: "", cfg: {}, aba: "chaves", rascunho: {} };
 const ROTULO_WEB = { auto: "Web: automática", sempre: "Web: sempre", nunca: "Web: desligada" };
 
+/* ---------------- a ponte com o programa ----------------
+   O pywebview cria a ponte em DUAS etapas: primeiro põe um objeto VAZIO
+   (window.pywebview.api = {}) e só depois coloca as funções dentro. Entre
+   uma etapa e outra, api[nome] é undefined e a tela estoura um
+   "api[nome] is not a function".
+
+   Foi exatamente isso que travou o Wolf em 16/10/2026: a tela perguntou
+   nesse intervalo, o erro apareceu, o "pensando" ficou aceso para sempre
+   e ele nao conseguia mais perguntar NADA.
+
+   Aqui a tela ESPERA a ponte encher em vez de confiar na ordem. Nao
+   importa se ela chega primeiro, depois ou junto: a chamada so acontece
+   quando existe pelo menos uma funcao. */
+const ESPERA_PONTE_MS = 30000;
+let pontePronta = null;
+
+function esperarPonte() {
+  if (pontePronta) return pontePronta;
+  pontePronta = new Promise((resolve, reject) => {
+    const comecou = Date.now();
+    const tentar = () => {
+      const api = window.pywebview && window.pywebview.api;
+      if (api && Object.keys(api).length > 0) return resolve(api);
+      if (Date.now() - comecou > ESPERA_PONTE_MS) {
+        pontePronta = null; // deixa tentar de novo na proxima chamada
+        return reject(new Error(
+          "o programa não respondeu em " + ESPERA_PONTE_MS / 1000 +
+          " segundos. Fecha e abre de novo."
+        ));
+      }
+      setTimeout(tentar, 40);
+    };
+    window.addEventListener("pywebviewready", tentar);
+    tentar();
+  });
+  return pontePronta;
+}
+
 async function chamar(nome, ...args) {
   try {
-    const api = window.pywebview && window.pywebview.api;
-    if (!api) throw new Error("a ponte com o programa ainda não está pronta");
+    const api = await esperarPonte();
+    if (typeof api[nome] !== "function") {
+      const disponiveis = Object.keys(api).sort().join(", ");
+      throw new Error(
+        `a função "${nome}" não existe no programa (o que existe: ${disponiveis})`
+      );
+    }
     return await api[nome](...args);
   } catch (e) {
+    // Se a chamada falhar, a tela NÃO pode ficar travada esperando: quem
+    // chama tem que poder seguir em frente.
+    if (estado.ocupado) esperar(false);
     aviso("Algo deu errado: " + (e.message || e), true);
-    return { erro: String(e) };
+    return { erro: String(e.message || e) };
   }
 }
 

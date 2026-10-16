@@ -302,7 +302,21 @@ class Ponte:
     """
 
     def __init__(self, janela=None):
-        self.janela = janela
+        # O nome da janela tem underscore DE PROPOSITO (16/10/2026).
+        #
+        # O pywebview monta a ponte andando por `dir(ponte)` e, quando acha
+        # um objeto que nao e' funcao, ele ENTRA dentro dele para ver se ha
+        # mais funcoes la. A janela do WebView2 tem `native` ->
+        # `AccessibilityObject` -> `Bounds` -> `Empty` -> `Empty` -> ... e
+        # nunca acaba: o pywebview estoura "maximum recursion depth
+        # exceeded" depois de milhares de atributos.
+        #
+        # Enquanto ele se perde nisso, a ponte fica VAZIA, e a tela
+        # (que ja estava pronta) pergunta e leva
+        # "TypeError: api[nome] is not a function" — foi assim que o Wolf
+        # perdeu a tela no primeiro teste em 16/10/2026. Tudo que comeca
+        # com underscore o pywebview pula, entao aqui nao entra naco.
+        self._janela = janela
         self.id_atual = None        # conversa aberta (igual ao app antigo)
         self.mensagens = []
         self.ocupado = False
@@ -709,10 +723,10 @@ class Ponte:
         Aqui nunca estoura nada: se o Wolf fechou a janela no meio da
         resposta, o erro e' engolido (a thread morre em silencio).
         """
-        if self.janela is None:
+        if self._janela is None:
             return                    # teste sem janela: nao ha para quem falar
         try:
-            self.janela.evaluate_js(
+            self._janela.evaluate_js(
                 "window.PIA.evento("
                 + json.dumps(dados, ensure_ascii=False) + ")"
             )
@@ -1174,7 +1188,7 @@ def principal():
         frameless=False,
         easy_drag=False,
     )
-    ponte.janela = janela
+    ponte._janela = janela
 
     def ao_abrir(instancia):
         # A barra de titulo do Windows e' branca por padrao e destoa de

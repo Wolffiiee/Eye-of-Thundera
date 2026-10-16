@@ -13,6 +13,26 @@ ler 40 commits.
 
 ## Defeitos importantes encontrados e corrigidos
 
+### 0. (16/10 de manhã) A tela travou: "api[nome] is not a function"
+
+O primeiro teste de manhã deu esse problema. A tela mostrou
+`TypeError: api[nome] is not a function` e o botão de enviar **nunca mais
+funcionou** — o "pensando" ficava aceso para sempre.
+
+**A pista enganava:** todas as funções que a tela pede existem. O erro
+dizia "função inexistente", mas a função estava lá.
+
+**A causa:** o pywebview monta a ponte *entrando dentro* dos objetos da
+ponte para ver se acha mais funções. A janela do Windows tem
+`native` → `AccessibilityObject` → `Bounds` → `Empty` → `Empty` → … sem
+fim. O pywebview se perdia nisso e, **enquanto isso, a ponte ficava
+vazia**. Você perguntou exatamente nesse instante.
+
+**Conserto:** a janela passou a se chamar `self._janela` (com underscore,
+que o pywebview pula) e a tela passou a **esperar a ponte encher** em vez
+de confiar na ordem. Se alguma chamada falhar, ela **destrava** em vez de
+te deixar preso.
+
 ### 1. O programa NUNCA pesquisava na web (defeito antigo e silencioso)
 
 O Wolf perguntou do próximo jogo do Grêmio e a IA respondeu que não tinha
