@@ -28,11 +28,6 @@ Um modo "pesquisa séria" para quando a pergunta é importante: o app procura
 em mais sites, lê mais páginas e devolve uma resposta organizada em tópicos,
 com as fontes citadas. Pode ser um botão ao lado do de enviar, ou um atalho.
 
-### 3. Modo conversa privada
-Hoje tudo o que você pergunta fica salvo. Um botão "conversa privada" faria o
-app não salvar aquela conversa e não usar a memória — tipo a "conversa
-temporária" do ChatGPT. Bom para assuntos que você não quer deixar registrado.
-
 ### 3. ~~Modo conversa privada~~ **FEITA em 16/10/2026**
 Botão "Privada" na barra de escrever. Ligado, o que for dito **não é
 salvo** e a IA **não aprende nada** — e o título da conversa fica
@@ -41,11 +36,14 @@ Um detalhe de segurança: ligar **ou desligar** começa uma conversa nova,
 senão desligar gravaria a conversa inteira junto e a parte privada
 vazaria para o arquivo.
 
-### 4. Perguntas para continuar
-Depois da resposta, o app sugere 3 perguntas de continuação que você pode
-clicar (ex.: "E quem ganhou?", "Me dê mais detalhes", "Compare com outro").
-Você já tem sugestões na tela inicial; seria legal ter também depois de cada
-resposta.
+### 4. ~~Perguntas para continuar~~ **FEITA em 16/10/2026**
+Depois da resposta, um botão discreto **"outras perguntas"** sugere 3
+perguntas curtas sobre o mesmo assunto; clicar em uma já manda a pergunta.
+**É um botão de propósito, não é automático:** cada sugestão gasta uma
+chamada de IA, e fazer isso sozinho a cada resposta dobraria o custo do
+programa sem você pedir.
+Se a IA responder besteira em vez da lista, a tela avisa em vez de
+mostrar coisa quebrada.
 
 ### 5. ~~Conversa importante (fixar)~~ **FEITA em 16/10/2026**
 Na barra da esquerda da tela nova, no menu dos tres pontinhos: "Fixar no topo" / "Soltar do topo". A conversa sobe no arquivo com as mensagens intactas e o programa antigo continua enxergando ela normalmente.

@@ -271,6 +271,23 @@ def _mensagens_de(conversa):
     return list(conversa.get("mensagens", [])) if conversa else []
 
 
+def _ler_json_da_ia(texto):
+    """Le o JSON que a IA devolveu, mesmo que venha com sujeira em volta.
+
+    Reaproveita o leitor do `roteador`, que ja foi testado para JSON
+    limpo, JSON dentro de ``` e texto solto. Se o `roteador` sumir do
+    projeto, cai no `json.loads` simples em vez de quebrar a tela.
+    """
+    try:
+        import roteador
+        return roteador._ler_json(texto)
+    except Exception:
+        try:
+            return json.loads(texto)
+        except Exception:
+            return None
+
+
 # --- a ponte: o que o JavaScript chama -------------------------------------
 
 class Ponte:
@@ -455,6 +472,60 @@ class Ponte:
             "conversas": _conversas_para_a_tela(),
         }
 
+    def sugerir(self, pergunta, resposta):
+        """Sugere 3 perguntas para continuar a conversa (ideia 4).
+
+        E' um BOTAO, e nao automatico de proposito: cada pergunta aqui
+        gasta uma chamada de IA, e fazer isso sozinho a cada resposta
+        dobraria o custo do programa sem o Wolf pedir. Com o botao, ele so
+        paga quando quer.
+
+        Usa o modelo rapido (o mesmo do roteador): sao tres frases
+        curtas, nao precisa pensar muito.
+        """
+        if DEMO:
+            return self._demo_nada()
+        cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+        chave = (cfg.get("api_key") or "").strip()
+        if not chave:
+            return {"erro": "sem_chave"}
+        if self.ocupado:
+            return {"erro": "Aguarde a resposta terminar."}
+        try:
+            from google import genai
+            from google.genai import types
+
+            http = types.HttpOptions(timeout=20000)
+            cliente = genai.Client(api_key=chave, http_options=http)
+            pedido = (
+                "Voce sugere perguntas de continuacao para um chat.\n"
+                "Responda S\u00d3 com JSON, sem texto em volta:\n"
+                '{"perguntas": ["...", "...", "..."]}\n\n'
+                "A pergunta foi:\n%s\n\n"
+                "E a resposta foi:\n%s\n\n"
+                "Escreva 3 perguntas curtas que a pessoa poderia fazer em "
+                "seguir sobre o MESMO assunto. Nada de 'como posso ajudar' "
+                "nem de perguntas sobre a propria conversa. Portugues do "
+                "Brasil, no maximo 90 letras cada."
+                % (str(pergunta or "")[:600], str(resposta or "")[:1800])
+            )
+            r = cliente.models.generate_content(
+                model=cfg.get("modelo_memoria") or p.MODELO_MEMORIA,
+                contents=pedido,
+                config=types.GenerateContentConfig(
+                    temperature=0.7, response_mime_type="application/json"),
+            )
+            dados = _ler_json_da_ia(getattr(r, "text", "") or "")
+            itens = (dados or {}).get("perguntas")
+            if not isinstance(itens, list):
+                return {"erro": "Nao consegui sugerir perguntas agora."}
+            limpas = [str(x).strip() for x in itens if str(x).strip()][:3]
+            if not limpas:
+                return {"erro": "Nao consegui sugerir perguntas agora."}
+            return {"perguntas": limpas}
+        except Exception as erro:
+            return {"erro": p.traduzir_erro(erro)}
+
     def definir_privada(self, ligada):
         """Liga ou desliga a conversa privada.
 
@@ -474,6 +545,7 @@ class Ponte:
         self.mensagens = []
         return {"privada": ligada, "atual": None, "mensagens": [],
                 "conversas": _conversas_para_a_tela()}
+
 
     def excluir_conversa(self, identificador):
         """Apaga uma conversa da lista.
@@ -735,6 +807,8 @@ class Ponte:
             # Sem isso, fechar e reabrir a conversa faria a resposta ficar
             # sem a lista de onde veio.
             fontes = fontes or []
+            self.ultimaPergunta = texto
+            self.ultimaResposta = resposta
             self.mensagens.append({"role": "model", "text": resposta,
                                    "fontes": fontes})
             if not DEMO:

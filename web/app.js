@@ -18,7 +18,7 @@ function el(tag, cls, texto) {
   return e;
 }
 
-const estado = { mensagens: [], conversas: [], atual: null, ocupado: false, gravando: false, privada: false, cfg: {}, aba: "chaves", rascunho: {} };
+const estado = { mensagens: [], conversas: [], atual: null, ocupado: false, gravando: false, privada: false, sugerindo: false, ultimaPergunta: "", ultimaResposta: "", cfg: {}, aba: "chaves", rascunho: {} };
 const ROTULO_WEB = { auto: "Web: automática", sempre: "Web: sempre", nunca: "Web: desligada" };
 
 async function chamar(nome, ...args) {
@@ -124,7 +124,7 @@ function criarMensagem(m) {
       else if (r && r.erro) aviso(r.erro, true);
     });
     acoes.append(bCopiar, bSalvar);
-    corpo.append(linhaFontes(m.fontes), acoes);
+    corpo.append(linhaFontes(m.fontes), acoes, botaoSugerir());
     // O texto CRU fica guardado na propria mensagem: e' ele que o
     // Ctrl+S precisa salvar (o que aparece na tela ja vem formatado,
     // com link e negrito).
@@ -154,6 +154,48 @@ function anexarMensagem(m) {
   $("#mensagens").append(criarMensagem(m));
   if (estado.mensagens.length === 1 && m.role === "user") mostrarPrivada();
   rolarParaOFim();
+}
+
+/* ---------------- perguntas para continuar ----------------
+   Um BOTAO, e nao automatico: cada sugestao gasta uma chamada de IA
+   (ver `sugerir` no Python). Clicando, aparecem 3 perguntas curtinhas
+   sobre o mesmo assunto; clicar em uma manda a pergunta. */
+function botaoSugerir() {
+  const b = el("button", "sugerir-btn");
+  b.append(ico("i-brilho"), el("span", "", "outras perguntas"));
+  const caixa = el("div", "sugestoes oculto");
+  b.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    if (!caixa.classList.contains("oculto")) {
+      caixa.classList.add("oculto");
+      return;
+    }
+    if (estado.sugerindo) return;
+    estado.sugerindo = true;
+    b.classList.add("carregando");
+    const r = await chamar("sugerir", estado.ultimaPergunta || "",
+                           estado.ultimaResposta || "");
+    estado.sugerindo = false;
+    b.classList.remove("carregando");
+    if (r.erro) return aviso(r.erro === "sem_chave"
+      ? "Cole a sua chave de API antes de pedir sugestões." : r.erro, true);
+    caixa.replaceChildren();
+    for (const p of r.perguntas || []) {
+      const chip = el("button", "sugestao", p);
+      chip.addEventListener("click", () => {
+        caixa.classList.add("oculto");
+        $("#entrada").value = p;
+        ajustarAltura();
+        atualizarEnviar();
+        enviar(p);
+      });
+      caixa.append(chip);
+    }
+    caixa.classList.remove("oculto");
+  });
+  const li = el("div", "linha-sugerir");
+  li.append(b, caixa);
+  return li;
 }
 
 /* ---------------- sites consultados ----------------
@@ -233,6 +275,7 @@ function aplicarEvento(o) {
     $("#etapa").textContent = o.texto;
   } else if (o.tipo === "resposta") {
     esperar(false);
+    estado.ultimaResposta = o.texto;
     anexarMensagem({ role: "model", text: o.texto, fontes: o.fontes });
   } else if (o.tipo === "erro") {
     esperar(false);
@@ -271,6 +314,9 @@ function aplicarEvento(o) {
 async function enviar(texto) {
   texto = (texto !== undefined ? texto : $("#entrada").value).trim();
   if (!texto || estado.ocupado) return;
+  // guardada para o botao "outras perguntas" (que pergunta a IA a partir
+  // da ultima pergunta e da ultima resposta)
+  estado.ultimaPergunta = texto;
   segurarEventos(true);
   let r = {};
   try {

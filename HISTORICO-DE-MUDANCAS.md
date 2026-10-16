@@ -5,6 +5,36 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Tela nova: "outras perguntas" para continuar
+
+Ideia 4 da `IDEIAS.md`: depois de cada resposta, 3 perguntinhas para
+continuar o assunto. Clicar em uma ja manda a pergunta.
+
+- **E' UM BOTAO, e nao automatico — de proposito.** Cada sugestao gasta
+  uma chamada de IA; fazer isso sozinho a cada resposta **dobraria o
+  custo do programa** sem o Wolf pedir. Com o botao, ele so paga quando
+  aperta.
+- Usa o **modelo rapido** (o mesmo do roteador) e pede JSON: sao tres
+  frases curtas, nao precisa pensar muito.
+- O leitor de JSON e' **tolerante**: se a IA responder com
+  `"Claro! {...} ate la"` em volta, ele le assim mesmo.
+- Se vier besteira ou lista vazia, **avisa na tela** em vez de mostrar
+  lista quebrada. No maximo 3. Sem chave, avisa sem chamar a IA. No modo
+  exemplo, nao gasta cota nenhuma.
+- **6 testes**, todos com IA de mentira (a cota do Wolf nao e' gasta).
+
+### Um vazamento meu nos testes (que os proprios testes pegaram)
+
+A linha que restaurava o `google.genai.Client` de verdade estava escrita
+de um jeito que **nao restaurava**: a IA de mentira continuaria valendo
+depois do teste, e qualquer teste seguinte passaria a mentir sem querer.
+Corrigido (o `Client` original e' guardado antes de trocar).
+
+Tambem: uma troca global de nomes tinha batido em outro bloco de testes
+(o de voz). Arrumado por linha, com conferencia.
+
+Verificacao: `TUDO CERTO`, **289 testes, 0 falhas, 0 avisos** (35 s).
+
 ## 2026-10-16 — Tela nova: "sites consultados" embaixo da resposta
 
 Ideia **numero 1** da `IDEIAS.md` (a que o Wolf mais gostou): a resposta

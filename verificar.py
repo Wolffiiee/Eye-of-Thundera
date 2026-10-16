@@ -211,6 +211,101 @@ try:
 except Exception as erro:
     falha("escurecer a barra levantou erro: %r" % (erro,))
 
+# --- 4c2. "outras perguntas": botao, nao automatico -----------------------
+# Cada sugestao gasta uma chamada de IA, entao isso NAO pode acontecer
+# sozinho a cada resposta: so quando o Wolf aperta. Aqui a IA e' de
+# mentira (gastar a cota real num teste seria errado).
+try:
+    import app_web as _aw
+    import google.genai as _genai_real
+
+    class _RespostaDeSugerir:
+        def __init__(self, texto):
+            self.text = texto
+
+    class _ModelsDeSugerir:
+        def __init__(self, texto):
+            self._texto = texto
+            self.chamadas = 0
+
+        def generate_content(self, **_kw):
+            self.chamadas += 1
+            return _RespostaDeSugerir(self._texto)
+
+    class _ClienteDeSugerir:
+        def __init__(self, texto):
+            self.models = _ModelsDeSugerir(texto)
+
+    _pasta = Path(PASTA) / "_tmp" / "teste-sugerir"
+    shutil.rmtree(_pasta, ignore_errors=True)
+    _pasta.mkdir(parents=True, exist_ok=True)
+    _cfg_orig = _aw.p.ARQUIVO_CONFIG
+    _demo_orig = _aw.DEMO
+    # O Client DE VERDADE e' guardado ANTES de trocar: se nao for
+    # restaurado, a IA de mentira continua valendo para o resto da
+    # verificacao (e qualquer teste depois dela passa a mentir sem
+    # querer). Foi assim que este teste vazava antes.
+    _client_original = _genai_real.Client
+    try:
+        _aw.p.ARQUIVO_CONFIG = _pasta / "config.json"
+        _aw.DEMO = False
+        _aw.p._gravar_json(_aw.p.ARQUIVO_CONFIG, {"api_key": "AIza-de-teste"})
+        _ponte = _aw.Ponte(None)
+
+        # 1. a IA devolve JSON sujo (com texto em volta): tem que ler
+        _genai_real.Client = lambda **_kw: _ClienteDeSugerir(
+            'Claro! {"perguntas": ["Quem ganhou?", "Quando e o proximo?", '
+            '"Onde joga?"]} ate la')
+        r = _ponte.sugerir("proximo jogo", "contra o Cruzeiro")
+        if r.get("perguntas") == ["Quem ganhou?", "Quando e o proximo?",
+                                  "Onde joga?"]:
+            ok("outras perguntas: lê o JSON mesmo com texto em volta")
+        else:
+            falha("outras perguntas: devolveu %r" % (r,))
+
+        # 2. a IA devolve besteira: avisa em vez de quebrar a tela
+        _genai_real.Client = lambda **_kw: _ClienteDeSugerir("desculpe, nao sei")
+        if _ponte.sugerir("a", "b").get("erro"):
+            ok("outras perguntas: resposta fora do formato avisa na tela")
+        else:
+            falha("outras perguntas: aceitou lixo como se fosse lista")
+        _genai_real.Client = lambda **_kw: _ClienteDeSugerir('{"perguntas": []}')
+        if _ponte.sugerir("a", "b").get("erro"):
+            ok("outras perguntas: lista vazia avisa, não mostra nada")
+        else:
+            falha("outras perguntas: mostrou lista vazia sem avisar")
+
+        # 3. no maximo 3 perguntas
+        _genai_real.Client = lambda **_kw: _ClienteDeSugerir(
+            '{"perguntas": ["1", "2", "3", "4", "5"]}')
+        if len(_ponte.sugerir("a", "b").get("perguntas", [])) == 3:
+            ok("outras perguntas: mostra no máximo 3")
+        else:
+            falha("outras perguntas: mostrou %d"
+                  % len(_ponte.sugerir("a", "b").get("perguntas", [])))
+
+        # 4. sem chave ele diz sem_chave (a tela abre as Configuracoes)
+        _aw.p._gravar_json(_aw.p.ARQUIVO_CONFIG, {})
+        if _ponte.sugerir("a", "b").get("erro") == "sem_chave":
+            ok("outras perguntas: sem chave avisa sem chamar a IA")
+        else:
+            falha("outras perguntas: sem chave nao avisou")
+
+        # 5. no modo exemplo nao chama a IA (nao gasta cota)
+        _aw.DEMO = True
+        antes_demo = _ponte.sugerir("a", "b")
+        if antes_demo.get("erro"):
+            ok("outras perguntas: no modo exemplo não gasta cota")
+        else:
+            falha("outras perguntas: no modo exemplo respondeu de verdade")
+    finally:
+        _aw.p.ARQUIVO_CONFIG = _cfg_orig
+        _aw.DEMO = _demo_orig
+        _genai_real.Client = _client_original
+        shutil.rmtree(_pasta, ignore_errors=True)
+except Exception as erro:
+    falha("os testes de 'outras perguntas' quebraram: %r" % (erro,))
+
 # --- 4d. sites consultados: o que a busca traz, limpo e honesto ---------
 # Sao os RESULTADOS DA BUSCA, nao citacoes: por isso a tela escreve
 # "sites consultados" e mostra o link, para o Wolf conferir com os

@@ -172,6 +172,18 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .enviar:hover:not(:disabled) { background: var(--azul-2); }
 .enviar:disabled { background: var(--superficie-2); color: var(--texto-3); opacity: 1; }
 #dica { max-width: 780px; margin: 7px auto 0; text-align: center; font-size: 11.5px; color: var(--texto-3); }
+/* "outras perguntas": botao discreto, as sugestoes aparecem embaixo */
+.linha-sugerir { margin-top: 10px; }
+.sugerir-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px;
+  color: var(--texto-3); padding: 3px 9px; border-radius: 999px; border: 1px dashed var(--borda); }
+.sugerir-btn:hover { color: #b8c8ff; border-color: #34458f; background: var(--superficie-2); }
+.sugerir-btn svg { width: 13px; height: 13px; flex: none; }
+.sugerir-btn.carregando { opacity: .6; }
+.sugestoes { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+.sugestoes .sugestao { font-size: 12.5px; padding: 6px 11px; border-radius: 999px;
+  background: var(--superficie); border: 1px solid var(--borda); color: var(--texto-2);
+  text-align: left; max-width: 100%; }
+.sugestoes .sugestao:hover { background: var(--superficie-2); color: var(--texto); }
 /* sites consultados (ideia 1): letra discreta, abre a lista ao clicar */
 .fontes { margin: 12px 0 2px; }
 .ver-fontes { display: inline-flex; align-items: center; gap: 6px; font-size: 12px;
