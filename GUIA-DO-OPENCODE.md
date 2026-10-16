@@ -1,4 +1,4 @@
-﻿# GUIA DO OPENCODE (leia ANTES de mexer em qualquer coisa)
+# GUIA DO OPENCODE (leia ANTES de mexer em qualquer coisa)
 
 Escrito pelo Claude em 16/10/2026 a pedido do Wolf. O Wolf nao programa:
 fale em portugues simples, chame-o de Wolf, nunca use jargao sem explicar.
@@ -55,9 +55,16 @@ o contexto esta acabando:
 Observacao: o 9router (`9router/Arsenal`) e o Ollama so funcionam se estiverem
 ligados; o script pula sozinho o que nao responder.
 
-### Troca automatica (ja instalada)
-O OpenCode usa o plugin **opencode-runtime-fallback** (em opencode.json, campo plugin). A lista de modelos dele fica em %USERPROFILE%\.config\opencode\opencode-fallback.json. Quando um modelo estourar o limite, ele passa para o proximo da lista sozinho. NAO instale outro plugin de troca por cima (brigam entre si). Se a lista ficar velha, confira com: opencode models e tire os nomes que sumiram.
-Backup do plugin proprio que escrevi (nao instalado): ferramentas\opencode-gratis-sempre.js + 11 - Instalar plugin gratis-sempre.bat (so usar se o runtime-fallback der problema; remover o outro antes).
+### Troca automatica (16/10: agora e o plugin PROPRIO gratis-sempre)
+O plugin gratis-sempre esta instalado em %USERPROFILE%\.config\opencode\plugin\gratis-sempre.js
+(codigo: ferramentas\opencode-gratis-sempre.js; testes: node ferramentas\teste-gratis-sempre.mjs).
+Quando aparece erro de limite, ele marca o modelo como descansando por 15 min, troca para o
+proximo gratis de ferramentas\modelos-gratis.txt e repete o ultimo pedido (max 6 trocas por sessao).
+O opencode-runtime-fallback foi RETIRADO do opencode.json (plugin: []) para nao brigar com ele.
+Copia do arquivo antigo: opencode.json.bak-antes-gratis-sempre. NAO use os dois ao mesmo tempo.
+Lista velha? `opencode models | findstr /i free` e ajuste modelos-gratis.txt (so linhas opencode/...).
+Se o plugin der problema: apague gratis-sempre.js da pasta plugin e volte
+"plugin": ["opencode-runtime-fallback"] no opencode.json.
 
 ## 5. Checklist de entrega
 [ ] verificar.bat = TUDO CERTO   [ ] .exe novo aberto e olhado
