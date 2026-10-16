@@ -12,6 +12,14 @@ if getattr(_sys_web, "frozen", False) and hasattr(_sys_web, "_MEIPASS"):
     RAIZ = Path(_sys_web._MEIPASS)
 else:
     RAIZ = Path(__file__).resolve().parent
+# Nome do app na barra de tarefas (em vez de "pythonw"/"IDLE").
+try:
+    import ctypes
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+        "Eye of Thundera")
+except Exception:
+    pass
+
 WEB = RAIZ / "web"
 if not WEB.exists():
     WEB = Path(__file__).resolve().parent / "web"
@@ -1526,13 +1534,6 @@ def principal():
     else:
         print("Suas conversas e memoria podem ser atualizadas ao conversar.")
     try:
-        # Nome do app na barra de tarefas (em vez de "IDLE (Python 3.12)").
-        try:
-            import ctypes
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                "Eye of Thundera")
-        except Exception:
-            pass
         webview.start(ao_abrir, janela, gui="edgechromium",
                       icon=str(RAIZ / "icone.ico"))
     except Exception as erro:
