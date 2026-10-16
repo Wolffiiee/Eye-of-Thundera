@@ -5,6 +5,44 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Tela nova: resumo do dia, backup no programa e memória com data
+
+Mais tres ideias da `IDEIAS.md`, feitas enquanto o Wolf dormia.
+
+### 1. "Resumo do dia"
+
+Botao **"Resumo do dia"** na barra de escrever e atalho **Ctrl+D**. Um
+clique e a tela pergunta as noticias de hoje. E' um botao (e nao uma
+frase na tela inicial) porque e' o que se pergunta TODO dia: nao faz
+sentido obrigar a digitar a mesma frase sempre.
+
+### 2. Cópia de segurança DENTRO do programa
+
+Cartao em Configuracoes > Conversa, com o botao **"Fazer cópia agora"**.
+O detalhe: o botao e o `9 - Fazer backup dos meus dados.bat` passam a
+usar a **mesma funcao** (`pesquisa_ia.fazer_backup_dados`). Dois jeitos
+de fazer a mesma coisa e' a receita para um deles ficar velho — foi
+exatamente o que aconteceu hoje com o `registrar_erro`, que existia
+so dentro do tkinter e a tela nova nao achava.
+
+### 3. Memória com data
+
+Cada item da aba Memoria mostra **"aprendeu em dd/mm/aaaa"**.
+
+- **As datas vão num arquivo AO LADO do `memoria.json`, nunca dentro
+  dele.** O `memoria.json` e' lido pelos dois programas e tem regra de
+  ouro (nunca perder uma palavra), entao mexer no formato seria pedir
+  problema. Fato antigo, guardado antes das datas existirem, fica sem
+  data — a tela mostra isso em vez de inventar um dia.
+- **O caminho do arquivo de datas sai do proprio `ARQUIVO_MEMORIA`**, e
+  nao de uma pasta solta: assim um teste (que aponta o arquivo da
+  memoria para uma pasta temporaria) **nunca escreve na pasta de
+  verdade do Wolf**. Ha teste que reprova se isso mudar.
+- Toda mudanca na memoria (adicionar, apagar, editar, organizar) devolve
+  os fatos **e** as datas juntas, senao a data ficaria velha na tela.
+
+Verificacao: `TUDO CERTO`, **299 testes, 0 falhas, 0 avisos** (31 s).
+
 ## 2026-10-16 — Tela nova: "outras perguntas" para continuar
 
 Ideia 4 da `IDEIAS.md`: depois de cada resposta, 3 perguntinhas para

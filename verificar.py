@@ -306,6 +306,115 @@ try:
 except Exception as erro:
     falha("os testes de 'outras perguntas' quebraram: %r" % (erro,))
 
+# --- 4c3. backup dos dados dentro do programa (o mesmo do .bat) ----------
+# O botao das Configuracoes e o `9 - Fazer backup dos meus dados.bat`
+# usam a MESMA funcao do motor: dois jeitos de fazer a mesma coisa e' a
+# receita para um deles ficar velho. Aqui a funcao e' testada numa pasta
+# de TESTE (os dados do Wolf nunca sao tocados).
+try:
+    import pesquisa_ia as _pi2
+    _tmp_bk = Path(PASTA) / "_tmp" / "teste-backup"
+    shutil.rmtree(_tmp_bk, ignore_errors=True)
+    _origem = _tmp_bk / "origem"
+    _origem.mkdir(parents=True)
+    (_origem / "historico.json").write_text("[]", encoding="utf-8")
+    (_origem / "memoria.json").write_text('["Gosta de RPG"]', encoding="utf-8")
+    _pasta_orig = _pi2.PASTA_CONFIG
+    _pi2.PASTA_CONFIG = _origem
+    try:
+        _zip, _nomes = _pi2.fazer_backup_dados(destino=_tmp_bk / "dados")
+    finally:
+        _pi2.PASTA_CONFIG = _pasta_orig
+    import zipfile as _zf
+    with _zf.ZipFile(_zip) as _z:
+        _dentro = sorted(_z.namelist())
+        _memoria = _z.read("memoria.json").decode("utf-8")
+    if _dentro == ["historico.json", "memoria.json"]:
+        ok("backup dos dados: copia exatamente os arquivos da pasta")
+    else:
+        falha("backup dos dados: copiou %r" % (_dentro,))
+    if "Gosta de RPG" in _memoria:
+        ok("backup dos dados: o conteúdo da memória vai inteiro no .zip")
+    else:
+        falha("backup dos dados: a memória saiu vazia do .zip")
+    _vazia = Path(PASTA) / "_tmp" / "backup-sem-nada"
+    shutil.rmtree(_vazia, ignore_errors=True)
+    _vazia.mkdir(parents=True)
+    _pasta_orig = _pi2.PASTA_CONFIG
+    _pi2.PASTA_CONFIG = _vazia
+    try:
+        _pi2.fazer_backup_dados(destino=_vazia / "dados")
+        _aviso_vazio = False
+    except Exception:
+        _aviso_vazio = True
+    finally:
+        _pi2.PASTA_CONFIG = _pasta_orig
+    if _aviso_vazio:
+        ok("backup dos dados: sem arquivos, avisa e não cria zip vazio")
+    else:
+        falha("backup dos dados: criou um zip sem nenhum arquivo")
+    if _pi2.PASTA_CONFIG == _pasta_orig and _pasta_orig.name == "PesquisaIA":
+        ok("backup dos dados: a pasta de verdade do Wolf não foi trocada")
+    else:
+        falha("backup dos dados: a pasta de dados ficou %r" % (_pi2.PASTA_CONFIG,))
+    shutil.rmtree(_tmp_bk, ignore_errors=True)
+    shutil.rmtree(_vazia, ignore_errors=True)
+except Exception as erro:
+    falha("os testes do backup dos dados quebraram: %r" % (erro,))
+
+# --- 4c4. datas da memoria: o que o Wolf aprendeu, e quando --------------
+# As datas ficam num arquivo AO LADO do memoria.json, nunca dentro dele:
+# o memoria.json e' lido pelos dois programas e tem regra de ouro (nunca
+# perder uma palavra). O arquivo das datas sai do caminho do
+# ARQUIVO_MEMORIA, entao um teste nao escreve na pasta de verdade.
+try:
+    import pesquisa_ia as _pi3
+    _tmp_dt = Path(PASTA) / "_tmp" / "teste-datas"
+    shutil.rmtree(_tmp_dt, ignore_errors=True)
+    _tmp_dt.mkdir(parents=True)
+    _mem_orig = _pi3.ARQUIVO_MEMORIA
+    _pi3.ARQUIVO_MEMORIA = _tmp_dt / "memoria.json"
+    try:
+        _pi3.salvar_memoria(["Gosta de RPG", "Mora em Santa Maria"])
+        _d1 = _pi3.carregar_memoria_datas()
+        if sorted(_d1) == ["Gosta de RPG", "Mora em Santa Maria"] and \
+                all(len(v) == 10 and v[2] == "/" for v in _d1.values()):
+            ok("memória com data: cada fato novo ganha a data de hoje")
+        else:
+            falha("memória com data: ficou %r" % (_d1,))
+        _pi3.salvar_memoria(["Gosta de RPG", "Mora em Santa Maria", "Novo"])
+        if "Novo" in _pi3.carregar_memoria_datas():
+            ok("memória com data: o item novo aparece com data na hora")
+        else:
+            falha("memória com data: o item novo ficou sem data")
+        _pi3.esquecer_memoria("Mora em Santa Maria")
+        if "Mora em Santa Maria" not in _pi3.carregar_memoria_datas():
+            ok("memória com data: o que foi apagado some da lista de datas")
+        else:
+            falha("memória com data: sobrou data de item apagado")
+        # o arquivo do lado NAO pode estar dentro do memoria.json
+        _conteudo = json.loads((_tmp_dt / "memoria.json").read_text(
+            encoding="utf-8"))
+        if _conteudo == ["Gosta de RPG", "Novo"]:
+            ok("memória com data: o memoria.json continua só com os fatos")
+        else:
+            falha("memória com data: o memoria.json mudou de formato (%r)"
+                  % (_conteudo,))
+        if (_tmp_dt / "memoria_datas.json").exists():
+            ok("memória com data: as datas vão num arquivo ao lado")
+        else:
+            falha("memória com data: não foi criado o arquivo das datas")
+        if not (Path(_pi3.PASTA_CONFIG) / "memoria_datas.json").exists() \
+                or _pi3.PASTA_CONFIG == _tmp_dt:
+            ok("memória com data: a pasta de verdade do Wolf não foi escrita")
+        else:
+            falha("memória com data: escreveu na pasta de verdade")
+    finally:
+        _pi3.ARQUIVO_MEMORIA = _mem_orig
+        shutil.rmtree(_tmp_dt, ignore_errors=True)
+except Exception as erro:
+    falha("os testes das datas da memória quebraram: %r" % (erro,))
+
 # --- 4d. sites consultados: o que a busca traz, limpo e honesto ---------
 # Sao os RESULTADOS DA BUSCA, nao citacoes: por isso a tela escreve
 # "sites consultados" e mostra o link, para o Wolf conferir com os

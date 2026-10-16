@@ -406,15 +406,32 @@ class Ponte:
             return _cfg_tela_demo()
         return _cfg_tela()
 
+    def _memoria_para_a_tela(self):
+        """Fatos + datas, sempre juntos (a aba Memoria mostra os dois).
+
+        Tudo que muda a memoria passa por aqui, para a data nunca ficar
+        velha na tela depois de adicionar, apagar ou editar um item.
+        """
+        return {"fatos": p.carregar_memoria(),
+                "datas": p.carregar_memoria_datas()}
+
     def memoria_listar(self):
-        """Aba Memória (so leitura neste passo)."""
+        """Aba Memória, com a data em que cada fato foi aprendido.
+
+        As datas vem do arquivo ao lado (`memoria_datas.json`), nunca de
+        dentro do `memoria.json`: esse arquivo e' lido pelos dois
+        programas e tem regra de ouro (nunca perder uma palavra), entao
+        nao se mexe nele. Fato antigo, que ja estava guardado antes das
+        datas existirem, vem sem data.
+        """
         if DEMO:
             return {"fatos": [
                 "Nome: Igor (pode ser chamado de Wolf)",
                 "Natural de Santa Maria, Rio Grande do Sul",
                 "Gosta muito de jogar videogames",
-            ]}
-        return {"fatos": p.carregar_memoria()}
+            ], "datas": {}}
+        fatos = p.carregar_memoria()
+        return {"fatos": fatos, "datas": p.carregar_memoria_datas()}
 
     # --- 2. as conversas de verdade (este passo) ---
 
@@ -471,6 +488,19 @@ class Ponte:
             "fixada": fixada,
             "conversas": _conversas_para_a_tela(),
         }
+
+    def fazer_backup(self):
+        """Copia as conversas, a memoria e as chaves para um .zip.
+
+        O mesmo que o `9 - Fazer backup dos meus dados.bat` faz, e com
+        a mesma funcao do motor (`pesquisa_ia.fazer_backup_dados`), para
+        nao existir dois jeitos de fazer a mesma coisa.
+        """
+        try:
+            caminho, nomes = p.fazer_backup_dados()
+            return {"caminho": str(caminho), "arquivos": len(nomes)}
+        except Exception as erro:
+            return {"erro": "Não consegui fazer a cópia: %s" % erro}
 
     def sugerir(self, pergunta, resposta):
         """Sugere 3 perguntas para continuar a conversa (ideia 4).
@@ -1053,23 +1083,27 @@ class Ponte:
         texto = (texto or "").strip()
         if texto:
             p._mesclar_memoria([texto])
-        return {"fatos": p.carregar_memoria()}
+        return self._memoria_para_a_tela()
 
     def memoria_apagar(self, fato):
         if DEMO:
             return self._demo_nada()
-        return {"fatos": p.esquecer_memoria(fato)}
+        p.esquecer_memoria(fato)
+        return self._memoria_para_a_tela()
 
     def memoria_apagar_tudo(self):
         if DEMO:
             return self._demo_nada()
-        return {"fatos": p.esquecer_memoria()}
+        p.esquecer_memoria()
+        return self._memoria_para_a_tela()
 
     def memoria_organizar(self):
         if DEMO:
             return self._demo_nada()
         mudou = p.organizar_memoria()
-        return {"fatos": p.carregar_memoria(), "mudou": bool(mudou)}
+        _r = self._memoria_para_a_tela()
+        _r["mudou"] = bool(mudou)
+        return _r
 
     def memoria_editar(self, antigo, novo):
         """Troca um fato guardado por outro (clicar no texto na lista).
@@ -1088,7 +1122,7 @@ class Ponte:
         if not novo:
             return {"erro": "O item não pode ficar vazio."}
         if novo == antigo:
-            return {"fatos": p.carregar_memoria()}
+            return self._memoria_para_a_tela()
         if len(novo) > p.memoria.TAMANHO_MAXIMO:
             return {"erro": "Esse item tem %d letras e o limite é %d. "
                             "Escreva mais curto."
@@ -1099,7 +1133,7 @@ class Ponte:
             return {"erro": "Não achei esse item na memória."}
         p.salvar_memoria(restante)
         p._mesclar_memoria([novo])
-        return {"fatos": p.carregar_memoria()}
+        return self._memoria_para_a_tela()
 
     def memoria_exportar(self):
         """Salva a memória inteira num .txt (o mesmo .txt do Windows)."""

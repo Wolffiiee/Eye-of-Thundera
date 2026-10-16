@@ -156,6 +156,22 @@ function anexarMensagem(m) {
   rolarParaOFim();
 }
 
+/* ---------------- resumo do dia ----------------
+   Um clique e a tela já pergunta as notícias de hoje. Existe como botão e
+   como atalho (Ctrl+D) porque é o que se pergunta TODO dia — não faz
+   sentido obrigar a digitar a mesma frase sempre. */
+const PERGUNTA_RESUMO =
+  "Me faz um resumo das notícias mais importantes de hoje no Brasil e no mundo. " +
+  "Em tópicos curtos, e no fim diga de onde você tirou.";
+
+function resumoDoDia() {
+  if (estado.ocupado) return aviso("Espere a resposta terminar.", true);
+  $("#entrada").value = PERGUNTA_RESUMO;
+  ajustarAltura();
+  atualizarEnviar();
+  enviar(PERGUNTA_RESUMO);
+}
+
 /* ---------------- perguntas para continuar ----------------
    Um BOTAO, e nao automatico: cada sugestao gasta uma chamada de IA
    (ver `sugerir` no Python). Clicando, aparecem 3 perguntas curtinhas
@@ -459,6 +475,12 @@ document.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === "0") {
     e.preventDefault();
     aplicarTamanho(15);
+    return;
+  }
+  // Ctrl+D: resumo das notícias de hoje.
+  if ((e.ctrlKey || e.metaKey) && (e.key === "d" || e.key === "D")) {
+    e.preventDefault();
+    resumoDoDia();
   }
 });
 document.addEventListener("click", (e) => {
@@ -677,7 +699,31 @@ function abaConversa(corpo) {
     linhaToggle("Corretor ortográfico", "Sublinha palavras erradas na caixa de digitar.", "web_corretor"),
     linhaToggle("Enviar sozinho depois de falar", "Para quando o microfone estiver ligado.", "voz_enviar")
   );
-  corpo.append(caixa);
+  corpo.append(caixa, cartaoBackup());
+}
+
+/* Cópia de segurança dos dados, dentro do próprio programa: e' o mesmo
+   que o `9 - Fazer backup dos meus dados.bat`, so que com um clique e
+   sem sair da tela. */
+function cartaoBackup() {
+  const c = el("div", "cartao");
+  c.append(el("h4", "", "Cópia de segurança dos seus dados"));
+  c.append(el("p", "desc", "Guava as conversas, a memória e as chaves num arquivo .zip dentro do OneDrive. Só lê e copia: não muda nada."));
+  const b = el("button", "btn", "Fazer cópia agora");
+  const onde = el("p", "nota-backup");
+  b.addEventListener("click", async () => {
+    b.disabled = true;
+    b.textContent = "Copiando...";
+    onde.textContent = "";
+    const r = await chamar("fazer_backup");
+    b.disabled = false;
+    b.textContent = "Fazer cópia agora";
+    if (r.erro) return aviso(r.erro, true);
+    onde.textContent = "Cópia feita: " + r.arquivos + " arquivo(s).";
+    aviso("Cópia de segurança feita.");
+  });
+  c.append(b, onde);
+  return c;
 }
 
 /* A letra da tela. Tem botão aqui E atalho (Ctrl +, Ctrl - e Ctrl 0),
@@ -767,6 +813,14 @@ async function abaMemoria(corpo) {
   const r = await chamar("memoria_listar");
   if (estado.aba !== "memoria") return;
   let fatos = r.fatos || [];
+  let datas = r.datas || {};
+  // Toda mudanca na memoria traz as datas junto, senao a data da tela
+  // ficaria velha depois de adicionar ou apagar um item.
+  const pegar = (rr) => {
+    if (rr.fatos) fatos = rr.fatos;
+        if (rr.datas) datas = rr.datas;
+    if (rr.datas) datas = rr.datas;
+  };
   const topo = el("div", "memoria-topo");
   const busca = el("input", "busca");
   busca.placeholder = "Buscar na memória...";
@@ -811,8 +865,13 @@ async function abaMemoria(corpo) {
       x.append(ico("i-fechar"));
       x.addEventListener("click", async () => {
         const rr = await chamar("memoria_apagar", f);
-        if (rr.fatos) { fatos = rr.fatos; desenhar(); }
+        pegar(rr); desenhar();
       });
+      // A data em que o fato foi aprendido. Fato antigo (guardado antes
+      // das datas existirem) fica sem data — e a tela mostra isso, em vez
+      // de inventar um dia.
+      const quando = (datas || {})[f];
+      if (quando) linha.append(el("span", "quando", "aprendeu em " + quando));
       // Clicar no TEXTO edita na hora (a Tarefa D pede "editar: clique no
       // texto"). Nao abro uma janelinha: edita-se aqui mesmo, e so grava
       // quando o Wolf confirmar.
@@ -830,7 +889,7 @@ async function abaMemoria(corpo) {
           if (!novoTexto) return aviso("O item não pode ficar vazio.", true);
           const rr = await chamar("memoria_editar", f, novoTexto);
           if (rr.erro) return aviso(rr.erro, true);
-          fatos = rr.fatos || fatos;
+          pegar(rr);
           aviso("Item editado.");
           desenhar();
         });
@@ -857,7 +916,9 @@ async function abaMemoria(corpo) {
   const adicionar = async () => {
     if (!campo.value.trim()) return;
     const rr = await chamar("memoria_adicionar", campo.value.trim());
-    if (rr.fatos) { fatos = rr.fatos; campo.value = ""; desenhar(); }
+    if (rr.fatos) { fatos = rr.fatos; campo.value = ""; }
+    if (rr.datas) datas = rr.datas;
+    desenhar();
   };
   add.addEventListener("click", adicionar);
   campo.addEventListener("input", avisarResto);
@@ -878,7 +939,7 @@ async function abaMemoria(corpo) {
       return;
     }
     const rr = await chamar("memoria_apagar_tudo");
-    if (rr.fatos) { fatos = rr.fatos; desenhar(); }
+    pegar(rr); desenhar();
   });
   corpo.append(topo, novo, contador, lista);
   desenhar();
@@ -905,6 +966,7 @@ function abaAjuda(corpo) {
     ["Ctrl + S", "salva a última resposta em .txt"],
     ["Ctrl + N", "começa uma conversa nova"],
     ["Ctrl + F", "procura nas conversas"],
+    ["Ctrl + D", "pede o resumo das notícias de hoje"],
     ["Ctrl + e Ctrl −", "aumenta ou diminui a letra"],
     ["Ctrl + 0", "volta a letra ao tamanho normal"],
     ["Esc", "fecha esta janela"],
@@ -1032,6 +1094,7 @@ function ligarEventos() {
   $("#btn-enviar").addEventListener("click", () => enviar());
   $("#btn-mic").addEventListener("click", () => alternarMicrofone());
   $("#btn-privada").addEventListener("click", () => alternarPrivada());
+  $("#btn-resumo").addEventListener("click", () => resumoDoDia());
   $("#btn-nova").addEventListener("click", novaConversa);
   $("#btn-config").addEventListener("click", () => abrirConfig());
   $("#btn-fechar-config").addEventListener("click", fecharConfig);

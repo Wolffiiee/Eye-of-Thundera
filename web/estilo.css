@@ -172,6 +172,11 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .enviar:hover:not(:disabled) { background: var(--azul-2); }
 .enviar:disabled { background: var(--superficie-2); color: var(--texto-3); opacity: 1; }
 #dica { max-width: 780px; margin: 7px auto 0; text-align: center; font-size: 11.5px; color: var(--texto-3); }
+/* data em que o fato da memoria foi aprendido */
+.fato .quando { flex: none; align-self: flex-start; font-size: 11.5px;
+  color: var(--texto-3); white-space: nowrap; margin-top: 2px; }
+/* cartao do backup dentro das Configuracoes */
+.nota-backup { color: var(--texto-3); font-size: 12.5px; margin: 8px 0 0; }
 /* "outras perguntas": botao discreto, as sugestoes aparecem embaixo */
 .linha-sugerir { margin-top: 10px; }
 .sugerir-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px;

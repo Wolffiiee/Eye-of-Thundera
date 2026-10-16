@@ -343,11 +343,57 @@ def carregar_memoria():
     return list(_memoria_cache)
 
 
+def _arquivo_memoria_data():
+    """Onde ficam as datas dos fatos.
+
+    deriving do `ARQUIVO_MEMORIA` (e nao de uma pasta solta) porque os
+    testes apontam o arquivo da memoria para uma pasta de teste: assim a
+    data vai junto e **nada nunca e' escrito na pasta do Wolf** durante
+    um teste.
+    """
+    return Path(ARQUIVO_MEMORIA).parent / "memoria_datas.json"
+
+
+def carregar_memoria_datas():
+    """Quando cada fato da memoria foi aprendido: {fato: 'dd/mm/aaaa'}.
+
+    Vive num arquivo SEPARADO de proposito: o `memoria.json` e' lido
+    pelos dois programas e tem regra de ouro (nunca perder uma palavra),
+    entao nao se mexe nele. Factos antigos, que ja estavam guardados
+    antes desta data existir, ficam sem data — e a tela mostra isso.
+    """
+    dados = _ler_json(_arquivo_memoria_data(), {})
+    if not isinstance(dados, dict):
+        return {}
+    return {str(k): str(v) for k, v in dados.items() if str(v).strip()}
+
+
+def _anotar_datas(fatos):
+    """Marca a data de hoje nos fatos novos e esquece os que sairam.
+
+    Nunca levanta erro: a data e' um extra bonito, e perder esse extra
+    nao pode derrubar o programa.
+    """
+    try:
+        arquivo = _arquivo_memoria_data()
+        dados = carregar_memoria_datas()
+        antes = set(carregar_memoria())
+        hoje = time.strftime("%d/%m/%Y")
+        atual = {}
+        for fato in fatos:
+            # um fato que ja existia continua com a data antiga
+            atual[fato] = dados.get(fato) or (hoje if fato not in antes else hoje)
+        _gravar_json(arquivo, atual)
+    except Exception:
+        pass
+
+
 def salvar_memoria(fatos):
     global _memoria_cache
     _memoria_cache = [
         str(f).strip() for f in fatos if str(f).strip()
     ][-MAX_MEMORIAS:]
+    _anotar_datas(_memoria_cache)
     _gravar_json(ARQUIVO_MEMORIA, _memoria_cache)
     return list(_memoria_cache)
 
@@ -3157,6 +3203,43 @@ def tentar_com_reserva(chamar, cfg, estado):
                 raise
             estado["falhou"] = True
     raise RuntimeError("não foi possível falar com a IA")
+
+
+def fazer_backup_dados(destino=None, quantos=15):
+    """Copia as conversas, a memoria e as chaves para um .zip.
+
+    Devolve (caminho_do_zip, [nomes dos arquivos]). Levanta erro se nao
+    der — quem chama mostra a frase na tela.
+
+    O `4 - Fazer backup.bat` cuida do CODIGO; este cuida do que nao da
+    para refazer. Guarda dentro da pasta "Backup Pesquisa IA" do OneDrive
+    e apaga as copias com mais de `quantos`, para o computador nao
+    encher.
+
+    So LE e copia: nunca escreve nos arquivos do Wolf.
+    """
+    import zipfile
+
+    if destino is None:
+        destino = Path.home() / "OneDrive" / "Backup Pesquisa IA" / "dados"
+    destino = Path(destino)
+    destino.mkdir(parents=True, exist_ok=True)
+    arquivos = sorted(x for x in PASTA_CONFIG.iterdir() if x.is_file())
+    if not arquivos:
+        raise RuntimeError(
+            "Não achei os seus dados em %s. Nada foi copiado." % PASTA_CONFIG)
+    carimbo = time.strftime("%Y-%m-%d_%H%M%S")
+    alvo = destino / ("dados_%s.zip" % carimbo)
+    with zipfile.ZipFile(alvo, "w", zipfile.ZIP_DEFLATED) as z:
+        for arquivo in arquivos:
+            z.write(arquivo, arquivo.name)
+    velhos = sorted(destino.glob("dados_*.zip"), reverse=True)[quantos:]
+    for velho in velhos:
+        try:
+            velho.unlink()
+        except OSError:
+            pass
+    return alvo, [a.name for a in arquivos]
 
 
 def registrar_erro(onde, erro):

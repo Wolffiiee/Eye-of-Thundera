@@ -69,7 +69,8 @@ conversa de semana passada ("aquela do bolo de cenoura").
 - ~~**Atalhos novos**~~ - **FEITOS em 16/10/2026** (tela nova): Ctrl+M microfone, Ctrl+S salvar, Ctrl+N conversa nova, Ctrl+F procurar, Ctrl+, / Ctrl- / Ctrl 0 para a letra.
 - (Ideia original) **Atalhos novos** — por exemplo Ctrl+F para procurar na conversa, e um
   atalho para abrir as Configurações.
-- **Resumo do dia** — um botão que monta um resumo das notícias do dia, sem
+- ~~**Resumo do dia**~~ - **FEITO em 16/10/2026** (tela nova): botão "Resumo do dia" na barra de escrever e atalho **Ctrl+D**. Um clique e a tela pergunta as notícias de hoje — é o que se pergunta todo dia, não faz sentido obrigar a digitar a mesma frase sempre.
+- (Ideia original) **Resumo do dia** — um botão que monta um resumo das notícias do dia, sem
   você precisar perguntar.
 
 ---
@@ -80,9 +81,11 @@ conversa de semana passada ("aquela do bolo de cenoura").
   ferramentas de voz no sistema).
 - **Arrastar um arquivo para a conversa** — jogar um .txt ou .pdf na janela e
   perguntar sobre ele ("o que este documento diz?").
-- **Memória com data** — na aba Memória, mostrar quando cada fato foi aprendido,
+- ~~**Memória com data**~~ - **FEITA em 16/10/2026**: cada item da aba Memória mostra "aprendeu em dd/mm/aaaa". As datas vão num arquivo **ao lado** do `memoria.json`, nunca dentro dele (esse é lido pelos dois programas e tem regra de ouro). Item antigo fica sem data — a tela mostra isso em vez de inventar um dia.
+- (Ideia original) **Memória com data** — na aba Memória, mostrar quando cada fato foi aprendido,
   para você saber se está atualizado.
-- **Exportar tudo** — um botão para salvar a memória e as conversas num
+- ~~**Exportar tudo**~~ - **FEITO em 16/10/2026**: botão "Fazer cópia agora" em Configurações > Conversa, que copia conversas, memória e chaves num `.zip` no OneDrive. É o mesmo que o `9 - Fazer backup dos meus dados.bat`, com a mesma função.
+- (Ideia original) **Exportar tudo** — um botão para salvar a memória e as conversas num
   arquivo só, como backup.
 
 ---
