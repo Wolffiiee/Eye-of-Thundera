@@ -2,7 +2,7 @@
 
 Assistente pessoal de pesquisa, com interface escura em HTML/JavaScript e integração Python via pywebview.
 
-**Estado conferido em 16/10/2026:** o atalho da Área de Trabalho abre o código-fonte em app_web.py. Um erro de sintaxe em web/app.js foi corrigido nesta revisão; a verificação agora inclui uma checagem de sintaxe JavaScript quando Node.js está disponível.
+**Estado conferido em 16/10/2026:** o atalho da Área de Trabalho abre o código-fonte em app_web.py. A sintaxe da interface está verificada automaticamente; a aba Personalização oferece cinco temas que são salvos e reaplicados na próxima abertura. O botão de salvar resposta usa o diálogo da janela pywebview, em vez de criar uma raiz Tkinter extra. A suíte passou com 126 verificações, sem falhas nem avisos; ainda falta confirmar visualmente os fluxos no aplicativo real.
 
 ## Comece por aqui
 
@@ -69,6 +69,6 @@ O resultado esperado termina em TUDO CERTO, com FALHA: 0. O relatório mostra VE
 
 ## Observações da interface
 
-A tela principal já reúne conversas, busca no histórico, modos de pesquisa, conversa privada, resumo do dia, microfone e envio. As configurações são divididas em Memória, Conversa, Chaves e Ajuda.
+A tela principal já reúne conversas, busca no histórico, modos de pesquisa, conversa privada, resumo do dia, microfone e envio. As configurações são divididas em Memória, Conversa, Chaves, Ajuda e Personalização. A aba Personalização permite escolher entre cinco temas, aplicados na hora e mantidos na próxima abertura.
 
 Melhorias de UX recomendadas para a próxima rodada: reduzir a sensação de excesso de botões na barra de escrita, agrupar cada provedor junto do seu controle de ativação, padronizar textos e estados de carregamento e verificar a navegação por teclado. Evite uma reformulação visual grande antes de validar os fluxos existentes.

@@ -1,6 +1,6 @@
 # Onde paramos
 
-Atualizado em 16/10/2026, após corrigir a interface sem resposta.
+Atualizado em 16/10/2026, após corrigir a persistência e aplicação dos temas da interface.
 
 ## Resumo do estado atual
 
@@ -12,7 +12,7 @@ Um commit recente inseriu uma chave de fechamento extra em web/app.js, imediatam
 
 A chave extra foi removida. Também foram corrigidos um texto quebrado na descrição do Gemini e uma duplicação na atualização das datas da memória.
 
-Além disso, nesta rodada foi adicionada a aba **Personalização** nas Configurações (abas: Memória, Conversa, Chaves, Ajuda, **Personalização**). Ela oferece 5 temas pré-definidos (Clássico Dark, Purpurina, Amethyst, Ocean, Forest) que alteram as variáveis CSS da interface e são salvos no config.json do usuário. A seleção é feita via <select> e persistida automaticamente.
+A revisão seguinte encontrou que a aba Personalização existia no JavaScript, mas faltava no HTML; o backend também ignorava tema/temaIdx ao salvar, as cores usavam variáveis CSS que a interface não consumia e a seleção não era aplicada na abertura. Corrigido: a aba agora aparece em Configurações, os cinco temas (Clássico Dark, Purpurina, Amethyst, Ocean, Forest) usam as variáveis CSS reais, são salvos pelo backend e reaplicados ao iniciar. A troca é imediata e a aba não mostra um botão Salvar desnecessário. Também foi corrigido o salvamento de respostas: a função deixou de criar uma raiz Tkinter dentro da thread da ponte e passou a usar o diálogo nativo da janela pywebview; o teste automatizado usa uma janela falsa e um arquivo temporário.
 
 A verificação automática agora executa node --check web/app.js quando Node.js está disponível. O contador final também foi corrigido: antes imprimia TESTES: 0 mesmo depois de registrar dezenas de verificações; agora imprime VERIFICACOES e conta as mensagens OK, FALHA e AVISO.
 
@@ -20,7 +20,7 @@ A verificação automática agora executa node --check web/app.js quando Node.js
 
 - JavaScript: sintaxe aprovada com Node.js.
 - Python: app_web.py, pesquisa_ia.py, memoria.py e roteador.py passaram na compilação de sintaxe.
-- verificar.py: VERIFICACOES: 126 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO.
+- verificar.py: VERIFICACOES: 126 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO. Há testes isolados para os cinco temas e para salvar resposta via diálogo pywebview, sem tocar no config.json real.
 - Teste de abertura: o comando usado pelo atalho foi iniciado novamente, a janela com título Eye of Thundera ficou visível no Windows e não foi criado erro.log.
 - Ainda falta confirmar manualmente que os cliques respondem. A suíte automatizada e a abertura da janela não substituem esse teste manual completo.
 
@@ -42,7 +42,7 @@ Os dados do usuário ficam em %LOCALAPPDATA%/PesquisaIA, fora do repositório. N
 1. Fechar qualquer janela de demonstração ou versão antiga e abrir novamente o atalho Eye of Thundera na Área de Trabalho.
 2. Testar Nova conversa, Configurações, alternância Web e envio de uma pergunta curta. Não enviar uma pergunta real sem confirmar que a chave está configurada e que o usuário deseja gastar cota.
 3. Se qualquer clique falhar, consultar %LOCALAPPDATA%/PesquisaIA/erro.log e registrar o erro sem incluir chaves.
-4. Conferir manualmente as quatro abas de Configurações e validar se as descrições correspondem aos controles reais.
+4. Conferir manualmente as cinco abas de Configurações e validar se as descrições correspondem aos controles reais; confirmar que a escolha de tema permanece após reabrir.
 5. Avaliar melhorias visuais em mudanças separadas, depois de validar os fluxos principais.
 
 ## Estado do Git

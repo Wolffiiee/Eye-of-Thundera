@@ -8,12 +8,13 @@ Atualizado em 16/10/2026. Este documento contém pendências reais; o histórico
 - Abrir Eye of Thundera pelo atalho da Área de Trabalho.
 - Conferir se Nova conversa, Configurações, Web e enviar respondem.
 - Fazer uma pergunta curta somente quando o usuário estiver pronto para testar a integração com a IA.
+- Testar Ctrl+S em uma resposta de exemplo, confirmar que o diálogo de salvar aparece na frente e que cancelar não gera erro.
 - Se falhar, ler %LOCALAPPDATA%/PesquisaIA/erro.log e registrar o traceback sem dados secretos.
 
 ## Prioridade 2 — conferir os fluxos de configuração
 
-- Abrir cada aba: Memória, Conversa, Chaves e Ajuda.
-- Verificar se os controles carregam, podem ser alterados e salvam corretamente.
+- Abrir cada aba: Memória, Conversa, Chaves, Ajuda e Personalização.
+- Verificar se os controles carregam, podem ser alterados e salvam corretamente; em Personalização, trocar de tema, fechar e reabrir para confirmar que a escolha permanece.
 - Conferir se as chaves aparecem mascaradas e se o texto de ajuda é claro.
 - Testar edição e exportação de memória somente com cuidado para não alterar dados reais sem autorização.
 

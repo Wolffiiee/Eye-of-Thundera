@@ -357,6 +357,9 @@ def _cfg_tela():
             "definida": bool(chave),
             "final": (str(chave)[-4:] if chave else ""),
         })
+    tema_idx = cfg.get("temaIdx", 0)
+    if not isinstance(tema_idx, int) or isinstance(tema_idx, bool) or not 0 <= tema_idx <= 4:
+        tema_idx = 0
     return {
         "modo_pesquisa": cfg.get("modo_pesquisa", "auto"),
         "usar_contexto": bool(cfg.get("usar_contexto", True)),
@@ -365,6 +368,8 @@ def _cfg_tela():
         "voz_enviar": bool(cfg.get("voz_enviar", True)),
         "usar_plano_b": bool(cfg.get("usar_plano_b", True)),
         "usar_gemini": bool(cfg.get("usar_gemini", True)),
+        "tema": cfg.get("tema", "Clássico Dark"),
+        "temaIdx": tema_idx,
         "gemini": _tem_chave(cfg.get("api_key", "")),
         "gemini_reserva": _tem_chave(cfg.get("api_key_reserva", "")),
         "servicos": servicos,
@@ -382,6 +387,8 @@ def _cfg_tela_demo():
         "voz_enviar": True,
         "usar_plano_b": True,
         "usar_gemini": True,
+        "tema": "Clássico Dark",
+        "temaIdx": 0,
         "gemini": {"definida": True, "final": "a1b2"},
         "gemini_reserva": {"definida": False, "final": ""},
         "servicos": [{
@@ -823,64 +830,31 @@ class Ponte:
             self.id_atual = str(time.time())
         return p.guardar_conversa(self.id_atual, self.mensagens)
 
-    def _onde_esta_a_janela(self):
-        """Onde ancorar a janela de Salvar (na tela do programa).
-
-        Medido em 16/10/2026: sem isto, a janela de "Salvar resposta
-        como..." abria em x=138, y=0 (primeiro monitor, canto da tela),
-        enquanto o programa estava no segundo (x=2000). O Wolf olhava
-        para o segundo monitor, via a janelinha no primeiro e achava que
-        o programa tinha travado.
-
-        Usa a posicao em que NOS mesmos abrimos a janela, e nao a
-        `janela.x` do pywebview: essa propriedade espera a janela ficar
-        "pronta" e pode TRAVAR ate 15 segundos (e a janela de Salvar
-        demorava tanto que parecia que nao abria). Se o Wolf arrastar a
-        janela para outro lugar, a janelinha pode nao sair bem em cima
-        dela - mas continua na tela certa, que e' o que importa.
-
-        Desde 16/10/2026 devolve a posicao LEMBRADA (a mesma que o
-        programa usa para abrir), e nao mais um ponto fixo: com o
-        programa aberto no segundo monitor, devolver X_PADRAO (200)
-        punha a janelinha de Salvar no primeiro monitor - que e' o
-        mesmo defeito que o Wolf viu de manha, de novo.
-        """
-        return _posicao_de_abertura()
-
     def salvar_texto(self, texto):
-        """Salvar a resposta num .txt. Este funciona mesmo."""
+        """Salvar a resposta num .txt usando o diálogo nativo do pywebview."""
         if not texto or not str(texto).strip():
             return {"erro": "Não tem resposta para salvar."}
+        if self._janela is None:
+            return {"erro": "A janela ainda não está pronta para salvar arquivos."}
         nome = p._nome_de_resposta(texto)
-        from tkinter import filedialog
-        import tkinter as tk
-        dono = tk.Tk()
-        dono.withdraw()
-        dono.attributes("-topmost", True)
         try:
-            # a janela de Salvar nasce embaixo da janela "pai": por isso
-            # a pai fica no mesmo lugar do programa, e nao no 0,0.
-            x, y = self._onde_esta_a_janela()
-            dono.geometry("1x1+%d+%d" % (max(0, x + 60), max(0, y + 60)))
-            dono.update_idletasks()
-            p._deixar_dialogo_do_sistema_escuro(dono)
-            caminho = filedialog.asksaveasfilename(
-                parent=dono,
-                title="Salvar resposta como...",
-                initialfile=nome,
-                defaultextension=".txt",
-                filetypes=[("Arquivo de texto", "*.txt"),
-                           ("Todos os arquivos", "*.*")],
+            # Use o diálogo pertencente à janela principal. Criar um Tk()
+            # aqui abre outra raiz em uma thread da ponte e pode deixar a
+            # interface inteira esperando sem mostrar a janela de Salvar.
+            tipo_salvar = webview.FileDialog.SAVE
+            caminhos = self._janela.create_file_dialog(
+                tipo_salvar,
+                save_filename=nome,
+                file_types=("Arquivo de texto (*.txt)",),
             )
         except Exception as erro:
             return {"erro": "Não consegui abrir a janela de salvar: %s" % erro}
-        finally:
-            try:
-                dono.destroy()
-            except Exception:
-                pass
-        if not caminho:
+        if not caminhos:
             return {}                      # cancelou: nao e erro
+        caminho = caminhos[0] if isinstance(caminhos, (list, tuple)) else caminhos
+        caminho = str(caminho)
+        if not caminho.lower().endswith(".txt"):
+            caminho += ".txt"
         try:
             with open(caminho, "w", encoding="utf-8-sig") as arquivo:
                 arquivo.write(str(texto).rstrip() + "\n")
@@ -1314,8 +1288,13 @@ class Ponte:
 
     def _cfg_curta(self):
         cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+        tema_idx = cfg.get("temaIdx", 0)
+        if not isinstance(tema_idx, int) or isinstance(tema_idx, bool) or not 0 <= tema_idx <= 4:
+            tema_idx = 0
         return {"modo_pesquisa": cfg.get("modo_pesquisa", "auto"),
-                "corretor": bool(cfg.get("corretor", True))}
+                "corretor": bool(cfg.get("corretor", True)),
+                "tema": cfg.get("tema", "Clássico Dark"),
+                "temaIdx": tema_idx}
 
     def definir_modo(self, modo):
         if DEMO:
@@ -1341,6 +1320,17 @@ class Ponte:
                 cfg[campo] = bool(dados[campo])
         if "web_corretor" in dados:
             cfg["corretor"] = bool(dados["web_corretor"])
+        temas_validos = {
+            0: "Clássico Dark",
+            1: "Purpurina",
+            2: "Amethyst",
+            3: "Ocean",
+            4: "Forest",
+        }
+        tema_idx = dados.get("temaIdx")
+        if isinstance(tema_idx, int) and not isinstance(tema_idx, bool) and tema_idx in temas_validos:
+            cfg["temaIdx"] = tema_idx
+            cfg["tema"] = temas_validos[tema_idx]
         permitidos = {"api_key", "api_key_reserva"} | {
             s["campo_chave"] for s in p.SERVICOS_RESERVA}
         for campo, valor in (dados.get("chaves") or {}).items():

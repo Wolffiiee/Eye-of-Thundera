@@ -5,6 +5,25 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Correção do diálogo Salvar resposta
+
+- **Defeito:** `Salvar resposta` criava uma nova raiz Tkinter dentro da thread da ponte pywebview, podendo deixar a interface esperando enquanto a janela do sistema não aparecia.
+- **Correção:** a função agora usa `self._janela.create_file_dialog(webview.FileDialog.SAVE, ...)`, o diálogo da própria janela principal; cancelamento continua sendo uma operação normal, e a extensão `.txt` é garantida.
+- **Prevenção:** adicionado teste isolado com uma janela falsa e arquivo temporário para verificar o tipo de diálogo, o filtro `.txt` e o conteúdo gravado, sem abrir uma janela real nem tocar nos dados pessoais.
+- **Verificação:** compilação Python e `verificar.py` passaram com 126 verificações, 0 falhas e 0 avisos; ainda falta confirmar manualmente o diálogo nativo na aplicação real.
+
+---
+
+## 2026-10-16 — Revisão da Personalização e persistência dos temas
+
+- **Defeitos encontrados:** a aba Personalização estava implementada em web/app.js, mas não existia como botão em web/index.html; o backend ignorava tema/temaIdx; as paletas alteravam --accent, que não é consumida pelo CSS, e não atualizavam todas as variáveis usadas pela interface; o tema escolhido não era aplicado ao iniciar.
+- **Correção:** adicionada a aba no HTML; centralizadas as cinco paletas com as variáveis CSS reais; seleção aplicada imediatamente e no início da aplicação; backend valida e salva o índice/nome do tema; botão Salvar oculto nessa aba porque a escolha é automática.
+- **Prevenção:** verificar.py agora verifica a existência da aba e aplica uma rodada isolada por cada um dos cinco temas, usando um diretório temporário dentro de _tmp e restaurando os caminhos originais.
+- **Documentação:** atualizados README.md, ONDE-PARAMOS.md e PROXIMOS-PASSOS.md.
+- **Verificação:** `node --check web/app.js`, compilação Python e `verificar.py`: 128 verificações, 0 falhas e 0 avisos. Ainda falta conferir visualmente a aba e a persistência no aplicativo real.
+
+---
+
 ## 2026-10-16 — Correção: janela abria, mas nenhum botão respondia
 
 - **Causa:** um commit adicionou uma chave `}` extra em `web/app.js`, logo após `abaChaves`. O navegador apontava `SyntaxError: Unexpected token '}'` na linha 1278 e não executava nenhum JavaScript do arquivo; por isso os eventos dos botões nunca eram registrados.

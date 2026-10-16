@@ -25,6 +25,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 
 if sys.stdout is not None:
@@ -1046,15 +1047,6 @@ try:
         else:
             falha("janela: a posição está misturada com o config.json")
 
-        # a janela de Salvar tem que nascer junto com o programa
-        if "_posicao_de_abertura()" in (
-                Path(PASTA / "app_web.py").read_text(encoding="utf-8")
-                .split("def _onde_esta_a_janela")[1].split("def salvar_texto")[0]):
-            ok("janela: a janela de Salvar nasce onde o programa está")
-        else:
-            falha("janela: a janela de Salvar ainda usa um ponto fixo "
-                  "(abriria no monitor errado)")
-
         # o .exe NAO pode ter janela de console
         _spec3 = (Path(PASTA / "Eye of Thundera.spec")
                   .read_text(encoding="utf-8"))
@@ -1108,40 +1100,7 @@ try:
 except Exception as erro:
     falha("a lista de sites consultados deu erro: %r" % (erro,))
 
-# --- 4e. a janela de "Salvar como" tem que nascer NA MESMA TELA do programa --
-# Defeito de 16/10/2026: a janela de "Salvar resposta como..." abria em
-# x=138, y=0 (primeiro monitor) enquanto o programa estava no segundo
-# (x=2000). O Wolf olhava para o segundo monitor, via a janelinha no
-# primeiro e achava que o programa tinha travado. Este teste nao abre
-# janela nenhuma: confere so de onde a tela nova tira a ancora.
-try:
-    _app = importlib.import_module("app_web")
-    _ponte = _app.Ponte()
-    _x, _y = _ponte._onde_esta_a_janela()
-    # A janela de Salvar tem que nascer ONDE o PROGRAMA ESTA. Como o
-    # programa agora abre onde foi fechado (16/10), o certo e' conferir
-    # que a ancora vem da mesma funcao de escolha de posicao — e nao mais
-    # um numero fixo. Conferir "x >= 1950" aqui so fazia sentido quando
-    # o programa era preso no segundo monitor.
-    _mesma_funcao = ("return _posicao_de_abertura()" in
-                     Path(PASTA / "app_web.py").read_text(encoding="utf-8")
-                     .split("def _onde_esta_a_janela")[1]
-                     .split("def salvar_texto")[0])
-    _abertura = _app._posicao_de_abertura()
-    if _mesma_funcao and (_x, _y) == _abertura:
-        ok("a janela de Salvar nasce onde o programa está (%d,%d)" % (_x, _y))
-    else:
-        falha("a janela de Salvar nasceria em (%d,%d) e o programa em "
-              "(%d,%d): nasceriam em monitores diferentes" % (_x, _y,
-                                                              _abertura[0],
-                                                              _abertura[1]))
-    if 'geometry("1x1+' in app_txt:
-        ok("a janela de Salvar é posicionada antes de abrir")
-    else:
-        falha("a janela de Salvar não é posicionada: ela nasce no canto "
-              "da tela, em outro monitor")
-except Exception as erro:
-    falha("conferir a posição da janela de Salvar deu erro: %r" % (erro,))
+# --- 4e. Salvar resposta é testado com diálogo pywebview falso ao final ---
 
 # --- 4f. tamanho da letra: existe e não mexe em nada do Python --------------
 # A letra e' so aparencia (fica no navegador), mas um erro aqui quebraria
@@ -1212,6 +1171,98 @@ if "assuntos" in _g and "gavetas" in _g:
     ok("UI: assuntos e gavetas presentes na tela")
 else:
     falha("UI: assuntos/gavetas ausentes")
+
+# --- personalização: aba, tema inicial e gravação isolada -------------------
+try:
+    _tema_html = (PASTA / "web" / "index.html").read_text(encoding="utf-8")
+    _tema_js = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    _tema_py = (PASTA / "app_web.py").read_text(encoding="utf-8")
+    _tema_pastas = PASTA / "_tmp"
+    _tema_pastas.mkdir(parents=True, exist_ok=True)
+    _ui_tema_ok = (
+        'data-aba="personalizacao"' in _tema_html
+        and "function abaPersonalizacao" in _tema_js
+        and "function aplicarTema" in _tema_js
+        and "aplicarTema(estado.cfg.temaIdx ?? 0)" in _tema_js
+        and '"temaIdx": tema_idx' in _tema_py
+    )
+    if _ui_tema_ok:
+        ok("personalização: aba visível e tema aplicado na abertura")
+    else:
+        falha("personalização: aba, aplicação inicial ou configuração incompleta")
+
+    _tema_aw = importlib.import_module("app_web")
+    _tema_pasta_original = _tema_aw.p.PASTA_CONFIG
+    _tema_arquivo_original = _tema_aw.p.ARQUIVO_CONFIG
+    _temas_esperados = ["Clássico Dark", "Purpurina", "Amethyst", "Ocean", "Forest"]
+    _temas_gravaram = True
+    try:
+        with tempfile.TemporaryDirectory(prefix="teste-temas-", dir=str(_tema_pastas)) as _tmp_tema:
+            _tema_aw.p.PASTA_CONFIG = Path(_tmp_tema)
+            _tema_aw.p.ARQUIVO_CONFIG = Path(_tmp_tema) / "config.json"
+            _tema_aw.p.salvar_config({})
+            _ponte_tema = _tema_aw.Ponte()
+            for _idx, _nome_tema in enumerate(_temas_esperados):
+                _ret_tema = _ponte_tema.config_salvar({
+                    "tema": _nome_tema, "temaIdx": _idx, "chaves": {}
+                })
+                _gravado = json.loads(_tema_aw.p.ARQUIVO_CONFIG.read_text(encoding="utf-8"))
+                _lido_tela = _tema_aw._cfg_tela()
+                if (_ret_tema.get("erro") or _gravado.get("temaIdx") != _idx
+                        or _gravado.get("tema") != _nome_tema
+                        or _lido_tela.get("temaIdx") != _idx
+                        or _lido_tela.get("tema") != _nome_tema):
+                    _temas_gravaram = False
+                    break
+    finally:
+        _tema_aw.p.PASTA_CONFIG = _tema_pasta_original
+        _tema_aw.p.ARQUIVO_CONFIG = _tema_arquivo_original
+    if _temas_gravaram:
+        ok("personalização: os 5 temas são salvos e carregados sem tocar nos dados reais")
+    else:
+        falha("personalização: um tema não foi salvo ou carregado corretamente")
+except Exception as _erro_tema:
+    falha("personalização: teste isolado falhou: %r" % (_erro_tema,))
+
+
+# --- salvar resposta: diálogo da própria janela, sem criar uma raiz Tk ------
+try:
+    _save_aw = importlib.import_module("app_web")
+    _save_webview = importlib.import_module("webview")
+    _save_pasta_tmp = PASTA / "_tmp"
+    _save_pasta_tmp.mkdir(parents=True, exist_ok=True)
+    _salvar_ok = False
+    with tempfile.TemporaryDirectory(prefix="teste-salvar-resposta-", dir=str(_save_pasta_tmp)) as _tmp_save:
+        _destino_save = Path(_tmp_save) / "resposta.txt"
+
+        class _JanelaDialogoFalso:
+            def __init__(self, destino):
+                self.destino = destino
+                self.chamada = None
+
+            def create_file_dialog(self, tipo, **kwargs):
+                self.chamada = (tipo, kwargs)
+                return [str(self.destino)]
+
+        _janela_save = _JanelaDialogoFalso(_destino_save)
+        _ponte_save = _save_aw.Ponte(janela=_janela_save)
+        _ret_save = _ponte_save.salvar_texto("Resposta de teste")
+        _texto_save = _destino_save.read_text(encoding="utf-8-sig") if _destino_save.exists() else ""
+        _salvar_ok = (
+            not _ret_save.get("erro")
+            and _ret_save.get("caminho") == str(_destino_save)
+            and _texto_save == "Resposta de teste\n"
+            and _janela_save.chamada is not None
+            and _janela_save.chamada[0] == _save_webview.FileDialog.SAVE
+            and "Arquivo de texto (*.txt)" in _janela_save.chamada[1].get("file_types", ())
+        )
+    if _salvar_ok:
+        ok("Salvar resposta: usa o diálogo pywebview e grava o texto em teste isolado")
+    else:
+        falha("Salvar resposta: diálogo pywebview ou gravação falhou")
+except Exception as _erro_save:
+    falha("Salvar resposta: teste isolado falhou: %r" % (_erro_save,))
+
 
 # --- resumo -----------------------------------------------------------------
 print()

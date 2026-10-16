@@ -21,6 +21,24 @@ function el(tag, cls, texto) {
 const estado = { mensagens: [], conversas: [], atual: null, ocupado: false, gravando: false, privada: false, profundo: false, sugerindo: false, ultimaPergunta: "", ultimaResposta: "", cfg: {}, aba: "chaves", rascunho: {} };
 const ROTULO_WEB = { auto: "Web: automática", sempre: "Web: sempre", nunca: "Web: desligada" };
 
+// Paletas centralizadas para a tela de Personalização e para a abertura do app.
+const TEMAS_UI = [
+  { nome: "Clássico Dark", cores: { "--bg": "#0e0e13", "--painel": "#13131a", "--superficie": "#1a1a23", "--superficie-2": "#22222d", "--texto": "#ececf3", "--texto-2": "#a6a6bb", "--texto-3": "#70708a", "--borda": "#272735", "--azul": "#3d6bff", "--azul-2": "#5b84ff" } },
+  { nome: "Purpurina", cores: { "--bg": "#0d0f1a", "--painel": "#15172a", "--superficie": "#202440", "--superficie-2": "#2a2e50", "--texto": "#e4dcf5", "--texto-2": "#b8acd6", "--texto-3": "#8e82b2", "--borda": "#4b416c", "--azul": "#a94eff", "--azul-2": "#c17aff" } },
+  { nome: "Amethyst", cores: { "--bg": "#141222", "--painel": "#211a32", "--superficie": "#2a1f3e", "--superficie-2": "#392950", "--texto": "#eee3ff", "--texto-2": "#c7b4e0", "--texto-3": "#9a83b8", "--borda": "#59416f", "--azul": "#b464e4", "--azul-2": "#cf8cff" } },
+  { nome: "Ocean", cores: { "--bg": "#0f2027", "--painel": "#152b35", "--superficie": "#1b3542", "--superficie-2": "#254654", "--texto": "#e0f4ff", "--texto-2": "#a8d0e6", "--texto-3": "#79a8c0", "--borda": "#345968", "--azul": "#36a9d6", "--azul-2": "#63c7ed" } },
+  { nome: "Forest", cores: { "--bg": "#0d1b15", "--painel": "#14291f", "--superficie": "#1a3a2e", "--superficie-2": "#24503d", "--texto": "#e0f5e7", "--texto-2": "#a8d5ba", "--texto-3": "#7fb394", "--borda": "#3d6a50", "--azul": "#6d9e4f", "--azul-2": "#8fbd70" } },
+];
+
+function aplicarTema(indice) {
+  const idx = Number.isInteger(Number(indice)) && Number(indice) >= 0 && Number(indice) < TEMAS_UI.length
+    ? Number(indice) : 0;
+  Object.entries(TEMAS_UI[idx].cores).forEach(([chave, valor]) => {
+    document.documentElement.style.setProperty(chave, valor);
+  });
+  return TEMAS_UI[idx];
+}
+
 /* ---------------- a ponte com o programa ----------------
    O pywebview cria a ponte em DUAS etapas: primeiro põe um objeto VAZIO
    (window.pywebview.api = {}) e só depois coloca as funções dentro. Entre
@@ -1595,7 +1613,9 @@ function mostrarAba(aba) {
   corpo.replaceChildren();
   corpo.className = "janela-corpo";
   $("#config-aviso").textContent = "";
-  $("#btn-salvar-config").classList.toggle("oculto", aba === "memoria" || aba === "ajuda");
+  $("#btn-salvar-config").classList.toggle(
+    "oculto", aba === "memoria" || aba === "ajuda" || aba === "personalizacao"
+  );
   ({ memoria: abaMemoria, conversa: abaConversa, chaves: abaChaves, ajuda: abaAjuda, personalizacao: abaPersonalizacao })[aba](corpo);
 }
 
@@ -1617,35 +1637,37 @@ function fecharConfig() {
 
 function abaPersonalizacao(corpo) {
   const cfg = estado.cfgTela;
-  const temaAtual = cfg.tema || "dark";
   corpo.append(
     el("h3", "", "Personalização"),
     el("p", "sub", "Escolha o visual da interface:")
   );
-  const temas = [
-    { nome: "Clássico Dark", cores: {"--bg": "#0e0e13", "--painel": "#1a1a24", "--texto": "#e0e0e0", "--borda": "#3a3a4f", "--accent": "#6c5ce7"}},
-    { nome: "Purpurina", cores: {"--bg": "#0d0f1a", "--painel": "#161d3a", "--texto": "#c0d6e8", "--borda": "#5a7a9d", "--accent": "#a94eff"}},
-    { nome: "Amethyst", cores: {"--bg": "#141222", "--painel": "#2a1a3e", "--texto": "#d0c0e8", "--borda": "#6a4a7e", "--accent": "#b464e4"}},
-    { nome: "Ocean", cores: {"--bg": "#0f2027", "--painel": "#1b2e3a", "--texto": "#a8d0e6", "--borda": "#3d5a7f", "--accent": "#e05d5d"}},
-    { nome: "Forest", cores: {"--bg": "#0d1b15", "--painel": "#1a3a2e", "--texto": "#a8d5ba", "--borda": "#5a7a5e", "--accent": "#6d9e4f"}},
-  ];
   const sel = el("select");
-  temas.forEach((t, i) => {
-    const o = el("option", "", t.nome);
-    o.value = i;
-    sel.append(o);
+  TEMAS_UI.forEach((tema, i) => {
+    const opcao = el("option", "", tema.nome);
+    opcao.value = i;
+    sel.append(opcao);
   });
-  sel.value = (cfg.temaIdx !== undefined ? cfg.temaIdx : 0);
+  sel.value = String(cfg.temaIdx ?? estado.cfg.temaIdx ?? 0);
   sel.addEventListener("change", async (e) => {
-    const idx = parseInt(e.target.value);
-    const t = temas[idx];
-    // Aplica variáveis CSS imediatamente
-    Object.entries(t.cores).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
-    // Salva a configuração
-    await chamar("config_salvar", { ...estado.rascunho, chaves: { tema: t.nome, temaIdx: idx } });
-    aviso("Tema alterado para " + t.nome);
+    const idx = Number(e.target.value);
+    const anterior = Number(estado.cfg.temaIdx ?? 0);
+    const tema = aplicarTema(idx);
+    const r = await chamar("config_salvar", {
+      ...estado.rascunho, tema: tema.nome, temaIdx: idx, chaves: {}
+    });
+    if (r.erro) {
+      aplicarTema(anterior);
+      sel.value = String(anterior);
+      aviso("Não foi possível salvar o tema: " + r.erro, true);
+      return;
+    }
+    estado.cfg.tema = tema.nome;
+    estado.cfg.temaIdx = idx;
+    estado.cfgTela.tema = tema.nome;
+    estado.cfgTela.temaIdx = idx;
+    aviso("Tema alterado para " + tema.nome);
   });
-  corpo.append(sel, el("p", "sub", "Após selecionar, a interface atualizará com o novo tema."));
+  corpo.append(sel, el("p", "sub", "A mudança é aplicada na hora e fica salva para a próxima abertura."));
 }
 
 async function salvarConfig() {
@@ -1723,6 +1745,7 @@ function aplicarCfg() {
   $("#rotulo-web").textContent = ROTULO_WEB[modo] || ROTULO_WEB.auto;
   $("#btn-web").classList.toggle("ligada", modo === "sempre");
   $("#entrada").spellcheck = estado.cfg.web_corretor !== false;
+  aplicarTema(estado.cfg.temaIdx ?? 0);
 }
 
 function lerArquivoTexto(arquivo) {
