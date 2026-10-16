@@ -275,6 +275,11 @@ function mostrarMenuContexto(x, y) {
           fecharMenuContexto();
         }));
       }
+      // reajusta a posicao depois que as sugestoes cresceram o menu
+      const l2 = Math.min(x, window.innerWidth - menu.offsetWidth - 8);
+      const a2 = Math.min(y, window.innerHeight - menu.offsetHeight - 8);
+      menu.style.left = Math.max(8, l2) + "px";
+      menu.style.top = Math.max(8, a2) + "px";
     });
   }
   // mostra antes de medir, e CORRIGE A POSIÇÃO se estiver perto da borda

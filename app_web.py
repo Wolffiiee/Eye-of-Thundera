@@ -1477,6 +1477,7 @@ def principal():
         background_color="#0e0e13",      # a barra some no fundo escuro
         frameless=False,
         easy_drag=False,
+        text_select=True,
     )
     ponte._janela = janela
 
