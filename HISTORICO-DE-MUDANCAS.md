@@ -5,6 +5,55 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Botão direito com correção de palavra (tela nova)
+
+O Wolf perguntou por que clicar com o botão direito sobre uma palavra
+errada não abria a caixa de correção. Motivo: **em produção o WebView2
+desliga o menu de contexto de proposito** —
+`settings.AreDefaultContextMenusEnabled = _state['debug']`. Não é defeito
+do Windows nem esquecimento: é o pywebview fazendo o programa se parecer
+com um aplicativo e não com uma página.
+
+### O que foi feito
+
+A tela agora monta o menu dela, com as correções da palavra sob o cursor
+e os comandos de edição (recortar, copiar, colar, selecionar tudo).
+
+- **A lógica da sugestão foi para o MOTOR**
+  (`pesquisa_ia.sugerir_correcao`) e o programa antigo passou a usar a
+  mesma função. Uma correção só, para as duas telas nunca discordarem do
+  que é "palavra errada" — a mesma lição do `registrar_erro`.
+- **O cursor vai para onde foi clicado.** O Chromium (e o WebView2) *não*
+  movem o cursor no botão direito; sem `caretRangeFromPoint` o menu
+  abriria sempre sobre a última letra digitada.
+- **O menu nunca nasce cortado:** ele é medido e puxado para dentro se
+  estiver perto da borda.
+- **Se alguma chamada falhar, o menu não fica em "carregando" para
+  sempre** — o titulo e o aviso saem juntos, no fim da espera.
+
+### Detalhe honesto: a busca demora
+
+`SpellChecker.candidates()` do pyspellchecker leva entre 0,3 s e 3 s,
+conforme a palavra. Não há como acelerar sem piorar a qualidade:
+limitar a distancia de edicao fica rapido mas **nao acha quase nada**
+("represetndo" -> nada), e buscar so em ingles e rapido mas **da
+respostas erradas** ("kibia" -> "libia"). Foi medido antes de decidir.
+
+Por isso o dicionario e' aquecido em segundo plano ao abrir o programa
+(`_obter_corretor`), e o menu abre na hora com os comandos de edicao: so
+a lista de correcoes e' que pode demorar um instante.
+
+### O teste
+
+A secao 4c6 confere 7 casos (palavra errada, trocada, correta, numero,
+lixo) mais a tela: evento, `preventDefault`, cursor, troca do texto e
+`caretRangeFromPoint`. E confere tambem que o programa antigo usa a
+funcao do motor, e nao uma copia.
+
+Verificacao: `TUDO CERTO`, **317 testes, 0 falhas, 0 avisos** (48 s — mais
+que os ~35 s de antes porque a verificacao agora mede a correcao de
+palavras de verdade, que e' lenta por natureza).
+
 ## 2026-10-16 — O defeito que travou a tela: a ponte se perdia dentro da janela
 
 O Wolf abriu a tela nova, perguntou "quem venceu o jogo ontem?" e levou

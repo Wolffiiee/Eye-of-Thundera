@@ -84,6 +84,10 @@
       </div>
       <div id="dica">Enter envia · Shift+Enter quebra a linha</div>
     </footer>
+    <!-- Menu do botão direito (correção de palavra + recortar/copiar/colar).
+         O WebView2 em produção DESLIGA o menu do navegador, então este
+         menu é desenhado pela própria tela. Fica escondido até o clique. -->
+    <div id="menu-contexto" class="oculto" role="menu"></div>
   </main>
 </div>
 

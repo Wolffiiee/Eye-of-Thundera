@@ -202,6 +202,149 @@ function anexarMensagem(m) {
   rolarParaOFim();
 }
 
+/* ---------------- menu do botão direito ----------------
+   No WebView2 de produção o menu de contexto do navegador está DESLIGADO
+   (`AreDefaultContextMenusEnabled = _state['debug']`), então o botão
+   direito não abre nada — foi o que o Wolf viu em 16/10/2026. Aqui a
+   tela faz o menu dela: as correções da palavra sob o cursor (a lógica
+   é a do MOTOR, a mesma do programa antigo) e os comandos de edição. */
+function palavraNoCursor(campo, pos) {
+  const t = campo.value;
+  let ini = pos, fim = pos;
+  while (ini > 0 && /[^\W\d_]/u.test(t[ini - 1])) ini--;
+  while (fim < t.length && /[^\W\d_]/u.test(t[fim])) fim++;
+  return { palavra: t.slice(ini, fim), ini, fim };
+}
+
+function fecharMenuContexto() {
+  $("#menu-contexto").classList.add("oculto");
+  $("#menu-contexto").replaceChildren();
+}
+
+function itemMenu(texto, aoClicar, ligado = true) {
+  const b = el("button", "", texto);
+  b.disabled = !ligado;
+  if (ligado) b.addEventListener("click", aoClicar);
+  return b;
+}
+
+function mostrarMenuContexto(x, y) {
+  const menu = $("#menu-contexto");
+  const campo = $("#entrada");
+  menu.replaceChildren();
+  const { palavra, ini, fim } = palavraNoCursor(campo, campo.selectionStart);
+  // o menu começa com os comandos que não dependem de nada
+  const temSelecao = campo.selectionStart !== campo.selectionEnd;
+  menu.append(
+    itemMenu("Recortar", () => { copiarSelecao(); substituirSelecao(""); fecharMenuContexto(); }, temSelecao),
+    itemMenu("Copiar", () => { copiarSelecao(); fecharMenuContexto(); }, temSelecao),
+    itemMenu("Colar", () => { colar(); fecharMenuContexto(); }),
+    itemMenu("Selecionar tudo", () => { campo.focus(); campo.select(); fecharMenuContexto(); })
+  );
+  if (palavra.length >= 2) {
+    // A busca das correções leva quase 4 segundos na PRIMEIRA vez (é o
+    // carregamento do dicionário). O título e o "carregando..." saem
+    // juntos, no fim da espera: se a busca demorasse e o título já
+    // tivesse sumido, aparecia um menu com os comandos e mais nada, e o
+    // Wolf pensaria que a correção não funciona.
+    const divisoria = el("div", "divisao");
+    const tit = el("div", "titulo", "Corrigir");
+    const vazio = el("div", "titulo", "carregando...");
+    menu.append(divisoria, tit, vazio);
+    chamar("sugerir_correcao", palavra).then((r) => {
+      // enquanto a tela procura as correções, o Wolf pode ter clicado
+      // em outro lugar: nesse caso este menu já foi fechado e as
+      // sugestões iriam aparecer num menu que ninguém está vendo.
+      if (menu.classList.contains("oculto")) return;
+      tit.remove();
+      vazio.remove();
+      const ss = (r && r.sugestoes) || [];
+      if (!ss.length) {
+        menu.append(el("div", "titulo", "(nada parecido)"));
+        return;
+      }
+      for (const s of ss) {
+        menu.append(itemMenu(s, () => {
+          substituirTrecho(ini, fim, s);
+          fecharMenuContexto();
+        }));
+      }
+    });
+  }
+  // mostra antes de medir, e CORRIGE A POSIÇÃO se estiver perto da borda
+  menu.classList.remove("oculto");
+  menu.style.left = "0px"; menu.style.top = "0px";
+  const l = Math.min(x, window.innerWidth - menu.offsetWidth - 8);
+  const a = Math.min(y, window.innerHeight - menu.offsetHeight - 8);
+  menu.style.left = Math.max(8, l) + "px";
+  menu.style.top = Math.max(8, a) + "px";
+}
+
+/* Troca um trecho do texto. `ini`/`fim` são índices do texto, não da
+   seleção: por isso recuamos se a seleção cobre o trecho. */
+function substituirTrecho(ini, fim, novo) {
+  const campo = $("#entrada");
+  const a = Math.min(ini, campo.selectionStart);
+  const b = Math.max(fim, campo.selectionEnd);
+  campo.focus();
+  campo.setRangeText(novo, a, b, "end");
+  ajustarAltura(); atualizarEnviar();
+}
+
+function substituirSelecao(novo) {
+  const campo = $("#entrada");
+  campo.focus();
+  campo.setRangeText(novo, campo.selectionStart, campo.selectionEnd, "end");
+  ajustarAltura(); atualizarEnviar();
+}
+
+function copiarSelecao() {
+  const campo = $("#entrada");
+  const s = campo.value.slice(campo.selectionStart, campo.selectionEnd);
+  if (s && navigator.clipboard) navigator.clipboard.writeText(s).catch(() => {});
+}
+
+function colar() {
+  if (!navigator.clipboard || !navigator.clipboard.readText) return;
+  navigator.clipboard.readText()
+    .then((t) => substituirSelecao(t))
+    .catch(() => aviso("Para colar, use Ctrl+V.", true));
+}
+
+/* O Chromium (e o WebView2) NÃO movem o cursor quando se clica com o
+   botão direito. Sem isto, o menu de correção abriria sempre em cima da
+   ÚLTIMA letra digitada, e não da palavra que o Wolf clicou — que é
+   exatamente o defeito que o programa antigo não tinha. */
+function cursorNoClique(campo, x, y) {
+  try {
+    if (document.caretRangeFromPoint) {
+      const r = document.caretRangeFromPoint(x, y);
+      if (r && campo.contains(r.startContainer)) return r.startOffset;
+    }
+  } catch (_e) { /* sem suporte: fica onde estava */ }
+  // reserva: tenta pelo `offsetX` do próprio evento
+  if (typeof campo.offsetX === "number") return campo.offsetX;
+  return campo.selectionStart;
+}
+
+function ligarMenuContexto() {
+  const campo = $("#entrada");
+  campo.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    if (campo.selectionStart === campo.selectionEnd) {
+      const pos = Math.min(cursorNoClique(campo, e.clientX, e.clientY),
+                           campo.value.length);
+      campo.setSelectionRange(pos, pos);
+    }
+    mostrarMenuContexto(e.clientX, e.clientY);
+  });
+  document.addEventListener("mousedown", (e) => {
+    if (!e.target.closest("#menu-contexto")) fecharMenuContexto();
+  });
+  window.addEventListener("blur", fecharMenuContexto);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") fecharMenuContexto(); });
+}
+
 /* ---------------- resumo do dia ----------------
    Um clique e a tela já pergunta as notícias de hoje. Existe como botão e
    como atalho (Ctrl+D) porque é o que se pergunta TODO dia — não faz
@@ -1196,4 +1339,5 @@ async function iniciar() {
 }
 
 ligarEventos();
+ligarMenuContexto();
 window.addEventListener("pywebviewready", iniciar);

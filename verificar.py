@@ -541,6 +541,76 @@ try:
 except Exception as erro:
     falha("os testes da ponte quebraram: %r" % (erro,))
 
+# --- 4c6. botao direito: correcao de palavra na tela nova ---------------
+# O WebView2 em PRODUCAO desliga o menu de contexto do navegador
+# (`AreDefaultContextMenusEnabled = _state['debug']`), entao o botao
+# direito abria NADA. A tela faz o menu dela, e a sugestao vem do MOTOR
+# (a mesma funcao que o programa antigo usa) para as duas telas
+# concordarem.
+try:
+    import pesquisa_ia as _p_menu
+    _probe = _aw.Ponte()
+    if not callable(getattr(_probe, "sugerir_correcao", None)):
+        falha("menu do botão direito: a ponte não tem sugerir_correcao")
+    else:
+        ok("menu do botão direito: a ponte tem sugerir_correcao")
+
+    _casos = [("gobiln", True), ("represetndo", True), ("casa", False),
+              ("1999", False), ("x", False), ("", False), (None, False)]
+    _achou, _falhou = 0, []
+    _goblin = None
+    for _palavra, _deveria in _casos:
+        _lista = _p_menu.sugerir_correcao(_palavra) or []
+        if _palavra == "gobiln":
+            _goblin = _lista
+        if _deveria and _lista:
+            _achou += 1
+        elif not _deveria and not _lista:
+            _achou += 1
+        else:
+            _falhou.append((_palavra, _lista[:3]))
+    if _achou == len(_casos):
+        ok("menu do botão direito: corrige palavra errada e respeita "
+           "palavra certa, número e lixo")
+    else:
+        falha("menu do botão direito: %r deram diferente do esperado"
+              % (_falhou,))
+    if "goblin" in (_goblin or []):
+        ok("menu do botão direito: 'gobiln' vira 'goblin'")
+    else:
+        falha("menu do botão direito: 'gobiln' não virou 'goblin'")
+    # o programa ANTIGO usa a MESMA funcao: uma cópia só, para as duas
+    # telas nunca discordarem do que é "palavra errada".
+    _antigo = Path(PASTA / "pesquisa_ia.py").read_text(encoding="utf-8")
+    if ("sugerir_correcao" in _antigo
+            and _antigo.count("def sugerir_correcao") == 1):
+        ok("menu do botão direito: o programa antigo usa a função do motor")
+    else:
+        falha("menu do botão direito: o programa antigo tem cópia própria "
+              "da correção")
+
+    _js2 = Path(PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    for _precisa, _rotulo in (
+            ("contextmenu", "a tela escuta o botão direito"),
+            ("preventDefault", "a tela cancela o menu do navegador"),
+            ("ligarMenuContexto", "o menu é ligado na abertura"),
+            ("itemMenu", "o menu é desenhado com botões"),
+            ("setRangeText", "escolher a sugestão troca a palavra certa"),
+            ("caretRangeFromPoint", "o cursor vai para onde foi clicado"),
+            ("menu-contexto", "o menu tem lugar na tela")):
+        if _precisa in _js2:
+            ok("menu do botão direito: %s" % _rotulo)
+        else:
+            falha("menu do botão direito: falta %s" % _precisa)
+    _html2 = Path(PASTA / "web" / "index.html").read_text(encoding="utf-8")
+    if 'id="menu-contexto"' in _html2 and 'class="oculto"' in _html2:
+        ok("menu do botão direito: começa escondido na tela")
+    else:
+        falha("menu do botão direito: o #menu-contexto não existe (ou "
+              "não começa escondido)")
+except Exception as erro:
+    falha("os testes do menu do botão direito quebraram: %r" % (erro,))
+
 # --- 4d. sites consultados: o que a busca traz, limpo e honesto ---------
 # Sao os RESULTADOS DA BUSCA, nao citacoes: por isso a tela escreve
 # "sites consultados" e mostra o link, para o Wolf conferir com os

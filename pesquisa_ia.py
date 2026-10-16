@@ -1076,6 +1076,62 @@ def _falha_de_chave(erro):
     return any(trecho in texto for trecho in CHAVE_RECUSADA)
 
 
+_CORRETORES = {}
+
+
+def _obter_corretor(lingua):
+    """Carrega (uma vez) o dicionário do corretor. Devolve False se não
+    houver biblioteca (o programa continua funcionando sem correção)."""
+    if lingua not in _CORRETORES:
+        try:
+            from spellchecker import SpellChecker
+            _CORRETORES[lingua] = SpellChecker(language=lingua)
+        except Exception:
+            _CORRETORES[lingua] = False
+    return _CORRETORES[lingua]
+
+
+def sugerir_correcao(palavra, maximo=6):
+    """Sugestões de correção para UMA palavra. Devolve [] se não houver.
+
+    Vive aqui no motor (e não dentro do tkinter) porque **os dois
+    programas** precisam dela: o antigo pelo botão direito, o novo pelo
+    menu que a própria tela monta. Duas cópias dessa lógica iam divergir
+    com o tempo — foi o que aconteceu com `registrar_erro`.
+
+    Português é a língua primária; o dicionário de inglês só entra quando
+    a palavra se assemelha **mais** a ele (jogo, game, chat...).
+    """
+    palavra = (palavra or "").strip()
+    if not re.fullmatch(r"[^\W\d_]{2,}", palavra, re.UNICODE):
+        return []
+    baixo = palavra.lower()
+    pt = _obter_corretor("pt")
+    if not pt:
+        return []
+    if baixo not in pt.unknown({baixo}):
+        return []                      # a palavra está certa
+    en = _obter_corretor("en")
+    # termo válido em inglês não sugere nada (evita "casa" -> "case")
+    if en and baixo not in en.unknown({baixo}):
+        return []
+    cands_pt = list(pt.candidates(baixo) or [])
+    cands_en = list(en.candidates(baixo) or []) if en else []
+
+    def melhor(cands):
+        if not cands:
+            return 0.0
+        return max(difflib.SequenceMatcher(None, baixo, c).ratio()
+                   for c in cands)
+
+    if cands_pt and cands_en:
+        cands = cands_en if melhor(cands_en) > melhor(cands_pt) + 0.10 \
+            else cands_pt
+    else:
+        cands = cands_en or cands_pt
+    return sorted(cands)[:maximo]
+
+
 def _criar_cliente(api_key):
     """Cria o cliente do Gemini já configurado para falhar rápido.
 
@@ -4254,37 +4310,11 @@ class Aplicativo:
         except Exception:
             return []
         palavra = self.entrada.get(inicio, fim).strip()
-        if not palavra or not re.fullmatch(r"[^\W\d_]{2,}", palavra, re.UNICODE):
-            return []
-        if palavra.lower() not in corretor.unknown({palavra.lower()}):
-            return []
-        corretor_en = self._obter_corretor_en()
-        # termo válido em inglês não sugere nada
-        if corretor_en and not corretor_en.unknown({palavra.lower()}):
-            return []
-        cands_pt = list(corretor.candidates(palavra.lower()) or [])
-        cands_en = []
-        if (corretor_en and corretor_en is not False
-                and corretor_en.unknown({palavra.lower()})):
-            cands_en = list(corretor_en.candidates(palavra.lower()) or [])
-        def melhor(cands):
-            if not cands:
-                return 0.0
-            return max(
-                difflib.SequenceMatcher(None, palavra.lower(), c).ratio()
-                for c in cands)
-        # a língua primária é o português: só usa inglês se for
-        # claramente mais parecido (palavra se assemelhar mais ao inglês)
-        if cands_pt and cands_en:
-            if melhor(cands_en) > melhor(cands_pt) + 0.10:
-                sugestoes = cands_en
-            else:
-                sugestoes = cands_pt
-        else:
-            sugestoes = cands_en or cands_pt
-        if not sugestoes:
-            return []
-        return [(s, inicio, fim) for s in sorted(sugestoes)[:6]]
+        # a decisão é do MOTOR (pesquisa_ia.sugerir_correcao), não deste
+        # método: o programa novo usa a mesma função no botão direito, e
+        # duas cópias dessa lógica iam divergir com o tempo.
+        sugestoes = sugerir_correcao(palavra)
+        return [(s, inicio, fim) for s in sugestoes]
 
     def _tem_selecao(self):
         try:

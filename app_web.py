@@ -429,6 +429,21 @@ class Ponte:
         return {"fatos": p.carregar_memoria(),
                 "datas": p.carregar_memoria_datas()}
 
+    def sugerir_correcao(self, palavra):
+        """Correções de uma palavra digitada (botão direito).
+
+        WebView2 em produção DESLIGA o menu de contexto do navegador
+        (`AreDefaultContextMenusEnabled = _state['debug']`), entao o
+        botão direito não abre nada. A tela monta o menu dela com esta
+        lista — e a lógica da sugestão é a mesma do programa antigo, que
+        está no motor (`pesquisa_ia.sugerir_correcao`).
+        """
+        try:
+            return {"sugestoes": p.sugerir_correcao(palavra)}
+        except Exception as erro:
+            p.registrar_erro("sugerir_correcao", erro)
+            return {"sugestoes": []}
+
     def memoria_listar(self):
         """Aba Memória, com a data em que cada fato foi aprendido.
 
@@ -1209,6 +1224,20 @@ def principal():
                 pass
 
         threading.Thread(target=escurecer, daemon=True).start()
+
+    # O dicionário do corretor leva quase 4 segundos para carregar na
+    # primeira vez (são dois dicionários: português e inglês). Se isso
+    # acontecer no meio de um clique direito, a tela ficaria 4 segundos
+    # parada com o menu aberto. Melhor carregar aqui, em segundo plano,
+    # enquanto o Wolf ainda está lendo o que já abriu.
+    def aquecer_corretor():
+        try:
+            p._obter_corretor("pt")
+            p._obter_corretor("en")
+        except Exception:
+            pass
+
+    threading.Thread(target=aquecer_corretor, daemon=True).start()
 
     print("Abrindo a tela nova (passo 4: microfone ligado).")
     print("Janela no segundo monitor: x=%d y=%d  (%dx%d)"
