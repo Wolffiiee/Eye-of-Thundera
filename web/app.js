@@ -1266,13 +1266,32 @@ async function abaMemoria(corpo) {
     if (rr.datas) datas = rr.datas;
   };
   const gavetas = r.gavetas || {};
-  const gavetasEl = el("div", "gavetas");
+  let filtroGaveta = ""; // "" = todos
+  const gavetasEl = el("div", "gavetas gavetas-filtro");
+  const allBtn = el("button", "badge-gaveta ativo", "todos · " + fatos.length);
+  allBtn.title = "Mostrar todas as gavetas";
+  allBtn.addEventListener("click", () => { filtroGaveta = ""; pintarativo(); desenhar(); });
+  gavetasEl.append(allBtn);
   for (const k of ["nome", "mora", "idade", "outros"]) {
     if (gavetas[k] && gavetas[k].length) {
-      const b = el("span", "badge-gaveta");
-      b.textContent = k + " · " + gavetas[k].length;
+      const b = el("button", "badge-gaveta", k + " · " + gavetas[k].length);
+      b.dataset.gaveta = k;
+      b.addEventListener("click", () => {
+        filtroGaveta = (filtroGaveta === k ? "" : k);
+        pintarativo(); desenhar();
+      });
       gavetasEl.append(b);
     }
+  }
+  const pintarativo = () => {
+    gavetasEl.querySelectorAll(".badge-gaveta").forEach((b) => {
+      if (b.dataset.gaveta === undefined) {
+        b.classList.toggle("ativo", filtroGaveta === "");
+      } else {
+        b.classList.toggle("ativo", filtroGaveta === b.dataset.gaveta);
+      }
+    });
+  };
   }
   const topo = el("div", "memoria-topo");
   const busca = el("input", "busca");
@@ -1308,8 +1327,8 @@ async function abaMemoria(corpo) {
   const desenhar = () => {
     lista.replaceChildren();
     const termo = busca.value.trim().toLowerCase();
-    const vistos = fatos.filter((f) => !termo || f.toLowerCase().includes(termo));
-    contador.textContent = fatos.length + (fatos.length === 1 ? " item guardado" : " itens guardados");
+    const daGaveta = filtroGaveta ? (gavetas[filtroGaveta] || []) : fatos;
+    const vistos = daGaveta.filter((f) => !termo || f.toLowerCase().includes(termo));    contador.textContent = fatos.length + (fatos.length === 1 ? " item guardado" : " itens guardados");
     if (!vistos.length) lista.append(el("div", "vazio-lista", fatos.length ? "Nada encontrado." : "Ainda não guardou nada."));
     for (const f of vistos) {
       const linha = el("div", "fato");
