@@ -14,7 +14,7 @@ else:
     RAIZ = Path(__file__).resolve().parent
 WEB = RAIZ / "web"
 if not WEB.exists():
-    WEB = Path.cwd() / "web"
+    WEB = Path(__file__).resolve().parent / "web"
 INDEX = WEB / "index.html"
 ESTILO = WEB / "estilo.css"
 SCRIPT = WEB / "app.js"
@@ -1436,8 +1436,12 @@ def _endereco_de(arquivo):
 def principal():
     faltando = [a for a in (INDEX, ESTILO, SCRIPT) if not a.exists()]
     if faltando:
-        sys.exit("Faltam arquivos da tela nova:\n  "
-                 + "\n  ".join(str(a) for a in faltando))
+        msg = "Faltam arquivos da tela nova:\n  " + "\n  ".join(str(a) for a in faltando)
+        try:
+            p.registrar_erro("principal (arquivos faltantes)", Exception(msg))
+        except Exception:
+            pass
+        raise RuntimeError(msg)
 
     ponte = Ponte()
     # Onde abrir: no monitor onde o Wolf fechou da ultima vez (16/10).
