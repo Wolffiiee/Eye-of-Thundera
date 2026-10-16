@@ -88,6 +88,7 @@ VOZ_FALSA = DEMO and not VOZ_REAL
 # esta posicao vai embora, como nas janelas do tkinter (que seguem o
 # app).
 X_PADRAO, Y_PADRAO = (2000, 100)
+TITULO_JANELA = "Pesquisa IA (tela nova - em construção)"
 LARGURA, ALTURA = (1180, 820) if not PREVIA else (1100, 760)
 
 CONVERSAS_DEMO = [
@@ -935,7 +936,7 @@ def principal():
 
     ponte = Ponte()
     janela = webview.create_window(
-        "Pesquisa IA (tela nova - em construção)",
+        TITULO_JANELA,
         url=_endereco_de(INDEX),
         js_api=ponte,
         x=X_PADRAO, y=Y_PADRAO,
@@ -949,12 +950,23 @@ def principal():
 
     def ao_abrir(instancia):
         # A barra de titulo do Windows e' branca por padrao e destoa de
-        # um programa escuro. Esta e' a mesma funcao que o programa antigo
-        # usa, entao as duas janelas ficam iguais.
-        try:
-            p.ativar_barra_escura(instancia)
-        except Exception:
-            pass
+        # um programa escuro.
+        #
+        # Aqui NAO da para usar `ativar_barra_escura`: ela espera um
+        # widget do tkinter (`update_idletasks` e `winfo_id`), e a janela
+        # do pywebview nao tem nenhum dos dois. O erro era engolido e a
+        # barra ficava BRANCA. Agora a janela e' procurada pelo titulo
+        # (ela pode demorar um pouco para o Windows criar, por isso a
+        # repeticao) e a barra e' escurecida de verdade.
+        # Uma tarefa de fundo: se ficasse esperando aqui, a janela nao
+        # apareceria.
+        def escurecer():
+            try:
+                p.escurecer_janela_por_titulo(TITULO_JANELA)
+            except Exception:
+                pass
+
+        threading.Thread(target=escurecer, daemon=True).start()
 
     print("Abrindo a tela nova (passo 4: microfone ligado).")
     print("Janela no segundo monitor: x=%d y=%d  (%dx%d)"

@@ -5,6 +5,62 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Tela nova: PASSO 7 (a barra de título estava BRANCA)
+
+Defeito de verdade encontrado aqui: **a tela nova abria com a barra de
+título do Windows branca**, batendo com o resto da tela escura. O
+programa de sempre já escurecia a barra desde 15/10, e o pedido do Wolf
+é "nunca janela branca".
+
+- **A causa:** a tela nova chamava `ativar_barra_escura(janela)`, que
+  espera um **widget do tkinter** (`janela.update_idletasks()` e
+  `janela.winfo_id()`). A janela do pywebview **não tem nenhum dos
+  dois**. O erro era engolido pelo `except: pass` e a barra ficava
+  branca, sem nenhum aviso.
+- **A correção:**
+  - `pesquisa_ia.escurecer_hwnd(hwnd)` — escurece a barra a partir do
+    **número** da janela, e não de um widget. Assim serve para o tkinter
+    e para o HTML. Nunca levanta erro: no pior dos casos a barra fica
+    clara e o programa continua funcionando.
+  - `pesquisa_ia.escurecer_janela_por_titulo(titulo)` — procura a janela
+    entre todas as do Windows pelo título e escurece. A janela pode
+    demorar um pouco para o Windows criar, por isso ela repete a
+    tentativa por ~10 segundos.
+  - `app_web.py` usa essa função nova, numa **tarefa de fundo**: se
+    ficasse esperando na thread principal, a janela não apareceria.
+  - `ativar_barra_escura` (a do tkinter) **não foi mexida** — ela
+    continua funcionando como estava.
+- **Atalhos novos:** `Ctrl+N` (conversa nova) e `Ctrl+F` (ir para a
+  busca). Sem o `preventDefault`, o navegador abriria a barra de
+  endereço e a busca do navegador, que nada têm a ver com o programa.
+  O `Ctrl+F` mostra a barra da esquerda se ela estiver recolhida, senão
+  não haveria campo nenhum para focar. A aba Ajuda ganhou as duas
+  linhas novas.
+- **O que já estava pronto e não precisou de nada:** os cantos
+  arredondados da caixa (`border-radius: 20px`), a cor da barra de
+  rolagem (`::-webkit-scrollbar`) e a cor de fundo da janela
+  (`background_color`), que é a mesma do CSS.
+- **2 testes novos**, que **não abrem janela nenhuma**: um confere que a
+  tela nova usa o caminho certo (e não o do tkinter, que falha), e o
+  outro que a função não quebra quando a janela não está aí (título
+  inexistente, título vazio, janela 0).
+
+Verificação: `TUDO CERTO`, **259 testes, 0 falhas** (38 s).
+
+### Defeito ainda ABERTO: o "Salvar .txt" da tela nova
+
+Medido em 16/10/2026: o caminho de salvar **não derruba o programa** —
+ele **fica esperando** a janela de "Salvar como" (a do Windows) que ele
+mesmo abriu, e o teste saiu de lá depois de 8 segundos sem morrer. Ou
+sea, se a janela de Salvar não aparece (ou aparece escondida atrás da
+tela nova), o Wolf vê o programa "travado" sem saber por quê.
+
+Isso não está corrigido ainda: o caminho atual cria uma janela do
+**tkinter** de dentro da thread da ponte, e essa thread não é a do
+tkinter. O certo seria usar a janela de salvar **do próprio pywebview**
+(`janela.create_file_dialog`), que é a ferramenta da casa. Fica como
+próximo trabalho, junto do passo 8.
+
 ## 2026-10-16 — Tela nova: PASSO 6 (procurar nas conversas)
 
 Uma caixinha "Procurar nas conversas..." em cima da lista, na barra da

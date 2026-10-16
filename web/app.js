@@ -332,6 +332,24 @@ document.addEventListener("keydown", (e) => {
       if (r && r.caminho) aviso("Salvo em " + r.caminho);
       else if (r && r.erro) aviso(r.erro, true);
     });
+    return;
+  }
+  // Ctrl+N: conversa nova. Ctrl+F: ir para a busca (o padrao do
+  // navegador abriria a barra de endereco, que nao existe aqui).
+  if ((e.ctrlKey || e.metaKey) && (e.key === "n" || e.key === "N")) {
+    e.preventDefault();
+    novaConversa();
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.key === "f" || e.key === "F")) {
+    e.preventDefault();
+    // com a barra recolhida a busca nao aparece: mostrar ela primeiro
+    if ($("#lateral").classList.contains("recolhida")) {
+      $("#btn-abrir-lateral").click();
+    }
+    const campo = $("#campo-busca");
+    campo.focus();
+    campo.select();
   }
 });
 document.addEventListener("click", (e) => {
@@ -686,6 +704,8 @@ function abaAjuda(corpo) {
     ["Shift + Enter", "quebra a linha"],
     ["Ctrl + M", "liga e desliga o microfone"],
     ["Ctrl + S", "salva a última resposta em .txt"],
+    ["Ctrl + N", "começa uma conversa nova"],
+    ["Ctrl + F", "procura nas conversas"],
     ["Esc", "fecha esta janela"],
   ]) {
     const l = el("div", "linha-atalho");

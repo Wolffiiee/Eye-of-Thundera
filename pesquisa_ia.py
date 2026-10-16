@@ -2726,6 +2726,81 @@ def _preparar_scrollbar_escuro(raiz):
         pass
 
 
+def escurecer_hwnd(hwnd):
+    """Deixa escura a barra de titulo de uma janela do Windows.
+
+    Recebe o NUMERO da janela (o "hwnd"), e nao um widget: assim serve
+    tanto para o tkinter quanto para a tela nova em HTML, que nao tem
+    `winfo_id`. Devolve True se deu certo. Nunca levanta erro: no
+    pior dos casos a barra fica clara e o programa continua funcionando.
+    """
+    if not hwnd:
+        return False
+    try:
+        import ctypes
+
+        ligado = ctypes.c_int(1)
+        # 20 = Windows 11 / 10 novo; 19 = Windows 10 1809.
+        for atributo in (20, 19):
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                hwnd, atributo, ctypes.byref(ligado), ctypes.sizeof(ligado)
+            )
+        return True
+    except Exception:
+        return False
+
+
+def escurecer_janela_por_titulo(titulo, tentativas=40, espera=0.25):
+    """Acha a janela pelo titulo e escurece a barra dela.
+
+    Isto existe por causa de um defeito: a tela nova (pywebview) NAO tem
+    `update_idletasks` nem `winfo_id` (sao metodos do tkinter), entao
+    chamar `ativar_barra_escura` nela levantava erro, o erro era engolido
+    e a barra de titulo ficava BRANCA, destoando do resto da tela
+    escura. Aqui a janela e' procurada pelo titulo entre todas as do
+    Windows.
+
+    A janela pode ainda nao existir no primeiro instante (o Windows cria
+    ela demorado), por isso o `tentativas`: se nao achar agora, tenta
+    de novo daqui a `espera` segundos, ate ~10 segundos no total.
+    """
+    alvo = (titulo or "").strip().lower()
+    if not alvo:
+        return False
+    try:
+        import ctypes
+
+        usuario = ctypes.windll.user32
+    except Exception:
+        return False
+
+    @ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
+    def visitar(hwnd, _lparam):
+        try:
+            tamanho = usuario.GetWindowTextLengthW(hwnd)
+            if tamanho:
+                buffer = ctypes.create_unicode_buffer(tamanho + 1)
+                usuario.GetWindowTextW(hwnd, buffer, tamanho + 1)
+                if alvo in buffer.value.lower():
+                    achadas.append(hwnd)
+                    return False            # para de procurar
+        except Exception:
+            pass
+        return True
+
+    for _ in range(max(1, tentativas)):
+        achadas = []
+        try:
+            usuario.EnumWindows(visitar, 0)
+        except Exception:
+            return False
+        for hwnd in achadas:
+            if escurecer_hwnd(hwnd):
+                return True
+        time.sleep(espera)
+    return False
+
+
 def ativar_barra_escura(janela):
     """Deixa a barra de título do Windows escura (modo escuro de verdade).
 

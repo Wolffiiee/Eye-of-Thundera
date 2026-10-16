@@ -182,6 +182,35 @@ if problemas_posicao:
 else:
     ok("a tela nova sempre nasce no 2o monitor (nenhuma flag abre na sua tela)")
 
+# --- 4c. a barra de titulo da tela nova tem que ficar ESCURA ---------------
+# Defeito encontrado em 16/10/2026: a tela nova chamava
+# `ativar_barra_escura`, que espera um widget do TK (update_idletasks e
+# winfo_id). A janela do pywebview nao tem nenhum dos dois: o erro era
+# engolido e a barra ficava BRANCA, batendo com o resto da tela escura.
+# Este teste nao abre janela nenhuma: ele so garante que a tela nova usa o
+# caminho certo (procurar pelo titulo) e que o caminho existe e funciona.
+app_txt = (PASTA / "app_web.py").read_text(encoding="utf-8")
+if "escurecer_janela_por_titulo" in app_txt and \
+        "ativar_barra_escura(instancia)" not in app_txt:
+    ok("a tela nova escurece a barra pelo titulo (e nao pelo caminho do tk)")
+else:
+    falha("a tela nova ainda usa ativar_barra_escura, que falha no pywebview")
+try:
+    _p = importlib.import_module("pesquisa_ia")
+    achou = _p.escurecer_janela_por_titulo("JANELA QUE NAO EXISTE",
+                                           tentativas=1, espera=0)
+    naoachou = achou is False
+    vazio = _p.escurecer_janela_por_titulo("   ", tentativas=1,
+                                           espera=0) is False
+    semjanela = _p.escurecer_hwnd(0) is False
+    if naoachou and vazio and semjanela:
+        ok("escurecer a barra não quebra quando a janela não está aí")
+    else:
+        falha("escurecer a barra deu erro: achou=%r vazio=%r sem=%r"
+              % (achou, vazio, semjanela))
+except Exception as erro:
+    falha("escurecer a barra levantou erro: %r" % (erro,))
+
 # --- 5. testes com a janela de verdade -------------------------------------
 
 
