@@ -164,6 +164,156 @@ def _esperar(raiz, segundos):
         time.sleep(0.05)
 
 
+# --- 5a. aba Memoria: a rolagem do mouse continua depois de apagar ---
+
+
+def testes_rolagem_da_memoria(p, raiz, app):
+    """Apagar um item da lista nao pode matar a rolagem do mouse.
+
+    O Tk nao repassa o evento da roda do mouse para o pai: so rola o
+    widget que esta embaixo do cursor. Como a lista e' DESTRUIDA e
+    recriada a cada desenho, os widgets novos nascem sem o binding da
+    rolagem. Se a ligacao so for feita uma vez (quando a janela abre),
+    depois do primeiro "X" a rolagem morre. Foi exatamente o que o Wolf
+    viu.
+    """
+    import shutil
+
+    pasta = Path(PASTA) / "_tmp" / "teste-memoria-rolagem"
+    shutil.rmtree(pasta, ignore_errors=True)
+    pasta.mkdir(parents=True, exist_ok=True)
+    original = p.ARQUIVO_MEMORIA
+    cache_original = getattr(p, "_memoria_cache", None)
+    p.ARQUIVO_MEMORIA = pasta / "memoria.json"
+    # 30 fatos: enche a lista e obriga a rolagem a trabalhar
+    (pasta / "memoria.json").write_text(
+        json.dumps(["Fato numero %02d, com um texto razoavelmente longo "
+                    "para ocupar espaco na lista" % n for n in range(1, 31)],
+                   ensure_ascii=False),
+        encoding="utf-8",
+    )
+    p._memoria_cache = None
+    try:
+        app._janela_config = None
+        app._abrir_config("memoria")
+        # REGRA DO WOLF: janela de teste sempre no SEGUNDO monitor (X >= 1950),
+        # para nunca cobrir a tela que ele esta usando. A janela de
+        # Configuracoes nasce centralizada no monitor principal, entao
+        # movemos para ca depois de abrir.
+        jan = getattr(app, "_janela_config", None)
+        if jan is not None:
+            try:
+                jan.geometry("760x800" + POSICAO_TESTE)
+            except Exception:
+                pass
+        _esperar(raiz, 0.8)
+        if jan is None:
+            falha("a aba Memoria nao abriu")
+            return
+
+        def botoes(texto):
+            """Os botoes do programa com o texto pedido (o 'Botao' do
+            pesquisa_ia e' um Label disfarçado, nao um Button do Tk)."""
+            achados = []
+            for w in p.anda(jan):
+                try:
+                    if isinstance(w, tk.Label) and w.cget("text") == texto:
+                        achados.append(w)
+                except Exception:
+                    pass
+            return achados
+
+        def apertar(w):
+            w.event_generate("<Button-1>", x=5, y=5)
+            _esperar(raiz, 0.3)
+
+        def sem_rolagem():
+            """Widgets da lista que NAO tem a rolagem ligada."""
+            return [w for w in botoes("X") if not w.bind("<MouseWheel>")]
+
+        antes = len(botoes("X"))
+        if antes == 0:
+            falha("a aba Memoria nao mostrou nenhum item para apagar")
+            return
+        if sem_rolagem():
+            falha("%d item(ns) da Memoria ja nasceram sem rolagem"
+                  % len(sem_rolagem()))
+        else:
+            ok("os %d itens da Memoria ja tem a rolagem do mouse" % antes)
+
+        # apaga o primeiro item (e' o que o Wolf fez) e confere de novo
+        apertar(botoes("X")[0])
+
+        depois = len(botoes("X"))
+        if depois == antes - 1:
+            ok("apagar um item removeu ele da lista (%d -> %d)"
+               % (antes, depois))
+        else:
+            falha("apagar nao removeu o item (%d -> %d)" % (antes, depois))
+
+        if sem_rolagem():
+            falha("depois de apagar, %d item(ns) ficaram sem a rolagem do "
+                  "mouse (o X parou de rolar)" % len(sem_rolagem()))
+        else:
+            ok("depois de apagar, os %d itens continuam rolando com o mouse"
+               % depois)
+
+        # e a rolagem realmente mexe a lista?
+        try:
+            lista = None
+            for w in p.anda(jan):
+                if isinstance(w, tk.Canvas) and w.winfo_class() == "Canvas":
+                    itens = w.find_all()
+                    if any(w.type(i) == "window" for i in itens):
+                        lista = w
+                        break
+            if lista is None:
+                ok("(não achei o canvas da lista para medir a rolagem)")
+            else:
+                antes_y = lista.yview()[0]
+                for w in p.anda(jan):
+                    try:
+                        w.event_generate("<MouseWheel>", delta=-120)
+                    except Exception:
+                        pass
+                _esperar(raiz, 0.4)
+                depois_y = lista.yview()[0]
+                if abs(depois_y - antes_y) > 0.001:
+                    ok("a roda do mouse mexe a lista da Memória "
+                       "(%.2f -> %.2f)" % (antes_y, depois_y))
+                else:
+                    falha("a roda do mouse não mexeu a lista da Memória")
+        except Exception as erro:
+            falha("não consegui medir a rolagem: %r" % (erro,))
+
+        # apagar TUDO tambem tem que deixar a lista rolavel (ou sem rolagem)
+        try:
+            todos = botoes("Apagar tudo")
+            if todos:
+                apertar(todos[0])
+                # a janela de confirmacao e' escura; aqui so interessa
+                # que a lista nao tenha ficado sem binding
+                if not sem_rolagem():
+                    ok("a lista tambem continua rolavel apos o pedido de "
+                       "apagar tudo")
+                else:
+                    falha("a lista ficou sem rolagem")
+            else:
+                ok("(a aba Memoria nao tem o botao 'Apagar tudo')")
+        except Exception as erro:
+            falha("não consegui conferir o 'Apagar tudo': %r" % (erro,))
+
+        try:
+            jan.destroy()
+        except Exception:
+            pass
+        app._janela_config = None
+    finally:
+        p.ARQUIVO_MEMORIA = original
+        p._memoria_cache = cache_original
+        shutil.rmtree(pasta, ignore_errors=True)
+
+
 def testes_de_tela():
     sys.path.insert(0, str(PASTA))
     import array as _array
@@ -835,20 +985,27 @@ def testes_de_tela():
             falha("o texto de apoio deveria estar visível na caixa vazia")
         else:
             try:
+                # Pega o foco de verdade antes de medir: na mao do Wolf
+                # tem outras janelas abertas (navegador, calculadora) e
+                # qualquer uma delas pode tomar o foco no meio do teste e
+                # fazer ele falhar sem ser defeito do programa.
+                raiz.focus_force()
+                raiz.update()
+                _esperar(raiz, 0.3)
                 app.entrada.focus_set()
                 raiz.update()
+                _esperar(raiz, 0.2)
                 app.rotulo_apoio.event_generate("<Button-1>", x=5, y=5)
             except Exception:
                 pass
             raiz.update()
-            # O foco no Windows leva alguns milissegundos para assentar,
-            # e checar na hora dava FALHA de vez em quando (teste
-            # instável). Aqui esperamos o foco chegar antes de julgar.
+            # O foco leva alguns milissegundos para assentar; checar na
+            # hora dava FALHA de vez em quando (teste instavel).
             focado = False
             for _ in range(20):
                 raiz.update()
                 time.sleep(0.05)
-                if raiz.focus_get() is app.entrada:
+                if app.entrada.focus_get() is app.entrada:
                     focado = True
                     break
             if focado:
@@ -1006,6 +1163,13 @@ def testes_de_tela():
         try:
             app._janela_config = None
             app._abrir_config("chave")
+            # REGRA DO WOLF: janela de teste no SEGUNDO monitor.
+            _janela = getattr(app, "_janela_config", None)
+            if _janela is not None:
+                try:
+                    _janela.geometry("760x800" + POSICAO_TESTE)
+                except Exception:
+                    pass
             _esperar(raiz, 0.6)
             jan = getattr(app, "_janela_config", None)
             textos = [w for w in (p.anda(jan) if jan else [])
@@ -1045,6 +1209,12 @@ def testes_de_tela():
                 app._janela_config = None
         except Exception as erro:
             falha("os testes das Configurações quebraram: %r" % (erro,))
+
+        # --- aba Memória: apagar um item não pode matar a rolagem do mouse
+        try:
+            testes_rolagem_da_memoria(p, raiz, app)
+        except Exception as erro:
+            falha("os testes da rolagem da Memória quebraram: %r" % (erro,))
 
         # --- coluna centralizada (por último: mexer no tamanho da janela
         # --- redesenha as bolhas e as referências do começo do teste ficam
@@ -1794,6 +1964,9 @@ if not falhas:
         testes_tela_nova_ia(importlib.import_module("pesquisa_ia"))
     except Exception as erro:
         falha("os testes da IA da tela nova quebraram: %r" % (erro,))
+
+
+# --- 5f. aba Memoria: a rolagem do mouse continua depois de apagar ------
 
 
 # --- 6. roteador: papo ou pesquisa (sem internet) --------------------------

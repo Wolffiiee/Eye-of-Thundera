@@ -5852,7 +5852,32 @@ class Aplicativo:
             _rolar_memoria,
         )
 
+        def _ligar_memoria(w):
+            """Liga a rolagem do mouse em TODOS os widgets de dentro.
+
+            O Tk nao repassa o evento da roda para o pai: quem tem o
+            binding e' o widget que esta debaixo do mouse. Por isso
+            precisa ser ligado um por um, e PRECISA ser feito de novo
+            sempre que a lista e' redesenhada: `desenhar()` destroi as
+            linhas antigas e cria outras, que nasceram sem binding. Sem
+            religar aqui, depois de apagar um item a rolagem da aba
+            Memoria parava de funcionar.
+            """
+            try:
+                w.bind("<MouseWheel>", _rolar_memoria)
+            except Exception:
+                pass
+            for c in w.winfo_children():
+                _ligar_memoria(c)
+
         def desenhar():
+            try:
+                desenhar_lista()
+            finally:
+                # sempre, mesmo no caminho que desenha "nada guardado"
+                _ligar_memoria(moldura)
+
+        def desenhar_lista():
             tela.delete("empty")
             for filho in lista.winfo_children():
                 filho.destroy()
@@ -5913,18 +5938,8 @@ class Aplicativo:
         Botao(botoes, "Apagar tudo", limpar).pack(side="left")
 
         desenhar()
-        def _ligar_memoria(w):
-            try:
-                w.bind("<MouseWheel>", _rolar_memoria)
-            except Exception:
-                pass
-            for c in w.winfo_children():
-                _ligar_memoria(c)
-        try:
-            moldura.bind("<MouseWheel>", _rolar_memoria)
-            _ligar_memoria(moldura)
-        except Exception:
-            pass
+        # A rolagem do mouse NAO e' ligada aqui: `_desenhar`/`desenhar`
+        # ja ligam em tudo, a cada redesenho (ver _ligar_memoria).
         env["tempo"] = janela.after(3000, conferir)
 
     def _preencher_aba_ajuda(self, pai, ao_rolar=None):
