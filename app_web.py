@@ -609,7 +609,8 @@ class Ponte:
             ], "datas": {}}
         fatos = p.carregar_memoria()
         return {"fatos": fatos, "datas": p.carregar_memoria_datas(),
-                "gavetas": p.carregar_memoria_gavetas()}
+                "gavetas": p.carregar_memoria_gavetas(),
+                "assuntos": p.carregar_memoria_por_assunto()}
 
     # --- 2. as conversas de verdade (este passo) ---
 

@@ -32,6 +32,12 @@ _TERCEIROS = re.compile(
     r"namorada|amigo|amiga|primo|prima|tio|tia|avo|cachorro|cachorra|gato|"
     r"gata|pet|chefe|colega)\b"
 )
+# Palavras que nao servem de assunto (verbos comuns, gavetas fixas).
+_STOP_ASSUNTO = _PARADAS | frozenset(
+    "nome mora idade tem gosta prefere chamado apelido natural nasceu "
+    "faz completa anos gosta de jogar videogame".split()
+)
+
 # Respostas vazias do modelo quando nao ha fato novo. NAO sao informacao
 # sobre o usuario e nunca podem virar "lembra do programa".
 _SEM_INFORMACAO = frozenset(
@@ -205,6 +211,28 @@ def consolidar(lista):
 def _informacoes(fatos):
     """Todo o conteudo dos fatos, como um conjunto de palavras."""
     return set().union(*[_tokens(f) for f in fatos]) if fatos else set()
+
+
+def assunto_de(fato):
+    """Rotulo curto de assunto do fato (primeira palavra significativa)."""
+    texto = _sem_acento(fato)
+    for p in re.findall(r"[a-z0-9]+", texto):
+        if p in _STOP_ASSUNTO:
+            continue
+        if len(p) < 3:
+            continue
+        return p[:12]
+    return "outros"
+
+
+def gavetas_por_assunto(fatos):
+    """Agrupa fatos por assunto (rotulo curto)."""
+    saida = {}
+    for fato in (fatos or []):
+        a = assunto_de(fato)
+        saida.setdefault(a, []).append(fato)
+    # ordena pelas gavetas com mais fatos primeiro
+    return dict(sorted(saida.items(), key=lambda kv: -len(kv[1])))
 
 
 def autoteste():

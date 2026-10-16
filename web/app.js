@@ -1267,6 +1267,7 @@ async function abaMemoria(corpo) {
   };
   const gavetas = r.gavetas || {};
   let filtroGaveta = ""; // "" = todos
+let filtroAssunto = ""; // "" = todos
   const gavetasEl = el("div", "gavetas gavetas-filtro");
   const allBtn = el("button", "badge-gaveta ativo", "todos · " + fatos.length);
   allBtn.title = "Mostrar todas as gavetas";
@@ -1289,6 +1290,30 @@ async function abaMemoria(corpo) {
         b.classList.toggle("ativo", filtroGaveta === "");
       } else {
         b.classList.toggle("ativo", filtroGaveta === b.dataset.gaveta);
+      }
+    });
+  };
+  const assuntos = r.assuntos || {};
+  const assuntosEl = el("div", "gavetas gavetas-filtro");
+  const allAss = el("button", "badge-gaveta ativo", "todos (assunto) · " + fatos.length);
+  allAss.title = "Mostrar todos os assuntos";
+  allAss.addEventListener("click", () => { filtroAssunto = ""; pintarAss(); desenhar(); });
+  assuntosEl.append(allAss);
+  for (const k of Object.keys(assuntos)) {
+    const b = el("button", "badge-gaveta", k + " · " + assuntos[k].length);
+    b.dataset.assunto = k;
+    b.addEventListener("click", () => {
+      filtroAssunto = (filtroAssunto === k ? "" : k);
+      pintarAss(); desenhar();
+    });
+    assuntosEl.append(b);
+  }
+  const pintarAss = () => {
+    assuntosEl.querySelectorAll(".badge-gaveta").forEach((b) => {
+      if (b.dataset.assunto === undefined) {
+        b.classList.toggle("ativo", filtroAssunto === "");
+      } else {
+        b.classList.toggle("ativo", filtroAssunto === b.dataset.assunto);
       }
     });
   };
@@ -1327,7 +1352,8 @@ async function abaMemoria(corpo) {
     lista.replaceChildren();
     const termo = busca.value.trim().toLowerCase();
     const daGaveta = filtroGaveta ? (gavetas[filtroGaveta] || []) : fatos;
-    const vistos = daGaveta.filter((f) => !termo || f.toLowerCase().includes(termo));    contador.textContent = fatos.length + (fatos.length === 1 ? " item guardado" : " itens guardados");
+    const daAssunto = filtroAssunto ? (assuntos[filtroAssunto] || []) : daGaveta;
+    const vistos = daAssunto.filter((f) => !termo || f.toLowerCase().includes(termo));    contador.textContent = fatos.length + (fatos.length === 1 ? " item guardado" : " itens guardados");
     if (!vistos.length) lista.append(el("div", "vazio-lista", fatos.length ? "Nada encontrado." : "Ainda não guardou nada."));
     for (const f of vistos) {
       const linha = el("div", "fato");
@@ -1413,6 +1439,7 @@ async function abaMemoria(corpo) {
     pegar(rr); desenhar();
   });
   if (gavetasEl.children && gavetasEl.children.length) corpo.append(gavetasEl);
+if (assuntosEl.children && assuntosEl.children.length) corpo.append(assuntosEl);
 corpo.append(topo, novo, contador, lista);
   desenhar();
 }

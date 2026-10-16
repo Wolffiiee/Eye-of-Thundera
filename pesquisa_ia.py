@@ -451,6 +451,11 @@ def carregar_memoria_gavetas():
     return memoria.gavetas_de(carregar_memoria())
 
 
+def carregar_memoria_por_assunto():
+    """Memoria agrupada por assunto (read-only)."""
+    return memoria.gavetas_por_assunto(carregar_memoria())
+
+
 def organizar_memoria():
     """Tira os fatos repetidos da memoria que ja existe.
 
