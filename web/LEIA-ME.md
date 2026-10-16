@@ -51,7 +51,9 @@ de graça (no Tk ele só sai de uma cor).
    reserva) do programa antigo — nada foi reescrito. A tela avisa se está
    gravando pelos eventos `gravando` e `voz`; o texto falado **entra na
    caixa de digitar** para o Wolf conferir (só sai sozinho se ele tiver
-   ligado "enviar" nas Configurações). Botão ou `Ctrl+M`.
+   ligado "enviar" nas Configurações). Botão ou `Ctrl+M`. Botão ou `Ctrl+M`. No `--demo` ele finge que ouviu; com
+   `--voz` (o `6 - Falar com a tela nova.bat`) ele é o microfone de
+   verdade, sem gravar nada.
 5. Janela de Configurações com as 4 abas funcionando de verdade (gravar).
 6. Salvar em .txt, copiar, pesquisar.
 7. Atalhos de teclado, cantos arredondados da caixa, borda escura da janela.
@@ -82,10 +84,29 @@ de graça (no Tk ele só sai de uma cor).
   contra os dados do Wolf.
 
 ## Como abrir
-- **Para o Wolf:** duplo clique em `5 - Ver a tela nova.bat` (abre no 2º
-  monitor, em modo exemplo, sem tocar em nada).
+- **Para o Wolf ver a tela (sem mexer em nada):** duplo clique em
+  `5 - Ver a tela nova.bat`. Abre no 2º monitor, em modo exemplo: as
+  conversas são de exemplo e o **microfone é de mentira** (ele finge que
+  ouviu, para o botão poder ser testado mesmo sem microfone).
+- **Para o Wolf TESTAR O MICROFONE DE VERDADE:** duplo clique em
+  `6 - Falar com a tela nova.bat`. É a mesma tela, com `--voz`: o
+  microfone é o real e a IA responde com a chave dele, **mas nenhuma
+  conversa é salva** (é `--demo --voz`).
 - **Para quem programa:** `.venv\Scripts\python.exe app_web.py` (usa as
-  conversas de verdade, só leitura). Com `--demo`, usa as de exemplo.
+  conversas de verdade, e grava).
+
+### As flags (são três coisas independentes)
+| flag | o que muda |
+|---|---|
+| `--demo` | conversas de exemplo e **nada é gravado** |
+| `--voz` | o microfone é o **de verdade**, mesmo com `--demo` |
+| `--previa` | `--demo` + janela menor (é o que o `5 - Ver a tela nova.bat` usa) |
+
+**Enquanto a tela nova for coisa de teste, ela nasce sempre no 2º
+monitor (x=2000)**, com qualquer combinação de flags — para nunca cobrir
+a tela em que o Wolf está trabalhando. Isso tem teste no `verificar.py`.
+Quando a tela nova virar *o* programa, a posição vai embora, como nas
+janelas do tkinter (que seguem o app).
 
 ## O `.exe` da tela nova
 Existe um spec separado, `Pesquisa IA Tela Nova.spec`, de propósito: o

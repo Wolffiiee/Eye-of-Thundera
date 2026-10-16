@@ -73,8 +73,21 @@ PREVIA = "--previa" in sys.argv
 # Modo DEMO: conversas de exemplo (com emoji COLORIDO) para o Wolf ver a
 # tela cheia e poder decidir. NAO le nem grava nada do Wolf: e' so olhar.
 DEMO = "--demo" in sys.argv or PREVIA
-X_PADRAO, Y_PADRAO = (2000, 100) if PREVIA else (120, 90)
-LARGURA, ALTURA = (1100, 760) if PREVIA else (1180, 820)
+# `--voz` deixa o MICROFONE DE VERDADE mesmo no modo exemplo. Sao duas
+# coisas diferentes: "nao gravar nada" (so olhar a tela) e "microfone
+# falso" (para o botao poder ser testado sem microfone nenhum). Com
+# `--demo --voz` o Wolf fala de verdade e a IA responde, mas nenhuma
+# conversa e' salva.
+VOZ_REAL = "--voz" in sys.argv
+VOZ_FALSA = DEMO and not VOZ_REAL
+# REGRA DO WOLF: enquanto a tela nova e' coisa de teste, ela nasce no
+# SEGUNDO monitor (x=2000), com ou sem --demo. Sem isso, rodar a tela
+# com a chave de verdade (para testar o microfone) abriria em cima da
+# tela em que ele esta trabalhando. Quando a tela nova virar O programa,
+# esta posicao vai embora, como nas janelas do tkinter (que seguem o
+# app).
+X_PADRAO, Y_PADRAO = (2000, 100)
+LARGURA, ALTURA = (1180, 820) if not PREVIA else (1100, 760)
 
 CONVERSAS_DEMO = [
     {
@@ -607,9 +620,10 @@ class Ponte:
         return self._comecar_gravacao()
 
     def _comecar_gravacao(self):
-        # No modo DEMO nao ha microfone nem chave: fingimos que gravou, para
-        # a tela de exemplo mostrar o botao funcionando sem microfone.
-        if DEMO:
+        # Na tela de exemplo o microfone e' de mentira: fingimos que
+        # gravou, para o botao poder ser testado sem microfone nenhum
+        # (com --voz ele passa a ser o de verdade).
+        if VOZ_FALSA:
             self.gravando = True
             self._evento({"tipo": "gravando", "ligado": True})
             return {"gravando": True}
@@ -640,10 +654,9 @@ class Ponte:
         self.gravador = None
         self.gravando = False
         self._evento({"tipo": "gravando", "ligado": False})
-        if DEMO:
+        if VOZ_FALSA:
             # texto de exemplo, para o Wolf ver o micro funcionando
             self.ocupado = True
-            time.sleep(0.6)
 
             def tarefa_demo():
                 self._evento({"tipo": "voz",
@@ -833,7 +846,7 @@ def principal():
         except Exception:
             pass
 
-    print("Abrindo a tela nova (passo 3: a IA ja esta ligada).")
+    print("Abrindo a tela nova (passo 4: microfone ligado).")
     print("Janela no segundo monitor: x=%d y=%d  (%dx%d)"
           % (X_PADRAO, Y_PADRAO, LARGURA, ALTURA))
     if DEMO:

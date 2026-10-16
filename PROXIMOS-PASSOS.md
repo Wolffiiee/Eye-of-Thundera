@@ -33,9 +33,16 @@ Claude em outra conversa): leia isto depois do PASSO-A-PASSO.md.
 - **As janelas escuras foram conferidas com os olhos pelo Wolf** (15/10).
 - **O botão direito na caixa vazia foi achado pelo Wolf e consertado**;
   falta só ele olhar o corrigido.
-1. **Uma pergunta normal** (digitando) com a chave nova — é o único
+1. **Falar com o microfone na tela nova** (16/10): duplo clique em
+   `6 - Falar com a tela nova.bat`. Abre no 2º monitor, o microfone é o
+   de verdade e a IA responde — mas **não salva nenhuma conversa** (é
+   `--demo --voz`). Confirmar: o botão fica vermelho piscando com o
+   tempo, o segundo clique para, e o que foi falado cai na caixa de
+   digitar para conferir. É o único jeito de testar o microfone sem
+   sujar o histórico.
+2. **Uma pergunta normal** (digitando) com a chave nova — é o único
    caminho que nunca foi testado de ponta a ponta.
-2. Usar o `.exe` por mais tempo (nos testes ele ficou aberto de 13 a 20
+3. Usar o `.exe` por mais tempo (nos testes ele ficou aberto de 13 a 20
    segundos, sem criar `erro.log`).
 Se algo falhar, leia o `erro.log` (no `.exe`: `%LOCALAPPDATA%\PesquisaIA\`;
 rodando pelo código: na pasta do projeto) e siga o PASSO-A-PASSO.md.

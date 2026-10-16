@@ -5,6 +5,35 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Tela nova: o microfone pode ser testado falando
+
+Duas correções e um atalho novo, para o Wolf poder testar o microfone
+de verdade sem sujar o histórico.
+
+- **A tela nova abria no MONITOR PRINCIPAL** quando rodava sem `--demo`
+  (nascia em x=120, em cima da tela em que o Wolf está trabalhando).
+  Agora ela nasce **sempre no segundo monitor** (x=2000), com qualquer
+  combinação de flags. É a regra do Wolf: janela de teste nunca cobre a
+  tela de trabalho. **Quando a tela nova virar O programa, esta posição
+  vai embora**, como nas janelas do tkinter, que seguem o app.
+- **Teste novo que trava essa regra:** o `verificar.py` roda as flags da
+  tela nova e falha se alguma abrir em x < 1950. Conferido que o teste
+  pega o problema se a posição voltar a depender de `--previa`.
+- **Separadas duas coisas que estavam misturadas:** "não gravar nada"
+  (`--demo`) e "microfone falso" (só para o botão poder ser testado
+  sem microfone). Agora são independentes: `--voz` deixa o microfone ser
+  o de verdade mesmo no modo exemplo.
+- **Novo `6 - Falar com a tela nova.bat`:** a tela nova com microfone de
+  verdade e IA de verdade, **sem salvar nenhuma conversa** e sem mexer
+  na memória. É o jeito seguro de o Wolf falar e ver a resposta.
+- **`5 - Ver a tela nova.bat` continua como era** (só olhar, microfone
+  falso), para não puxar o microfone de surpresa.
+- **`verificar.py`:** 3 testes novos (a tela nova no 2º monitor; no
+  modo exemplo nenhum som de verdade é gravado; com `--voz` grava de
+  verdade).
+
+Verificação: `TUDO CERTO`, **238 testes, 0 falhas** (88 s).
+
 ## 2026-10-16 — Tela nova: PASSO 4 (o microfone)
 
 O botão do microfone da tela nova deixou de estar apagado. Agora ele

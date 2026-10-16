@@ -374,6 +374,15 @@ Arquivos novos:
                               chaves, e as conversas mostradas sao de
                               exemplo. Para voltar ao programa de sempre,
                               abra o atalho "Pesquisa IA" da Area de Trabalho.
+  6 - Falar com a tela nova.bat -> a MESMA tela nova, mas para TESTAR O
+                               MICROFONE: ele usa o microfone de verdade
+                               e a IA responde, e mesmo assim NAO salva
+                               nenhuma conversa sua nem mexe na sua
+                               memoria. Clique no botão do microfone (ou
+                               aperte Ctrl+M) para gravar e clique de novo
+                               para parar; o que voce falou aparece na
+                               caixa de digitar para voce conferir antes
+                               de enviar.
   4 - Fazer backup.bat      -> cópia de segurança: salva o código e todo o
                               histórico do Git num .zip dentro da pasta
                               "Backup Pesquisa IA" do seu OneDrive (que vai

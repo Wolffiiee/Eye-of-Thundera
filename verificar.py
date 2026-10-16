@@ -156,6 +156,32 @@ if n_bind != 1:
 else:
     ok("só existe o bind_all de clique do dispatcher")
 
+# --- 4b. a tela nova também tem que nascer no SEGUNDO monitor ---------------
+# REGRA DO WOLF: janela de teste nao pode cobrir a tela em que ele esta
+# trabalhando. A tela nova (app_web.py) tambem e' coisa de teste, entao
+# nasce no 2o monitor SEMPRE - inclusive sem --demo, que e' o jeito de
+# testar o microfone de verdade. Se alguem voltar a fazer a posicao
+# depender de --previa, essa janela cai no monitor principal.
+web_txt = (PASTA / "app_web.py").read_text(encoding="utf-8")
+trecho_flags = web_txt[web_txt.index("PREVIA = "):web_txt.index("CONVERSAS_DEMO")]
+problemas_posicao = []
+for argumentos in ([], ["--demo"], ["--previa"], ["--demo", "--voz"], ["--voz"]):
+    valores = {}
+    try:
+        exec("import sys\n" + trecho_flags.replace(
+            "sys.argv", repr(["app_web.py"] + argumentos)), valores)
+    except Exception as erro:
+        problemas_posicao.append("%r deu erro: %r" % (argumentos, erro))
+        continue
+    if valores["X_PADRAO"] < 1950:
+        problemas_posicao.append("%r abre em x=%d (precisa ser >= 1950)"
+                                 % (argumentos, valores["X_PADRAO"]))
+if problemas_posicao:
+    falha("a tela nova pode abrir no monitor principal: %s"
+          % "; ".join(problemas_posicao))
+else:
+    ok("a tela nova sempre nasce no 2o monitor (nenhuma flag abre na sua tela)")
+
 # --- 5. testes com a janela de verdade -------------------------------------
 
 
@@ -2140,7 +2166,9 @@ def testes_tela_nova_microfone(p):
                  "voz": p.voz,
                  "_criar_cliente": p._criar_cliente,
                  "threading": app_web.threading,
-                 "DEMO": app_web.DEMO}
+                 "DEMO": app_web.DEMO,
+                 "VOZ_REAL": app_web.VOZ_REAL,
+                 "VOZ_FALSA": app_web.VOZ_FALSA}
     try:
         p.ARQUIVO_CONFIG = pasta / "config.json"
         p.ARQUIVO_HISTORICO = pasta / "historico.json"
@@ -2296,8 +2324,10 @@ def testes_tela_nova_microfone(p):
         else:
             falha("microfone: com a tela ocupada devolveu %r" % (resposta,))
 
-        # 12. MODO EXEMPLO: funciona sem microfone e sem chave nenhuma
+        # 12. MODO EXEMPLO: o microfone e' de mentira, sem chave nenhuma
         app_web.DEMO = True
+        app_web.VOZ_REAL = False
+        app_web.VOZ_FALSA = True
         app_web.threading = threading
         ponte, janela = ponte_limpa()
         ponte.mic_alternar()
@@ -2308,6 +2338,26 @@ def testes_tela_nova_microfone(p):
         else:
             falha("microfone: no modo exemplo não respondeu (%r)"
                   % (janela.tipos(),))
+        if not gravados:
+            ok("microfone: no modo exemplo NENHUM som de verdade e' gravado")
+        else:
+            falha("microfone: no modo exemplo gravou %r" % (gravados,))
+
+        # 12b. com --voz, o microfone de verdade e' usado, mas ainda sem
+        #      gravar nada. E' assim que o Wolf testa falando de verdade.
+        app_web.DEMO = True
+        app_web.VOZ_REAL = True
+        app_web.VOZ_FALSA = False
+        p.voz = microfone_de_mentira()
+        ponte, janela = ponte_limpa()
+        ponte.mic_alternar()
+        janela.eventos.clear()
+        ponte.mic_alternar()
+        if janela.unico("voz") and gravados == ["iniciou", "parou"]:
+            ok("microfone: com --voz ele grava de verdade (e transcreve)")
+        else:
+            falha("microfone: com --voz ficou %r (gravados %r)"
+                  % (janela.tipos(), gravados))
         app_web.DEMO = False
 
         # 13. NADA foi gravado: nem conversa, nem arquivo do Wolf
@@ -2325,8 +2375,8 @@ def testes_tela_nova_microfone(p):
         for nome, valor in guardados.items():
             if nome == "threading":
                 app_web.threading = valor
-            elif nome == "DEMO":
-                app_web.DEMO = valor
+            elif nome in ("DEMO", "VOZ_REAL", "VOZ_FALSA"):
+                setattr(app_web, nome, valor)
             else:
                 setattr(p, nome, valor)
         shutil.rmtree(pasta, ignore_errors=True)
