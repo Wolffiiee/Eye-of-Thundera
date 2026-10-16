@@ -1317,6 +1317,93 @@ let filtroAssunto = ""; // "" = todos
       }
     });
   };
+  // --- visualizacao agrupada por gaveta (secoes recolhiveis) ---
+  const agruparBtn = el("button", "btn", "Agrupar");
+  agruparBtn.title = "Mostra as gavetas como secoes recolhiveis";
+  let modoAgrupado = false;
+  agruparBtn.addEventListener("click", () => {
+    modoAgrupado = !modoAgrupado;
+    agruparBtn.textContent = modoAgrupado ? "Lista" : "Agrupar";
+    agruparBtn.title = modoAgrupado
+      ? "Volta para a lista simples"
+      : "Mostra as gavetas como secoes recolhiveis";
+    desenhar();
+  });
+
+  const secoes = el("div", "gavetas-secoes");
+  const desenharSecoes = () => {
+    secoes.replaceChildren();
+    if (!modoAgrupado) { secoes.classList.add("oculto"); return; }
+    secoes.classList.remove("oculto");
+    const termo = busca.value.trim().toLowerCase();
+    const nomes = ["nome", "mora", "idade", "outros"];
+    for (const g of nomes) {
+      const fatosG = (gavetas[g] || []).filter((f) =>
+        !termo || f.toLowerCase().includes(termo));
+      if (!fatosG.length) continue;
+      const det = el("details", "gaveta-secao");
+      det.open = true;
+      const sum = el("summary", "gaveta-titulo");
+      sum.append(el("span", "", g + " (" + fatosG.length + ")"));
+      det.append(sum);
+      const listaG = el("div", "gaveta-lista");
+      for (const f of fatosG) {
+        const linha = el("div", "fato fato-compacto");
+        const texto = el("span", "editavel", f);
+        texto.title = "Clique para editar";
+        texto.addEventListener("click", () => {
+          if (linha.classList.contains("editando")) return;
+          linha.classList.add("editando");
+          const caixa = el("input", "edicao");
+          caixa.value = f;
+          const ok = el("button", "btn primario", "Salvar");
+          const cancelar = el("button", "btn", "Cancelar");
+          ok.addEventListener("click", async () => {
+            const novoTexto = caixa.value.trim();
+            if (!novoTexto) return aviso("O item nao pode ficar vazio.", true);
+            const rr = await chamar("memoria_editar", f, novoTexto);
+            if (rr.erro) return aviso(rr.erro, true);
+            pegar(rr);
+            aviso("Item editado.");
+            desenhar();
+          });
+          cancelar.addEventListener("click", () => desenhar());
+          caixa.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") { e.preventDefault(); ok.click(); }
+            if (e.key === "Escape") { e.preventDefault(); desenhar(); }
+          });
+          linha.replaceChildren(caixa, ok, cancelar);
+          caixa.focus();
+          caixa.setSelectionRange(caixa.value.length, caixa.value.length);
+        });
+        const x = el("button", "icone");
+        x.title = "Apagar este item";
+        x.append(ico("i-fechar"));
+        x.addEventListener("click", async () => {
+          const rr = await chamar("memoria_apagar", f);
+          pegar(rr); desenhar();
+        });
+        const quando = (datas || {})[f];
+        if (quando) linha.append(el("span", "quando", "aprendeu em " + quando));
+        linha.append(texto, x);
+        listaG.append(linha);
+      }
+      const addG = el("button", "btn", "+ Adicionar em " + g);
+      addG.addEventListener("click", () => {
+        const val = prompt("Novo fato para a gaveta " + g + ":");
+        if (val && val.trim()) {
+          chamar("memoria_adicionar", val.trim()).then((rr) => {
+            if (rr.fatos) { fatos = rr.fatos; }
+            if (rr.datas) datas = rr.datas;
+            desenhar();
+          });
+        }
+      });
+      det.append(listaG, addG);
+      secoes.append(det);
+    }
+  };
+
   const topo = el("div", "memoria-topo");
   const busca = el("input", "busca");
   busca.placeholder = "Buscar na memória...";
@@ -1326,7 +1413,7 @@ let filtroAssunto = ""; // "" = todos
   const exportar = el("button", "btn", "Exportar");
   exportar.title = "Salva a memória num .txt";
   const apagarTudo = el("button", "btn perigo", "Apagar tudo");
-  topo.append(busca, organizar, exportar, apagarTudo);
+  topo.append(busca, organizar, exportar, apagarTudo, agruparBtn);
   exportar.addEventListener("click", async () => {
     const rr = await chamar("memoria_exportar");
     if (rr.erro) aviso(rr.erro, true);
@@ -1409,7 +1496,7 @@ let filtroAssunto = ""; // "" = todos
       lista.append(linha);
     }
   };
-  busca.addEventListener("input", desenhar);
+  busca.addEventListener("input", () => { desenhar(); desenharSecoes(); });
   const adicionar = async () => {
     if (!campo.value.trim()) return;
     const rr = await chamar("memoria_adicionar", campo.value.trim());
@@ -1440,7 +1527,8 @@ let filtroAssunto = ""; // "" = todos
   });
   if (gavetasEl.children && gavetasEl.children.length) corpo.append(gavetasEl);
 if (assuntosEl.children && assuntosEl.children.length) corpo.append(assuntosEl);
-corpo.append(topo, novo, contador, lista);
+if (modoAgrupado) { desenharSecoes(); } else { secoes.classList.add("oculto"); }
+corpo.append(topo, novo, contador, lista, secoes);
   desenhar();
 }
 
