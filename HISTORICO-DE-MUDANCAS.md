@@ -5,6 +5,51 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — O projeto mudou de pasta: de C: para D:
+
+O Wolf pediu para mudar a pasta do projeto para o `D:` (que tem 353 GB
+livres, contra 76 GB no `C:`). Agora vive em:
+
+    D:\Projetos\PesquisaIA
+
+### O que foi conferido ANTES de mexer
+
+- **`D:` tem 353 GB livres.** O `C:` estava com 76 GB.
+- **Nenhum caminho fixo em codigo.** O grep por `C:\Projetos` nao
+  achou nada em `.py`, `.spec` ou `.bat` — so em 5 arquivos `.md`, que
+  foram atualizados. Era o unico risco real da mudanca.
+- **O git nao tinha nada sem salvar**, entao a pasta antiga e a nova
+  ficam com exatamente o mesmo estado.
+
+### O que foi feito
+
+1. **Apagado o que da para refazer**: `build/` e `dist/` do PyInstaller
+   (233 MB) e o `__pycache__`. Nenhuma perda: o build regenera em 3 min.
+2. **Copiado** para o `D:` (1.359 MB em 11 s), conferindo arquivo por
+   arquivo antes de seguir.
+3. **Recriado o ambiente Python**. Este foi o detalhe que quase passou
+   batido: o `.venv` do Windows tem o caminho do projeto **gravado
+   dentro** (`pyvenv.cfg` diz `command = ... C:\Projetos\PesquisaIA\.venv`,
+   e o launcher `Scripts\python.exe` tambem). Mover a pasta sem refazer
+   o `.venv` deixaria o projeto **sem nenhum Python funcionando** — e o
+   primeiro sintoma seria um erro esquisito no meio do `verificar.py`.
+4. **Instalado o `requirements.txt` E o `requirements-dev.txt`** no
+   ambiente novo. Sem o segundo o `pyflakes` some — e ele e' o que pega
+   erro de digitacao antes da verificacao rodar. (Foi exatamente o que
+   aconteceu: o `verificar.py` avisou "No module named pyflakes" na
+   primeira rodada no `D:`.)
+5. **Atualizados os 5 documentos** que citavam o caminho velho.
+
+### A regra que saiu daqui
+
+**Mudar a pasta de um projeto com Python nao e' so copiar arquivo.**
+Antes de mexer, conferir tres coisas: caminho fixo no codigo, estado do
+git e o ambiente virtual. O terceiro e' o que quebra — e quebra
+silencioso, do tipo "o programa funciona mas o `verificar.py` nao roda".
+
+Verificacao no caminho novo: `TUDO CERTO`, **317 testes, 0 falhas,
+0 avisos** (47 s).
+
 ## 2026-10-16 — Botão direito com correção de palavra (tela nova)
 
 O Wolf perguntou por que clicar com o botão direito sobre uma palavra
