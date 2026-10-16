@@ -5,6 +5,60 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — A janela lembra onde foi fechada (e dois defeitos)
+
+Tres coisas que o Wolf pediu ou viu com o programa na mao.
+
+### 1. A janela lembra onde foi fechada
+
+Ele pediu para acabar com a regra de abrir sempre no segundo monitor.
+Agora o programa:
+
+- **guarda a posicao ao fechar** (no evento `closing`, que dispara ANTES
+  da janela sumir — depois seria tarde demais);
+- **abre no mesmo monitor** onde foi fechado;
+- se esse monitor **nao existir mais hoje** (levou o notebook para outro
+  lugar), cai no **meio da tela principal**;
+- se o Windows nao souber dizer quantas telas tem, cai no padrao.
+
+A posicao vai para `janela.json` — **separado do `config.json`**, que e'
+onde fica a chave da API. A janela de "Salvar" passou a usar a mesma
+posicao (antes usava um ponto fixo, que com o programa no segundo
+monitor punha a janelinha no primeiro — o mesmo defeito de 16/10).
+
+### 2. "Abrindo a foto..." ficava escrito no meio da imagem
+
+O aviso era escondido em `mostrar()`, mas **nao quando a foto chegava** —
+e e' quando a foto chega que ele tem de sair. Corrigido com
+`esconderAviso()`.
+
+### 3. O .exe abria uma janela preta (CMD) atras do programa
+
+O spec tinha `console=True` "porque a tela nova ainda era um teste". Agora
+e' a tela de verdade: `console=False`. Sem a janela preta, os erros vao
+para o `erro.log` (que a tela ja grava sozinha).
+
+### O detalque que quase passou batido
+
+`ctypes.wintypes` **NAO vem junto com `import ctypes`**. Sem o
+`from ctypes import wintypes`, a funcao de contar telas levantava
+`AttributeError` — que o `except` engolia e devolvia "nao tem monitor"
+para **qualquer** posicao. O programa nunca mais abriria no monitor
+certo, e o sintoma seria "volta a abrir sempre no mesmo lugar".
+
+O `except` agora grava no `erro.log` e devolve `True` (na duvida, abre
+onde estava).
+
+### Os testes
+
+Secao 4c11 (11 verificacoes de posicao: 2 monitores, 1 so, notebook,
+ordem invertida, monitor que sumiu, arquivo estragado) e 4c10 (o aviso
+some + o .exe sem console). O teste 4b foi reescrito: ele copiava um
+trecho do codigo e rodava com `exec`, e esse trecho cresceu ate usar
+`ctypes` — passou a verificar o compromisso no codigo.
+
+Verificacao: `TUDO CERTO`, **376 testes, 0 falhas, 0 avisos** (49 s).
+
 ## 2026-10-16 — O programa antigo foi aposentado (o Wolf mandou)
 
 O Wolf perguntou se ainda era preciso fazer os testes no programa antigo.
