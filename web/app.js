@@ -1292,7 +1292,6 @@ async function abaMemoria(corpo) {
       }
     });
   };
-  }
   const topo = el("div", "memoria-topo");
   const busca = el("input", "busca");
   busca.placeholder = "Buscar na memória...";
