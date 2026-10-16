@@ -1543,9 +1543,8 @@ async function tratarArquivoSolto(arquivo) {
   }
   const texto = (await lerArquivoTexto(arquivo)).slice(0, 30000);
   if (!texto.trim()) { aviso("Arquivo vazio.", true); return; }
-  const marcador = "\n\n--- Arquivo: " + arquivo.name + " ---\n" + texto + "\n--- Fim ---\n\n";
   const entrada = $("#entrada");
-  entrada.value = (entrada.value ? entrada.value.trim() + "\n\n" : "") + marcador;
+  entrada.value = (entrada.value ? entrada.value.trim() + "\n\n" : "") + texto;
   ajustarAltura(); atualizarEnviar();
   aviso("Arquivo carregado: " + arquivo.name + ". Aperte Enter para enviar.");
 }
