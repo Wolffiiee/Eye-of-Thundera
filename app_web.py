@@ -50,8 +50,15 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent
 sys.path.insert(0, str(RAIZ))
-sys.stdout.reconfigure(encoding="utf-8")
-
+if sys.stdout is not None:
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+# Com console=False (o .exe de verdade) NAO ha stdout: ele e' None.
+# Chamar reconfigure em None derruba o programa na largada com
+# "AttributeError: 'NoneType' object has no attribute 'reconfigure'"
+# (foi o que o Wolf viu em 16/10/2026). So' reconfigura se houver.
 # O pywebview e' a unica coisa que esta tela usa de fora. Se faltar, o
 # erro diz o que fazer em vez de dar uma excecao gigante.
 try:

@@ -22,7 +22,11 @@ from datetime import datetime
 from pathlib import Path
 
 PASTA = Path(__file__).resolve().parent
-sys.stdout.reconfigure(encoding="utf-8")
+if sys.stdout is not None:
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 # Onde ficam as cópias. OneDrive é sincronizado com a nuvem.
 DESTINO = Path.home() / "OneDrive" / "Backup Pesquisa IA"

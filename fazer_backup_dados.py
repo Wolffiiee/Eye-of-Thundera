@@ -11,7 +11,11 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent
 sys.path.insert(0, str(RAIZ))
-sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if sys.stdout is not None:
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 import pesquisa_ia as p
 
