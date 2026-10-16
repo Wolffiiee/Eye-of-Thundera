@@ -1,4 +1,4 @@
-# -*- mode: python ; coding: utf-8 -*-
+﻿# -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
 datas = [('icone.ico', '.'), ('avatar_usuario.png', '.'), ('web', 'web')]
@@ -18,7 +18,7 @@ datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
-    ['pesquisa_ia.py'],
+    ['app_web.py'],
     pathex=[],
     binaries=binaries,
     datas=datas,
@@ -53,3 +53,4 @@ exe = EXE(
     entitlements_file=None,
     icon=['icone.ico'],
 )
+

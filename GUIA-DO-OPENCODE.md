@@ -59,3 +59,8 @@ ligados; o script pula sozinho o que nao responder.
 [ ] verificar.bat = TUDO CERTO   [ ] .exe novo aberto e olhado
 [ ] Area de Trabalho = 1 icone   [ ] ONDE-PARAMOS + HISTORICO atualizados
 [ ] commit feito                 [ ] avisei o Wolf em portugues simples
+
+## 6. Armadilhas ja vistas (16/10)
+- Os arquivos Eye of Thundera.spec e Eye of Thundera (debug).spec DEVEM empacotar **app_web.py**. Com pesquisa_ia.py o .exe abre o programa ANTIGO.
+- Depois de gerar o .exe: ABRA e confira (titulo da janela Eye of Thundera, sem caixa de erro). Nunca deixe codigo de depuracao (gravar em eyethundera_debug.txt) no app_web.py.
+- webview.start() so pode ser chamado UMA vez, no fim de principal().
