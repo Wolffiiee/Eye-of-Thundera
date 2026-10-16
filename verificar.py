@@ -1145,6 +1145,14 @@ if "chamar(" not in corpo_aplicar:
 else:
     falha("mudar a letra chama o Python: não deveria")
 
+
+# --- Tarefa D (pesquisa profunda) evidence ---------------------------
+_tarefad = Path(PASTA / "web" / "app.js").read_text(encoding="utf-8") + "\n" + Path(PASTA / "app_web.py").read_text(encoding="utf-8") + "\n" + Path(PASTA / "pesquisa_ia.py").read_text(encoding="utf-8")
+if "btn-deep" in _tarefad and "profundo" in _tarefad:
+    ok("Tarefa D: pesquisa profunda (botao + flag) presente no codigo")
+else:
+    falha("Tarefa D: plumbagem deepresearch ausente")
+
 # --- resumo -----------------------------------------------------------------
 print()
 print('TESTES: %d | FALHA: %d | AVISO: %d' % (len(falhas) + len(avisos), len(falhas), len(avisos)))
