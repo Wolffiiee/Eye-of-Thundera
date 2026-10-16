@@ -391,6 +391,20 @@ Arquivos novos:
                                esta em construcao e quiser ver como fica
                                com os seus dados. Se algo parecer errado,
                                e so fechar: o programa de sempre nao muda.
+  9 - Fazer backup dos meus dados.bat -> copia de segurança das SUAS
+                              coisas (conversas, memória e chaves) num
+                              .zip dentro da pasta "Backup Pesquisa IA" do
+                              seu OneDrive. O "4 - Fazer backup.bat" cuida
+                              do CÓDIGO; este cuida do que não dá para
+                              refazer. Só lê e copia, não muda nada, pode
+                              rodar com o programa aberto. As cópias com
+                              mais de 15 dias são apagadas sozinhas. Vale
+                              a pena rodar depois de cada coisa grande que
+                              o programa ganhar. Para recuperar: abra o
+                              .zip, tire os arquivos e copie para
+                              C:\Users\Igor\AppData\Local\PesquisaIA
+                              (pasta escondida: digite o caminho na barra
+                              de endereço do Explorer).
   4 - Fazer backup.bat      -> cópia de segurança: salva o código e todo o
                               histórico do Git num .zip dentro da pasta
                               "Backup Pesquisa IA" do seu OneDrive (que vai

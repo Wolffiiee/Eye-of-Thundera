@@ -2694,6 +2694,20 @@ try:
             falha(nome)
 
     r = roteador.regra_local
+
+    # O PRAZO DO ROTEADOR: o Google exige 10 s ou mais. Com menos, ele
+    # recusa com 400 INVALID_ARGUMENT e o roteador cai na regra das
+    # palavras SEM AVISAR NINGUEM - foi assim que "pesquisar ou papo"
+    # ficou desligado sem ninguem perceber (achado em 16/10/2026).
+    _fonte = io.open(ARQUIVO, encoding="utf-8").read()
+    _achado = re.search(r"timeout=(\d+),", _fonte)
+    if _achado and int(_achado.group(1)) >= 10000:
+        ok("o prazo do roteador é de %d ms (o Google exige 10 s ou mais)"
+           % int(_achado.group(1)))
+    else:
+        falha("o prazo do roteador é %s ms: o Google recusa com menos de "
+              "10 s e o roteador decide errado SEM AVISAR"
+              % (_achado.group(1) if _achado else "desconhecido"))
     confere(r("oi") == "amigo", "roteador: 'oi' é papo")
     confere(r("valeu!") == "amigo", "roteador: 'valeu!' é papo")
     confere(r("/web preço do dólar") == "pesquisa",

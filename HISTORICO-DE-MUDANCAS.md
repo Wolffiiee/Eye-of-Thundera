@@ -5,6 +5,52 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Defeito antigo e silencioso: o programa nunca pesquisava
+
+O Wolf perguntou no programa novo "Quanto será o próximo jogo do Grêmio?"
+e a IA respondeu que **não tinha acesso à internet**. Não era erro: a
+resposta chegou. Mas era uma resposta ruim, e a causa era grave.
+
+- **A causa:** o programa dá um **prazo** para a IA decidir "isso é papo
+  ou é pesquisa?". O prazo estava em **8 segundos**, e o Google exige
+  **no mínimo 10**. O Google respondia:
+  `400 INVALID_ARGUMENT. Manually set deadline 8s is too short. Minimum
+  allowed deadline is 10s.`
+- **O efeito:** essa decisão **NUNCA funcionou**, em nenhum momento, em
+  nenhum dos dois programas. O `except` que pega o erro é silencioso, e
+  o roteador caía na **reserva por palavras** ("hoje", "agora", "notícia",
+  "placar", "preço"...). "Próximo jogo" não está na lista, então ia para
+  papo — e a IA, sem material de web, respondia que não tinha internet.
+- **A correção:** prazo de 8 s → **20 s**. Testado com a chave de
+  verdade:
+
+  | pergunta | antes | depois |
+  |---|---|---|
+  | "Quanto será o próximo jogo do Grêmio?" | papo | **pesquisa** |
+  | "Me conta uma curiosidade sobre história" | papo | papo |
+
+  O ponto de interrogação não muda nada: o Google recusava a chamada
+  **antes de a IA ler a frase**.
+- **Teste novo que impede a volta:** o `verificar.py` lê o prazo no
+  código e **reprova** se for menor que 10 s. Conferido que o teste
+  reprova com 8 s e aprova com 20 s.
+- **Este defeito era do PROGRAMA DE SEMPRE (tkinter), não da tela nova.**
+  O `.exe` antigo da Area de Trabalho tinha o defeito; por isso os dois
+  `.exe` foram refeitos.
+
+## 2026-10-16 — Rede de seguranca dos dados do Wolf
+
+O backup que existia (`4 - Fazer backup.bat`) protege o **codigo**, nao
+as **conversas, a memoria e as chaves** — que sao as coisas que nao da
+para refazer.
+
+- **`fazer_backup_dados.py` + `9 - Fazer backup dos meus dados.bat`:**
+  copiam `%LOCALAPPDATA%\PesquisaIA` para um `.zip` em
+  `OneDrive\Backup Pesquisa IA\dados`. **So le e copia** — nao muda
+  nada. Copias com mais de 15 dias sao apagadas sozinhas.
+- **Rodado:** 5 arquivos (config, historico, memoria e duas copias
+  antigas da memoria) em `dados_2026-10-16_013640.zip`.
+
 ## 2026-10-16 — Defeito corrigido: "Salvar" abria na tela errada
 
 O Wolf avisou que o `7 - Usar a tela nova de verdade.bat` estava

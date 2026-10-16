@@ -21,6 +21,28 @@ Claude em outra conversa): leia isto depois do PASSO-A-PASSO.md.
 - Dados do Wolf (conversas, memória, chaves): `%LOCALAPPDATA%\PesquisaIA\`.
   Intocados. Nunca mexer.
 
+## O que já foi resolvido em 16/10/2026 (não repetir)
+
+- **O programa NUNCA pesquisava na web, e ninguém percebia.** O prazo do
+  roteador estava em 8 s e o Google exige 10 s (erro 400), então a decisão
+  "papo ou pesquisa" NUNCA vinha da IA: caía na lista de palavras. O
+  Wolf perguntou do próximo jogo do Grêmio e a IA disse que não tinha
+  internet. **Corrigido para 20 s** (vale para os DOIS programas) e
+  travado com teste. O `.exe` antigo da Área de Trabalho tinha o defeito.
+- **A janela de "Salvar como" abria no monitor errado** (x=138, primeiro
+  monitor, enquanto o programa estava no segundo). Parecia travamento.
+  **Corrigido** — medida: x=138 → x=2068.
+- **A barra de título da tela nova estava BRANCA.** A função usada
+  esperava uma peça do tkinter que a tela nova não tem; o erro era
+  engolido. **Corrigido** (escurece pelo título da janela).
+- **Rede de segurança dos dados:** `9 - Fazer backup dos meus dados.bat`
+  copia conversas, memória e chaves para o OneDrive. O `4 - Fazer
+  backup.bat` cuida só do código.
+- **`Pesquisa IA Tela Nova.exe` está na Área de Trabalho** e convive com
+  o programa de sempre (nomes diferentes). Testado: abre no 2º monitor,
+  fica de pé, sem `erro.log`. Ver o conteúdo da tela ainda é coisa do
+  Wolf (o print automático da janela não funcionou).
+
 ## O que ainda NÃO foi testado (fazer primeiro, com o Wolf)
 - **A chave de API foi trocada em 15/10/2026 e está funcionando.** A chave
   antiga (que o Google passou a recusar com erro 401 "API key not valid" no

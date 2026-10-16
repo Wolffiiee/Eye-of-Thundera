@@ -776,8 +776,15 @@ def _decidir_modo(api_key, texto, historico, modo="auto"):
         from google import genai
         from google.genai import types
 
+        # O PRAZO PRECISA SER DE 10 SEGUNDOS OU MAIS. Com 8 o Google
+        # recusa com "400 INVALID_ARGUMENT: Manually set deadline 8s is
+        # too short. Minimum allowed deadline is 10s" - e o roteador
+        # caia na regra das palavras, SEM AVISAR NINGUEM. Isso zerava
+        # "pesquisar ou papo" para sempre (achado em 16/10/2026, quando o
+        # Wolf perguntou do proximo jogo do Gremio e a IA respondeu que
+        # nao tinha internet, sendo que o programa tem).
         http = types.HttpOptions(
-            timeout=8000,
+            timeout=20000,
             retry_options=types.HttpRetryOptions(
                 attempts=1,
                 initial_delay=0.2,
