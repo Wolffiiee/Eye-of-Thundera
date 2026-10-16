@@ -764,6 +764,88 @@ try:
 except Exception as erro:
     falha("os testes da galeria de imagens quebraram: %r" % (erro,))
 
+# --- 4c8. o visor de fotos: passar para a proxima sem fechar --------------
+# O Wolf pediu exatamente isto: nao diminuir a foto e clicar na outra.
+# A tela de foto grande virou um VISOR com varias fotos: setas do teclado,
+# botao embaixo e arrastar com o mouse.
+try:
+    _js4 = Path(PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    for _precisa, _rotulo, _por_que in (
+            ("function abrirVisorFotos",
+             "a tela tem um visor de fotos", "abrirVisorFotos"),
+            ('ArrowRight', "as setas do teclado passam de uma para outra",
+             "seta para a direita"),
+            ("ArrowLeft", "a seta da esquerda volta", "seta para esquerda"),
+            ("mouseBaixo", "dá para arrastar a foto com o mouse",
+             "arrastar"),
+            ("soltarMouse", "soltar o arrasto troca de foto", "soltar"),
+            ("FOTOS_COM_ARRASTO",
+             "com muita foto o arrastar some (senão trava)", "limite"),
+            ("foto-conta", "a tela mostra em qual foto se está",
+             "contador"),
+            ("ampliarFoto(i, f, fotos)",
+             "o clique sabe TODAS as fotos, não só a clicada", "lista")):
+        if _precisa in _js4:
+            ok("visor de fotos: %s" % _rotulo)
+        else:
+            falha("visor de fotos: falta %s na tela" % _por_que)
+    # O visor tem que ESCUTAR o teclado e PARAR de escutar quando fecha:
+    # se nao remover o ouvinte, cada foto aberta deixaria um para tras.
+    if ("removeEventListener(\"keydown\", teclas)" in _js4
+            and "function teclas" in _js4):
+        ok("visor de fotos: o teclado para de ser ouvido ao fechar")
+    else:
+        falha("visor de fotos: o teclado continua sendo ouvido depois de "
+              "fechar (cada foto deixaria um ouvinte)")
+    _css4 = Path(PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+    for _precisa, _rotulo in ((".foto-barra", "a barra de baixo"),
+                              (".foto-seta", "os botões de ir e voltar"),
+                              (".foto-conta", "o 'N de M'"),
+                              (".foto-dica", "a dica de como passar")):
+        if _precisa in _css4:
+            ok("visor de fotos: %s tem desenho" % _rotulo)
+        else:
+            falha("visor de fotos: falta o desenho de %s" % _precisa)
+except Exception as erro:
+    falha("os testes do visor de fotos quebraram: %r" % (erro,))
+
+# --- 4c9. o portugues e' do BRASIL, nao de Portugal -----------------------
+# O Wolf leu respostas com sotaque de Portugal e riu (16/10/2026). A causa:
+# o prompt de CONVERSA nao dizia qual portugues — e sem isso o modelo
+# escolhe a variante que ele acha mais neutra, que e' a de Portugal.
+try:
+    import pesquisa_ia as _pg_id
+    for _nome, _prompt in (("conversa", _pg_id.INSTRUCOES_AMIGO),
+                          ("pesquisa", _pg_id.INSTRUCOES),
+                          ("aprender", _pg_id.INSTRUCOES_APRENDER)):
+        if "português do BRASIL" in _prompt or "portugues do Brasil" in _prompt:
+            ok("idioma: o prompt de %s diz que é do Brasil" % _nome)
+        else:
+            falha("idioma: o prompt de %s NÃO diz que é do Brasil "
+                  "(a resposta vai sair em português de Portugal)" % _nome)
+    # as palavras que ele usa quando escorrega, uma a uma
+    for _pt, _br in (("de certeza", "com certeza"),
+                     ("a nível de", "no sentido de"),
+                     ("ecrã", "tela"),
+                     ("equipa", "equipe"),
+                     ("ficheiro", "arquivo"),
+                     ("estou a fazer", "estou fazendo")):
+        if _pt in _pg_id.IDIOMA_BR and _br in _pg_id.IDIOMA_BR:
+            ok("idioma: a regra mostra '%s' → '%s'" % (_pt, _br))
+        else:
+            falha("idioma: a regra não mostra '%s' → '%s'" % (_pt, _br))
+    if "gerundiz" in _pg_id.IDIOMA_BR:
+        ok("idioma: a regra avisa que Portugal gerundiza e o Brasil não")
+    else:
+        falha("idioma: a regra não fala do gerúndio (é o erro mais comum)")
+    # a regra tem que estar DENTRO dos prompts, não só existir solta
+    if "IDIOMA_BR" in Path(PASTA / "pesquisa_ia.py").read_text(encoding="utf-8"):
+        ok("idioma: a regra do português brasileiro é usada pelos prompts")
+    else:
+        falha("idioma: a regra existe mas ninguém usa")
+except Exception as erro:
+    falha("os testes do idioma quebraram: %r" % (erro,))
+
 # --- 4d. sites consultados: o que a busca traz, limpo e honesto ---------
 # Sao os RESULTADOS DA BUSCA, nao citacoes: por isso a tela escreve
 # "sites consultados" e mostra o link, para o Wolf conferir com os

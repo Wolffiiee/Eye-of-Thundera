@@ -555,7 +555,7 @@ function desenharGaleria(o) {
     img.alt = f.titulo || "Foto " + (i + 1);
     img.loading = "lazy";
     b.append(img);
-    b.addEventListener("click", () => ampliarFoto(i, f));
+    b.addEventListener("click", () => ampliarFoto(i, f, fotos));
     grade.append(b);
   });
   // antes das acoes ("copiar / salvar / outras perguntas"): as fotos
@@ -568,42 +568,194 @@ function desenharGaleria(o) {
   rolarParaOFim();
 }
 
-function ampliarFoto(indice, info) {
+/* ---------------- ver as fotos uma a uma ----------------
+   O Wolf pediu para passar para a foto seguinte sem ter que diminuir e
+   clicar na outra. A tela de foto aberta e' entao um VISOR com varias
+   fotos: nao fecha a cada troca, so troca o que esta aparecendo.
+
+   Tres jeitos de passar para a outra, porque nao ha um jeito certo:
+   - as setas do teclado (← →), que o Wolf ja usa para tudo;
+   - um botao embaixo, com "3 de 9" para saber onde se esta;
+   - arrastar a foto com o mouse, que e' o gesto mais natural.
+
+   Arrastar e' implementado "de proprio": com tres fotos (pouco mais que
+   o celular mostra), dois programinhas de posicao resolvem em
+   milissegundos, sem clicar. Com muita foto, simular o arrasto no
+   mouse arrancaria e soltaria a imagem do servidor — por isso acima de
+   12 some o arrasto e ficam as setas e o botao. */
+const FOTOS_COM_ARRASTO = 12;
+
+let fotoAberta = null;   // {indice, total, fotos, mostrar, fechar}
+
+function abrirVisorFotos(indice, fotos) {
+  if (fotoAberta) fotoAberta.fechar();
+  const total = fotos.length;
   const tampa = el("div", "foto-aberta");
   const img = document.createElement("img");
-  img.alt = info.titulo || "Foto ampliada";
+  img.alt = "Foto ampliada";
   const carregando = el("div", "foto-carregando", "Abrindo a foto...");
   const fechar = el("button", "foto-fechar", "✕");
+  fechar.title = "Fechar (Esc)";
   const pagina = el("a", "foto-pagina", "ver a página da foto");
-  pagina.href = info.pagina || "#";
   pagina.target = "_blank";
   pagina.rel = "noopener noreferrer";
-  if (!info.pagina) pagina.classList.add("oculto");
 
-  fechar.addEventListener("click", () => tampa.remove());
+  // --- a barra de baixo: anterior, contagem, proxima, arrastar
+  const barra = el("div", "foto-barra");
+  const anterior = el("button", "foto-seta", "‹");
+  anterior.title = "Foto anterior (seta para a esquerda)";
+  const proximo = el("button", "foto-seta", "›");
+  proximo.title = "Próxima foto (seta para a direita)";
+  const conta = el("span", "foto-conta", "");
+  const dica = el("span", "foto-dica", "");
+  barra.append(anterior, conta, proximo, dica);
+
+  function mostrar(novo) {
+    if (novo < 0 || novo >= total) return;
+    fotoAberta.indice = novo;
+    const info = fotos[novo];
+    conta.textContent = (novo + 1) + " de " + total;
+    anterior.disabled = novo === 0;
+    proximo.disabled = novo === total - 1;
+    pagina.href = info.pagina || "#";
+    pagina.classList.toggle("oculto", !info.pagina);
+    img.alt = info.titulo || ("Foto " + (novo + 1));
+    img.style.opacity = "0";
+    if (carregando.parentElement) carregando.remove();
+    if (!carregando.isConnected) tampa.append(carregando);
+    carregando.textContent = "Abrindo a foto...";
+    chamar("imagem_ampliada", novo).then((r) => {
+      if (!document.body.contains(tampa)) return;   // o Wolf ja fechou
+      if (r && r.erro) {
+        carregando.textContent = r.erro;
+        return;
+      }
+      img.src = r.base64;
+      img.style.opacity = "1";
+      if (r.pagina) {
+        pagina.href = r.pagina;
+        pagina.classList.remove("oculto");
+      }
+    });
+  }
+
+  function terminar() {
+    document.removeEventListener("keydown", teclas);
+    document.removeEventListener("mousedown", mouseBaixo);
+    document.removeEventListener("mousemove", arrastando);
+    document.removeEventListener("mouseup", soltarMouse);
+    if (foto) { foto.style.transform = ""; foto = null; }
+    if (tampa.parentElement) tampa.remove();
+    fotoAberta = null;
+  }
+
+  anterior.addEventListener("click", () => mostrar(fotoAberta.indice - 1));
+  proximo.addEventListener("click", () => mostrar(fotoAberta.indice + 1));
+  fechar.addEventListener("click", terminar);
   tampa.addEventListener("click", (e) => {
-    if (e.target === tampa) tampa.remove();
-  });
-  document.addEventListener("keydown", function esc(e) {
-    if (e.key === "Escape" && document.body.contains(tampa)) {
-      tampa.remove();
-      document.removeEventListener("keydown", esc);
+    // clique no fundo (fora da foto e dos botoes) fecha; na foto,
+    // avanca — que e' o que se espera ao clicar numa foto grande.
+    if (e.target === tampa || e.target === img) {
+      if (e.target === img && proximaExiste()) mostrar(fotoAberta.indice + 1);
+      else terminar();
     }
   });
 
-  tampa.append(fechar, carregando, img, pagina);
+  function proximaExiste() {
+    return fotoAberta && fotoAberta.indice < total - 1;
+  }
+
+  function teclas(e) {
+    if (!document.body.contains(tampa)) return;
+    if (e.key === "Escape") { terminar(); return; }
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      mostrar(fotoAberta.indice + 1);
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault();
+      mostrar(fotoAberta.indice - 1);
+    }
+  }
+  document.addEventListener("keydown", teclas);
+
+  // --- arrastar com o mouse
+  let arrasta = false;
+  let x0 = 0, y0 = 0, terceiro = false, ultimo = null;
+  let foto = null;
+  let saiuPeloLado = false;
+
+  function mouseBaixo(e) {
+    if (!document.body.contains(tampa)) return;
+    if (e.button !== 0) return;
+    if (e.target.closest("button, a")) return;
+    arrasta = true;
+    terceiro = false;
+    saiuPeloLado = false;
+    ultimo = null;
+    x0 = e.clientX;
+    y0 = e.clientY;
+    foto = img;
+  }
+
+  function arrastando(e) {
+    if (!arrasta || !foto) return;
+    const dx = e.clientX - x0;
+    const dy = e.clientY - y0;
+    foto.style.transition = "none";
+    foto.style.transform = "translate(" + dx + "px," + dy * 0.22 + "px)";
+    if (ultimo === null) ultimo = e.clientX;
+    if (Math.abs(e.clientX - ultimo) > 18) {
+      terceiro = true;
+      ultimo = e.clientX;
+    }
+    saiuPeloLado = Math.abs(dx) > 130;
+  }
+
+  function soltarMouse() {
+    if (!arrasta || !foto) return;
+    arrasta = false;
+    // 3 criterios, do mais forte para o mais fraco:
+    // 1) andou de lado varias vezes -> vai para onde veio andando;
+    // 2) puxou longe para o lado -> vai para la;
+    // 3) so um arrasto curtinho -> proxima.
+    let passo;
+    if (terceiro) passo = (ultimo || x0) > x0 ? 1 : -1;
+    else if (saiuPeloLado) passo = dxAtual() > 0 ? -1 : 1;
+    else passo = 1;
+    foto.style.transition = "transform .16s ease";
+    if (passo < 0 && fotoAberta.indice > 0) mostrar(fotoAberta.indice - 1);
+    else if (passo > 0 && fotoAberta.indice < total - 1) mostrar(fotoAberta.indice + 1);
+    // volta pro lugar: e' o que faz a foto parecer que passou voando
+    setTimeout(() => {
+      if (foto) { foto.style.transform = ""; foto = null; }
+    }, 20);
+  }
+
+  function dxAtual() {
+    return foto ? foto.getBoundingClientRect().left -
+        (tampa.getBoundingClientRect().left +
+         (tampa.clientWidth - foto.offsetWidth) / 2) : 0;
+  }
+
+  if (total <= FOTOS_COM_ARRASTO) {
+    document.addEventListener("mousedown", mouseBaixo);
+    document.addEventListener("mousemove", arrastando);
+    document.addEventListener("mouseup", soltarMouse);
+    dica.textContent = "arraste ou use as setas para passar";
+  } else {
+    dica.textContent = "use as setas do teclado";
+  }
+
+  tampa.append(fechar, carregando, img, pagina, barra);
   document.body.append(tampa);
+  fotoAberta = { indice, total, fotos, mostrar, fechar: terminar };
+  mostrar(indice);
+}
 
-  chamar("imagem_ampliada", indice).then((r) => {
-    if (!document.body.contains(tampa)) return;   // o Wolf ja fechou
-    if (r && r.erro) {
-      carregando.textContent = r.erro;
-      return;
-    }
-    img.src = r.base64;
-    carregando.remove();
-    if (r.pagina) pagina.href = r.pagina;
-  });
+function ampliarFoto(indice, info, todas) {
+  // chamada antiga (so uma foto): abre o visor com uma foto so
+  if (!todas || !todas.length) return;
+  abrirVisorFotos(indice, todas);
 }
 
 async function enviar(texto) {

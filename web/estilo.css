@@ -186,20 +186,42 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 
 /* a foto aberta por cima de tudo */
 .foto-aberta { position: fixed; inset: 0; z-index: 95; background: rgba(4,4,8,.9);
-  display: grid; place-items: center; padding: 28px; cursor: zoom-out; }
-.foto-aberta img { max-width: 92vw; max-height: 84vh; border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.65); background: var(--painel); }
+  display: grid; place-items: center; padding: 28px; cursor: zoom-out;
+  overflow: hidden; }
+.foto-aberta img { max-width: 88vw; max-height: 74vh; border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.65); background: var(--painel);
+  transition: opacity .12s ease; user-select: none; -webkit-user-drag: none;
+  touch-action: pan-y; }
 .foto-aberta .foto-carregando { color: var(--texto-3); font-size: 14px;
   position: absolute; }
 .foto-aberta .foto-fechar { position: absolute; top: 14px; right: 18px;
   width: 38px; height: 38px; border-radius: 10px; font-size: 17px;
   background: var(--superficie-2); border: 1px solid var(--borda);
-  color: var(--texto); cursor: pointer; }
+  color: var(--texto); cursor: pointer; z-index: 2; }
 .foto-aberta .foto-fechar:hover { background: var(--superficie); }
-.foto-aberta .foto-pagina { position: absolute; bottom: 18px; left: 50%;
+.foto-aberta .foto-pagina { position: absolute; bottom: 20px; left: 50%;
   transform: translateX(-50%); color: var(--texto-2); font-size: 13px;
-  text-decoration: none; border-bottom: 1px dashed var(--borda); }
+  text-decoration: none; border-bottom: 1px dashed var(--borda);
+  z-index: 2; }
 .foto-aberta .foto-pagina:hover { color: var(--texto); }
+
+/* a barra de baixo do visor de fotos: passar para a proxima sem fechar */
+.foto-barra { position: absolute; bottom: 16px; left: 50%;
+  transform: translateX(-50%); display: flex; align-items: center; gap: 10px;
+  padding: 7px 12px; border-radius: 999px; background: rgba(19,19,26,.94);
+  border: 1px solid var(--borda); z-index: 2; max-width: 92vw; }
+.foto-barra .foto-seta { width: 34px; height: 34px; border-radius: 9px;
+  font-size: 20px; line-height: 1; background: var(--superficie-2);
+  border: 1px solid var(--borda); color: var(--texto); cursor: pointer; }
+.foto-barra .foto-seta:hover:not(:disabled) { background: var(--superficie); }
+.foto-barra .foto-seta:disabled { opacity: .3; cursor: default; }
+.foto-barra .foto-conta { color: var(--texto); font-size: 13px;
+  min-width: 62px; text-align: center; }
+.foto-barra .foto-dica { color: var(--texto-3); font-size: 12px;
+  white-space: nowrap; }
+@media (max-width: 720px) {
+  .foto-barra .foto-dica { display: none; }
+}
 
 /* menu do botão direito (correção de palavra + comandos de edição).
    Nasce perto do clique, sempre DENTRO da janela: se abrisse para fora,

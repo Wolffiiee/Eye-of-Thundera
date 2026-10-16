@@ -5,6 +5,64 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Ver as fotos uma a uma, e português de verdade
+
+Duas coisas que o Wolf pediu depois de testar a galeria.
+
+### 1. Passar para a foto seguinte sem diminuir
+
+O pedido foi: *"quando a foto estiver grande, passar para o lado, sem
+precisar diminuir e clicar na próxima"*. A tela de foto grande deixou de
+ser uma foto so e virou um **visor**: ela não fecha a cada troca, só
+troca o que está aparecendo.
+
+- **Setas do teclado** (← → e também ↑ ↓), que o Wolf já usa para tudo.
+- **Botão ‹ › embaixo**, com **"3 de 9"** para saber onde se está.
+- **Arrastar a foto com o mouse** — o gesto mais natural de todos.
+
+**O detalhe do arrastar:** tentei fazer arrastar rápido (várias fotos
+passando de uma vez) e os problemas aparecem rápido — o rato solta a
+imagem do servidor e ela pisca, ou passa duas de uma vez. Por isso o
+arrasto foi implementado "de próprio": com três fotos (mais que o
+celular mostra), dois programinhas de posição resolvem em milissegundos.
+Com muita foto, simular o arrasto no mouse arrancaria e soltaria a
+imagem do servidor. Então **acima de 12 fotos o arrastar some** e ficam
+as setas e o botão, que nunca dão problema — e a dica embaixo muda
+sozinha para "use as setas do teclado".
+
+As setas das pontas desligam (‹ na primeira, › na última): o Wolf vê
+que acabou, sem precisar contar.
+
+**Testado com a tela aberta**, nos três jeitos: seta → 2, seta ← 1,
+botão → 2, botão ← 1, arrastar → 2, arrastar ← 1, e indo até a 6 de 6
+a seta › desligou. **Esc** fecha, como sempre.
+
+### 2. A IA respondia com sotaque de Portugal
+
+O Wolf leu as respostas e riu: *"está falando com um tom de português de
+Portugal, nós somos Brasileiros"*.
+
+**A causa era uma frase que faltava.** O prompt de **pesquisa** dizia
+"português do Brasil" duas vezes; o de **conversa** (quando não tem
+pesquisa na web) **não dizia nada**. E sem dizer qual, o modelo escolhe
+a variante que acha mais neutra — que é a de Portugal.
+
+Corrigido com uma regra só (`IDIOMA_BR`), usada pelos três prompts:
+diz que é do Brasil **e lista as palavras** que ele usa quando
+escorrega ('de certeza', 'a nível de', 'equipa', 'ecrã', 'rato',
+'ficheiro', 'a seguir está'), mais o erro mais comum de todos: **em
+Portugal se gerundiza** ("estou a fazer"), aqui se diz "estou fazendo".
+
+A lista não é enfeite: sem ela o modelo volta para essas palavras na
+resposta seguinte.
+
+**Uma confissão:** isso só apareceu porque o Wolf leu as respostas. Nos
+meus testes a IA é falsa — e **ninguém testou o tom da voz**. É a mesma
+coisa que o "Imortal" do Grêmio: eu achei que sabia, e quem lê é quem
+percebe.
+
+Verificacao: `TUDO CERTO`, **355 testes, 0 falhas, 0 avisos** (61 s).
+
 ## 2026-10-16 — Galeria de imagens na tela nova (falta o último)
 
 O Wolf perguntou se dava para resumir tudo no programa novo e aposentar o
