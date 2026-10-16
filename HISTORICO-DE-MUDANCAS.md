@@ -5,6 +5,42 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Tela nova: PASSO 4 (o microfone)
+
+O botão do microfone da tela nova deixou de estar apagado. Agora ele
+grava, transcreve e joga o que foi falado na caixa de digitar.
+
+- **pp_web.py — Ponte.mic_alternar():** um clique começa a gravar e
+o clique seguinte para (é o botão **ou** Ctrl+M, como no programa
+  antigo). Devolve na hora, sem travar a janela; o resto vem por evento.
+- **Nada de áudio foi reescrito.** Usa o mesmo oz.Gravador, o mesmo
+  wav_tem_som ("não ouvi nada"), o mesmo 	ranscrever com a mesma
+  ordem de modelos (o bom primeiro, os de reserva depois) e o mesmo
+  	entar_com_reserva do programa de hoje.
+- **O texto falado NÃO é enviado sozinho**: ele entra na caixa de
+  digitar para o Wolf conferir, igual ao programa antigo. Só sai sozinho
+  se a opção "enviar" estiver ligada nas Configurações.
+- **Três eventos novos para a tela:** "gravando" (ligou/desligou, com
+o botão vermelho piscando e o relógio), "voz" (o texto transcrito) e
+  "voz_erro" (falhou; com "chave": true a tela abre as Configurações).
+- **Erros viram frase em português**, todos: programa montado sem a
+biblioteca de som, nenhum microfone ligado, microfone ocupado por
+  outro programa, silênçio, chave recusada.
+- **--demo finge que ouviu**, para a tela de exemplo funcionar mesmo
+sem microfone e sem chave.
+- **web/index.html:** o botão do microfone saiu de disabled.
+- **web/app.js:** a seção do microfone (relógio, botão vermelho,
+Ctrl+M) e os três casos de evento novos.
+- **web/estilo.css:** .icone.gravando — vermelho, com um brilho que
+pulsa, igual ao do programa atual.
+- **erificar.py:** 19 testes novos do microfone. O oz inteiro é
+trocado por um de mentira, então o **microfone de verdade não abre** e
+a **cota de IA não é gasta**. A falha que teve no caminho foi do
+  *teste*, não do programa: ele esperava o modelo de IA repetido na
+lista, e a lista certa (a mesma do programa antigo) não repete.
+
+Verificação: TUDO CERTO, **235 testes, 0 falhas** (55 s).
+
 ## 2026-10-16 — Tela nova: PASSO 3 (a IA de verdade)
 
 O `enviar()` deixou de responder "passo 3". Agora a pergunta chega na IA

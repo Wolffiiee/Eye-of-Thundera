@@ -245,6 +245,9 @@ class Ponte:
         self.id_atual = None        # conversa aberta (igual ao app antigo)
         self.mensagens = []
         self.ocupado = False
+        # microfone (passo 4): o gravador e' o mesmo do programa antigo
+        self.gravador = None
+        self.gravando = False
         # A chave principal do Google parou de ser recusada? Este dicionario
         # e' o que FAZ LEMBRAR. Precisa ser o mesmo a cada pergunta, senao o
         # programa esqueceria que ja trocou e voltaria a insistir na chave
@@ -585,6 +588,104 @@ class Ponte:
             pass
         finally:
             self.ocupado = False
+
+    # --- 4. o microfone (este passo) ---
+
+    def mic_alternar(self):
+        """Um clique comeca a gravar; o clique seguinte para e transcreve.
+
+        Igual ao programa antigo (Ctrl+M): o mesmo `voz.Gravador`, o mesmo
+        `wav_tem_som` e o mesmo `transcrever` com a lista de modelos de
+        reserva. O texto falado NAO e' enviado sozinho: ele entra na caixa
+        de digitar para o Wolf conferir antes (a menos que ele tenha
+        ligado a opcao "enviar sozinho" nas Configuracoes).
+        """
+        if self.ocupado and not self.gravando:
+            return {"erro": "Aguarde a resposta terminar."}
+        if self.gravando:
+            return self._parar_gravacao()
+        return self._comecar_gravacao()
+
+    def _comecar_gravacao(self):
+        # No modo DEMO nao ha microfone nem chave: fingimos que gravou, para
+        # a tela de exemplo mostrar o botao funcionando sem microfone.
+        if DEMO:
+            self.gravando = True
+            self._evento({"tipo": "gravando", "ligado": True})
+            return {"gravando": True}
+        if not p.voz.TEM_SOM:
+            return {"erro": "Este programa foi montado sem a biblioteca de "
+                            "som. Rode '1 - Instalar.bat' de novo."}
+        try:
+            if not p.voz.microfone_disponivel():
+                return {"erro": "Não achei nenhum microfone ligado neste "
+                                "computador."}
+        except Exception as erro:
+            return {"erro": p.voz.microfone_erro(erro)}
+        if not (p._ler_json(p.ARQUIVO_CONFIG, {}).get("api_key") or "").strip():
+            return {"erro": "sem_chave_voz"}
+
+        gravador = p.voz.Gravador()
+        try:
+            gravador.iniciar()
+        except Exception as erro:
+            return {"erro": p.voz.microfone_erro(erro)}
+        self.gravador = gravador
+        self.gravando = True
+        self._evento({"tipo": "gravando", "ligado": True})
+        return {"gravando": True}
+
+    def _parar_gravacao(self):
+        gravador = self.gravador
+        self.gravador = None
+        self.gravando = False
+        self._evento({"tipo": "gravando", "ligado": False})
+        if DEMO:
+            # texto de exemplo, para o Wolf ver o micro funcionando
+            self.ocupado = True
+            time.sleep(0.6)
+
+            def tarefa_demo():
+                self._evento({"tipo": "voz",
+                              "texto": "qual foi a primeira frase jogada na Lua?",
+                              "enviar": False})
+                self.ocupado = False
+
+            threading.Thread(target=tarefa_demo, daemon=True).start()
+            return {"gravando": False, "transcrevendo": True}
+        if gravador is None:
+            return {"gravando": False}
+        try:
+            wav = gravador.parar()
+        except Exception as erro:
+            return {"erro": p.voz.microfone_erro(erro)}
+        if not p.voz.wav_tem_som(wav):
+            return {"erro": "Não ouvi nada. Tente de novo, mais perto do "
+                            "microfone."}
+
+        self.ocupado = True
+        cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+        modelo = cfg.get("modelo", p.MODELO_PADRAO)
+        modelos = [modelo] + [m for m in p.MODELOS_RESERVA if m != modelo]
+
+        def tarefa():
+            try:
+                texto = p.tentar_com_reserva(
+                    lambda qual: p.voz.transcrever(
+                        p._criar_cliente(qual), modelos, wav
+                    ),
+                    cfg, self.chaves,
+                )
+                self._evento({"tipo": "voz", "texto": str(texto or "").strip(),
+                              "enviar": bool(cfg.get("voz_enviar", False))})
+            except Exception as erro:
+                self._evento({"tipo": "voz_erro", "texto": p.traduzir_erro(erro),
+                              "chave": bool(p._falha_de_chave(erro))})
+            finally:
+                self.ocupado = False
+
+        threading.Thread(target=tarefa, daemon=True).start()
+        return {"gravando": False, "transcrevendo": True}
 
     def _aprender(self, pergunta, resposta, cfg, chave):
         """Deixa a IA aprender sobre o Wolf, em segundo plano e calada.

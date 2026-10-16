@@ -25,9 +25,11 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
 import time
 import tkinter as tk
 import traceback
+import types
 from pathlib import Path
 
 try:
@@ -2065,6 +2067,276 @@ if not falhas:
         testes_tela_nova_ia(importlib.import_module("pesquisa_ia"))
     except Exception as erro:
         falha("os testes da IA da tela nova quebraram: %r" % (erro,))
+
+
+def testes_tela_nova_microfone(p):
+    """Passo 4: o microfone da tela nova.
+
+    NAO grava audio de verdade e NAO chama a IA de verdade (o microfone do
+    Wolf ficaria aberto e a cota dele seria gasta). O `voz` inteiro e
+    trocado por um de mentira, e o arquivo de configuracao aponta para
+    uma pasta de teste, entao nem a chave nem as conversas do Wolf sao
+    tocadas.
+    """
+    import app_web
+
+    pasta = Path(PASTA) / "_tmp" / "teste-tela-nova-mic"
+    shutil.rmtree(pasta, ignore_errors=True)
+    pasta.mkdir(parents=True, exist_ok=True)
+
+    gravados = []      # o que o microfone de mentira "ouviu"
+    pedidos = []       # cada transcricao pedida (modelos, wav)
+
+    class GravadorDeMentira:
+        """Finge o `voz.Gravador`: nada de som, so marca o que foi feito."""
+
+        def __init__(self):
+            self.parado = False
+
+        def iniciar(self):
+            gravados.append("iniciou")
+
+        def parar(self):
+            self.parado = True
+            gravados.append("parou")
+            return b"onda-de-som-de-mentira"
+
+    def microfone_de_mentira(**muda):
+        """Monta um `voz` falso. `muda` troca o que o teste quiser."""
+        falso = types.SimpleNamespace()
+        falso.TEM_SOM = True
+        falso.Gravador = GravadorDeMentira
+        falso.microfone_disponivel = lambda: True
+        falso.wav_tem_som = lambda wav: True
+        falso.transcrever = (lambda cliente, modelos, wav:
+                             pedidos.append({"modelos": list(modelos),
+                                             "wav": wav}) or
+                             "O que foi falado: çãé 🚀")
+        falso.microfone_erro = (lambda erro: " microfone: %s" % (erro,))
+        for nome, valor in muda.items():
+            setattr(falso, nome, valor)
+        return falso
+
+    def com_chave(voz_enviar=False):
+        p._gravar_json(p.ARQUIVO_CONFIG,
+                       {"api_key": "AIza-chave-de-teste",
+                        "voz_enviar": voz_enviar})
+
+    def ponte_limpa():
+        gravados.clear()
+        pedidos.clear()
+        janela = _JanelaDeMentira()
+        return app_web.Ponte(janela), janela
+
+    def ja_gravando(falso):
+        """Coloca o microfone falso, liga a gravacao e devolve a ponte."""
+        p.voz = falso
+        ponte, _janela = ponte_limpa()
+        ponte.mic_alternar()
+        return ponte
+
+    guardados = {"ARQUIVO_CONFIG": p.ARQUIVO_CONFIG,
+                 "ARQUIVO_HISTORICO": p.ARQUIVO_HISTORICO,
+                 "voz": p.voz,
+                 "_criar_cliente": p._criar_cliente,
+                 "threading": app_web.threading,
+                 "DEMO": app_web.DEMO}
+    try:
+        p.ARQUIVO_CONFIG = pasta / "config.json"
+        p.ARQUIVO_HISTORICO = pasta / "historico.json"
+        p._criar_cliente = lambda api_key: "cliente-de-teste"
+        app_web.threading = _ThreadsNaHora()
+        app_web.DEMO = False
+
+        # 1. SEM SOM: fala em portugues e nao finge que gravou
+        p.voz = microfone_de_mentira(TEM_SOM=False)
+        com_chave()
+        ponte, janela = ponte_limpa()
+        resposta = ponte.mic_alternar()
+        if "sem a biblioteca de som" in str(resposta.get("erro", "")):
+            ok("microfone: avisando que o programa foi montado sem som")
+        else:
+            falha("microfone: sem som devolveu %r" % (resposta,))
+        if not janela.unico("gravando") and not ponte.gravando:
+            ok("microfone: sem som ele não finge que está gravando")
+        else:
+            falha("microfone: sem som ele disse que estava gravando")
+
+        # 2. SEM MICROFONE LIGADO
+        p.voz = microfone_de_mentira(microfone_disponivel=lambda: False)
+        ponte, _janela = ponte_limpa()
+        resposta = ponte.mic_alternar()
+        if "microfone ligado" in str(resposta.get("erro", "")):
+            ok("microfone: avisando que não achou microfone ligado")
+        else:
+            falha("microfone: sem microfone devolveu %r" % (resposta,))
+
+        # 3. SEM CHAVE: avisa para a tela abrir as Configuracoes
+        p.voz = microfone_de_mentira()
+        p._gravar_json(p.ARQUIVO_CONFIG, {})
+        ponte, _janela = ponte_limpa()
+        resposta = ponte.mic_alternar()
+        if resposta.get("erro") == "sem_chave_voz" and not ponte.gravando:
+            ok("microfone: sem chave pede a chave e não grava")
+        else:
+            falha("microfone: sem chave devolveu %r" % (resposta,))
+
+        # 4. GRAVAR: o primeiro clique liga, e a tela e avisada na hora
+        com_chave()
+        ponte, janela = ponte_limpa()
+        resposta = ponte.mic_alternar()
+        ligado = janela.unico("gravando")
+        if resposta.get("gravando") and ponte.gravando and gravados == ["iniciou"]:
+            ok("microfone: o primeiro clique começa a gravar")
+        else:
+            falha("microfone: o primeiro clique devolveu %r (gravou %r)"
+                  % (resposta, gravados))
+        if ligado and ligado.get("ligado") is True:
+            ok("microfone: a tela é avisada que começou a gravar")
+        else:
+            falha("microfone: nenhum aviso de 'começou a gravar' (%r)"
+                  % (ligado,))
+
+        # 5. PARAR: o segundo clique para e o texto falado entra na caixa
+        janela.eventos.clear()
+        resposta = ponte.mic_alternar()
+        voz = janela.unico("voz")
+        desligado = [e for e in janela.eventos
+                     if e.get("tipo") == "gravando"
+                     and e.get("ligado") is False]
+        if resposta.get("transcrevendo") and "parou" in gravados:
+            ok("microfone: o segundo clique para de gravar")
+        else:
+            falha("microfone: o segundo clique devolveu %r (gravados %r)"
+                  % (resposta, gravados))
+        if desligado:
+            ok("microfone: a tela é avisada que parou de gravar")
+        else:
+            falha("microfone: nenhum aviso de 'parou'")
+        if voz and voz.get("texto") == "O que foi falado: çãé 🚀":
+            ok("microfone: o que foi falado chega na caixa, com acento e emoji")
+        else:
+            falha("microfone: o texto falado veio %r" % (voz,))
+        if ponte.ocupado is False:
+            ok("microfone: depois de transcrever, o programa volta a aceitar")
+        else:
+            falha("microfone: ficou travado depois de transcrever")
+
+        # 6. o texto falado NAO e' enviado sozinho
+        if voz and voz.get("enviar") is False:
+            ok("microfone: o texto falado NÃO é enviado sozinho (Wolf confere)")
+        else:
+            falha("microfone: o texto falado foi marcado para enviar (%r)"
+                  % (voz,))
+
+        # 7. a lista de modelos e' a mesma do programa antigo (com reservas).
+        #    Repare que MODELOS_RESERVA ja comeca pelo modelo bom: a regra
+        #    e' "o modelo escolhido primeiro, e os outros uma vez cada".
+        escolhido = p.MODELO_PADRAO
+        esperado = [escolhido] + [m for m in p.MODELOS_RESERVA
+                                  if m != escolhido]
+        if pedidos and pedidos[0]["modelos"] == esperado:
+            ok("microfone: tenta o modelo bom e os de reserva, como antes")
+        else:
+            falha("microfone: os modelos pedidos foram %r (esperado %r)"
+                  % (pedidos[0]["modelos"] if pedidos else None, esperado))
+
+        # 8. SILENCIO: "não ouvi nada" e nenhum texto na caixa
+        ponte = ja_gravando(microfone_de_mentira(wav_tem_som=lambda wav: False))
+        janela = ponte.janela
+        janela.eventos.clear()
+        resposta = ponte.mic_alternar()
+        if "Não ouvi nada" in str(resposta.get("erro", "")) and \
+                not janela.unico("voz"):
+            ok("microfone: quando não ouve nada, avisa e não inventa texto")
+        else:
+            falha("microfone: no silêncio devolveu %r" % (resposta,))
+
+        # 9. TRANSCRICAO QUE FALHA: vira frase em portugues na tela
+        def transcrever_quebrado(cliente, modelos, wav):
+            raise RuntimeError("API key not valid: 401 UNAUTHENTICATED")
+
+        ponte = ja_gravando(microfone_de_mentira(transcrever=transcrever_quebrado))
+        janela = ponte.janela
+        janela.eventos.clear()
+        ponte.mic_alternar()
+        erro = janela.unico("voz_erro")
+        if erro and "chave" in str(erro.get("texto", "")).lower():
+            ok("microfone: chave recusada vira frase em português na tela")
+        else:
+            falha("microfone: o erro de chave veio %r" % (erro,))
+        if erro and erro.get("chave") is True:
+            ok("microfone: erro de chave avisa a tela para abrir as Config.")
+        else:
+            falha("microfone: o erro não avisou das Configurações (%r)"
+                  % (erro,))
+
+        # 10. FALHA DO MICROFONE AO LIGAR: vira frase, sem travar
+        class GravadorQuebrado:
+            def iniciar(self):
+                raise RuntimeError("dispositivo ocupado")
+
+        p.voz = microfone_de_mentira(Gravador=GravadorQuebrado)
+        ponte, _janela = ponte_limpa()
+        resposta = ponte.mic_alternar()
+        if "dispositivo ocupado" in str(resposta.get("erro", "")) and \
+                not ponte.gravando:
+            ok("microfone: microfone ocupado avisa e não trava o programa")
+        else:
+            falha("microfone: microfone ocupado devolveu %r" % (resposta,))
+
+        # 11. clicou no microfone com uma conversa rodando: espera
+        p.voz = microfone_de_mentira()
+        ponte, _janela = ponte_limpa()
+        ponte.ocupado = True
+        resposta = ponte.mic_alternar()
+        ponte.ocupado = False
+        if "Aguarde" in str(resposta.get("erro", "")):
+            ok("microfone: não grava por cima de uma resposta em andamento")
+        else:
+            falha("microfone: com a tela ocupada devolveu %r" % (resposta,))
+
+        # 12. MODO EXEMPLO: funciona sem microfone e sem chave nenhuma
+        app_web.DEMO = True
+        app_web.threading = threading
+        ponte, janela = ponte_limpa()
+        ponte.mic_alternar()
+        janela.eventos.clear()
+        ponte.mic_alternar()
+        if janela.unico("voz"):
+            ok("microfone: no modo exemplo ele finge que ouviu algo")
+        else:
+            falha("microfone: no modo exemplo não respondeu (%r)"
+                  % (janela.tipos(),))
+        app_web.DEMO = False
+
+        # 13. NADA foi gravado: nem conversa, nem arquivo do Wolf
+        if p.ARQUIVO_CONFIG == pasta / "config.json" and \
+                p.ARQUIVO_HISTORICO == pasta / "historico.json":
+            ok("microfone: o teste rodou com os arquivos do Wolf escondidos")
+        else:
+            falha("microfone: o teste usou o arquivo de verdade (%r)"
+                  % (p.ARQUIVO_CONFIG,))
+        if not (pasta / "historico.json").exists():
+            ok("microfone: falar não cria conversa nenhuma no disco")
+        else:
+            falha("microfone: sobrou conversa do microfone no disco")
+    finally:
+        for nome, valor in guardados.items():
+            if nome == "threading":
+                app_web.threading = valor
+            elif nome == "DEMO":
+                app_web.DEMO = valor
+            else:
+                setattr(p, nome, valor)
+        shutil.rmtree(pasta, ignore_errors=True)
+
+
+if not falhas:
+    try:
+        testes_tela_nova_microfone(importlib.import_module("pesquisa_ia"))
+    except Exception as erro:
+        falha("os testes do microfone quebraram: %r" % (erro,))
 
 
 def testes_tela_nova_config(p):

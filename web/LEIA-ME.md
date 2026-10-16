@@ -45,8 +45,13 @@ de graça (no Tk ele só sai de uma cor).
    `resposta`, `erro` e `conversas` (ver `window.PIA.evento`). Reaproveita
    `pesquisa_ia.perguntar`/`conversar`, o roteador, a chave reserva e o
    tradutor de erro do programa antigo — nada disso foi reescrito.
-4. Caixa de digitar (já existe), microfone, botão enviar (já existe),
-   modo web.
+4. ~~Microfone~~ **FEITO (passo 4, 16/10/2026)**: `Ponte.mic_alternar()`
+   liga e desliga a gravação com o mesmo `voz.Gravador`, o mesmo
+   `wav_tem_som` e o mesmo `transcrever` (com a lista de modelos de
+   reserva) do programa antigo — nada foi reescrito. A tela avisa se está
+   gravando pelos eventos `gravando` e `voz`; o texto falado **entra na
+   caixa de digitar** para o Wolf conferir (só sai sozinho se ele tiver
+   ligado "enviar" nas Configurações). Botão ou `Ctrl+M`.
 5. Janela de Configurações com as 4 abas funcionando de verdade (gravar).
 6. Salvar em .txt, copiar, pesquisar.
 7. Atalhos de teclado, cantos arredondados da caixa, borda escura da janela.
@@ -60,13 +65,20 @@ de graça (no Tk ele só sai de uma cor).
 - Para o Python **falar com a tela**, use o `self._evento(...)` da ponte
   (é ele que faz `janela.evaluate_js("window.PIA.evento(" + json + ")")`).
   O `json.dumps(..., ensure_ascii=False)` evita que acento e emoji virem
-  lixo — sem ele o ç chega como `\u00e7`. Os quatro tipos de evento são
-  `etapa` (o que a IA está fazendo), `resposta`, `erro` (com `"chave"`
-  quando o problema é a chave, e aí a tela abre as Configurações) e
-  `conversas` (atualiza a barra da esquerda).
-- Todo teste do `verificar.py` que mexe em conversa, memória ou chave
-  aponta os arquivos para `_tmp\teste-tela-nova` (ou
-  `_tmp\teste-tela-nova-ia`, o da IA) e restaura no fim. Nunca teste
+  lixo — sem ele o ç chega como `\u00e7`. Os tipos de evento são:
+  | evento | quando | o que a tela faz |
+  |---|---|---|
+  | `etapa` | a IA está trabalhando | escreve o que ela está fazendo |
+  | `resposta` | a resposta veio | joga a resposta na conversa |
+  | `erro` | deu problema | escreve o erro; com `"chave": true` abre as Config. |
+  | `conversas` | a lista mudou | redesenha a barra da esquerda |
+  | `gravando` | o micro ligou/desligou | acende o botão vermelho e o relógio |
+  | `voz` | o áudio foi transcrito | joga o texto na caixa de digitar |
+  | `voz_erro` | a transcrição falhou | avisa (e abre as Config. se for chave) |
+- Todo teste do `verificar.py` que mexe em conversa, memória, chave ou
+  microfone aponta os arquivos para `_tmp\teste-tela-nova*` e restaura no
+  fim. No microfone o `voz` inteiro é trocado por um de mentira: o teste
+  **não abre o microfone de verdade** e **não gasta cota**. Nunca teste
   contra os dados do Wolf.
 
 ## Como abrir

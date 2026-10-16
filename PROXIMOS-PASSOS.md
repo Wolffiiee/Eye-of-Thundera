@@ -85,9 +85,23 @@ rodando pelo código: na pasta do projeto) e siga o PASSO-A-PASSO.md.
         no caminho: a chave reserva não se lembrava da troca (era
         chamada com um dicionário descartável, e voltava a insistir na
         chave morta a cada mensagem);
-     4. caixa de digitar, microfone, botão enviar, modo web;
+     4. ~~caixa de digitar, microfone, botão enviar, modo web~~
+        **FEITO em 16/10/2026**: `Ponte.mic_alternar()` liga e desliga a
+        gravação com o mesmo `voz.Gravador`, o mesmo `wav_tem_som` e o
+        mesmo `transcrever` (mesma ordem de modelos, com reservas) do
+        programa antigo — nada de áudio foi reescrito. A tela é avisada
+        pelos eventos `gravando`, `voz` e `voz_erro`; o texto falado
+        **entra na caixa de digitar** para o Wolf conferir (só sai sozinho
+        se a opção "enviar" estiver ligada). Botão do microfone ou
+        `Ctrl+M`. No `--demo` ele finge que ouviu, para a tela de exemplo
+        funcionar sem microfone. 19 testes, com microfone e IA falsos (o
+        microfone de verdade não abre e a cota não é gasta);
      5. janela de Configurações com as 4 abas gravando de verdade
-        (a Tarefa D entra aqui, para não ser feita duas vezes);
+        (a Tarefa D entra aqui, para não ser feita duas vezes) — **já
+        está no código e tem 7 testes** (`config_salvar`, memória
+        adicionar/apagar/apagar tudo/organizar, chave vazia não apaga a
+        chave salva); falta conferir com o Wolf e ligar o que só existe
+        no tkinter;
      6. microfone de ponta a ponta, salvar .txt, copiar, pesquisar;
      7. atalhos de teclado, cantos arredondados da caixa, borda da janela;
      8. `verificar.bat` cobrindo a tela nova + `.exe` gerado e testado

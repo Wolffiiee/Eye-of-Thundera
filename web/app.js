@@ -18,7 +18,7 @@ function el(tag, cls, texto) {
   return e;
 }
 
-const estado = { mensagens: [], conversas: [], atual: null, ocupado: false, cfg: {}, aba: "chaves", rascunho: {} };
+const estado = { mensagens: [], conversas: [], atual: null, ocupado: false, gravando: false, cfg: {}, aba: "chaves", rascunho: {} };
 const ROTULO_WEB = { auto: "Web: automática", sempre: "Web: sempre", nunca: "Web: desligada" };
 
 async function chamar(nome, ...args) {
@@ -203,6 +203,29 @@ function aplicarEvento(o) {
     estado.conversas = o.conversas;
     estado.atual = o.atual;
     desenharConversas();
+  } else if (o.tipo === "gravando") {
+    mostrarGravando(o.ligado);
+  } else if (o.tipo === "voz") {
+    // o texto falado NAO e' enviado sozinho: entra na caixa de digitar
+    // para o Wolf conferir antes (igual ao programa antigo)
+    esperar(false);
+    const caixa = $("#entrada");
+    if (o.texto) {
+      caixa.value = caixa.value ? caixa.value + " " + o.texto : o.texto;
+      ajustarAltura();
+      atualizarEnviar();
+      caixa.focus();
+      const fim = caixa.value.length;
+      caixa.setSelectionRange(fim, fim);
+      aviso("Pronto! Confira o texto e aperte Enter para enviar.");
+      if (o.enviar) setTimeout(() => enviar(), 400);
+    } else {
+      aviso("Não consegui entender o áudio. Tente falar mais perto do microfone.", true);
+    }
+  } else if (o.tipo === "voz_erro") {
+    esperar(false);
+    aviso(o.texto || "Não consegui transcrever o áudio.", true);
+    if (o.chave) abrirConfig("chaves");
   }
 }
 
@@ -283,6 +306,14 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     fecharMenu();
     if (!$("#modal").classList.contains("oculto")) fecharConfig();
+    return;
+  }
+  // Ctrl+M: microfone sem tirar a mao do teclado (como no programa antigo).
+  // Nao enquanto a pessoa esta digitando um texto com Ctrl grudado, nem
+  // se ja ha uma conversa rodando.
+  if ((e.ctrlKey || e.metaKey) && (e.key === "m" || e.key === "M")) {
+    e.preventDefault();
+    alternarMicrofone();
   }
 });
 document.addEventListener("click", (e) => {
@@ -572,6 +603,57 @@ async function salvarConfig() {
   $("#config-aviso").className = "ok";
 }
 
+/* ---------------- microfone ----------------
+   Um clique comeca a gravar; o clique seguinte para. O Python cuida do
+   audio (grava, confere se tem som e transcreve) e avisa a tela com os
+   eventos "gravando" e "voz". O texto falado entra na caixa de digitar
+   para o Wolf conferir antes - igual ao programa antigo. */
+let relogioGravacao = null;
+
+function mostrarGravando(ligado) {
+  estado.gravando = !!ligado;
+  const botao = $("#btn-mic");
+  botao.classList.toggle("gravando", estado.gravando);
+  botao.title = estado.gravando
+    ? "Parar de gravar"
+    : "Falar: clique para gravar, clique de novo para parar (Ctrl+M)";
+  clearInterval(relogioGravacao);
+  relogioGravacao = null;
+  if (estado.gravando) {
+    $("#digitando").classList.remove("oculto");
+    let segundos = 0;
+    $("#etapa").textContent = "Gravando... aperte de novo para parar";
+    relogioGravacao = setInterval(() => {
+      segundos += 1;
+      $("#etapa").textContent = "Gravando... " + segundos + "s";
+    }, 1000);
+  } else {
+    $("#etapa").textContent = "Transcrevendo o que você falou...";
+  }
+}
+
+async function alternarMicrofone() {
+  if (estado.ocupado && !estado.gravando) {
+    return aviso("Aguarde a resposta terminar.", true);
+  }
+  const r = await chamar("mic_alternar");
+  if (r.erro) {
+    if (r.erro === "sem_chave_voz") {
+      aviso("Cole a sua chave de API antes de falar a pergunta.", true);
+      abrirConfig("chaves");
+    } else {
+      mostrarGravando(false);
+      aviso(r.erro, true);
+    }
+    return;
+  }
+  if (r.gravando) mostrarGravando(true);
+  else if (r.transcrevendo) {
+    esperar(true, "Transcrevendo o que você falou...");
+    $("#digitando").classList.remove("oculto");
+  }
+}
+
 /* ---------------- início ---------------- */
 function aplicarCfg() {
   const modo = estado.cfg.modo_pesquisa || "auto";
@@ -590,6 +672,7 @@ function ligarEventos() {
     }
   });
   $("#btn-enviar").addEventListener("click", () => enviar());
+  $("#btn-mic").addEventListener("click", () => alternarMicrofone());
   $("#btn-nova").addEventListener("click", novaConversa);
   $("#btn-config").addEventListener("click", () => abrirConfig());
   $("#btn-fechar-config").addEventListener("click", fecharConfig);
