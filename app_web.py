@@ -446,6 +446,24 @@ class Ponte:
             self.id_atual = str(time.time())
         return p.guardar_conversa(self.id_atual, self.mensagens)
 
+    def _onde_esta_a_janela(self):
+        """Onde ancorar a janela de Salvar (na tela do programa).
+
+        Medido em 16/10/2026: sem isto, a janela de "Salvar resposta
+        como..." abria em x=138, y=0 (primeiro monitor, canto da tela),
+        enquanto o programa estava no segundo (x=2000). O Wolf olhava
+        para o segundo monitor, via a janelinha no primeiro e achava que
+        o programa tinha travado.
+
+        Usa a posicao em que NOS mesmos abrimos a janela, e nao a
+        `janela.x` do pywebview: essa propriedade espera a janela ficar
+        "pronta" e pode TRAVAR ate 15 segundos (e a janela de Salvar
+        demorava tanto que parecia que nao abria). Se o Wolf arrastar a
+        janela para outro lugar, a janelinha pode nao sair bem em cima
+        dela - mas continua na tela certa, que e o que importa.
+        """
+        return (X_PADRAO, Y_PADRAO)
+
     def salvar_texto(self, texto):
         """Salvar a resposta num .txt. Este funciona mesmo."""
         if not texto or not str(texto).strip():
@@ -457,6 +475,11 @@ class Ponte:
         dono.withdraw()
         dono.attributes("-topmost", True)
         try:
+            # a janela de Salvar nasce embaixo da janela "pai": por isso
+            # a pai fica no mesmo lugar do programa, e nao no 0,0.
+            x, y = self._onde_esta_a_janela()
+            dono.geometry("1x1+%d+%d" % (max(0, x + 60), max(0, y + 60)))
+            dono.update_idletasks()
             p._deixar_dialogo_do_sistema_escuro(dono)
             caminho = filedialog.asksaveasfilename(
                 parent=dono,
@@ -466,6 +489,8 @@ class Ponte:
                 filetypes=[("Arquivo de texto", "*.txt"),
                            ("Todos os arquivos", "*.*")],
             )
+        except Exception as erro:
+            return {"erro": "Não consegui abrir a janela de salvar: %s" % erro}
         finally:
             try:
                 dono.destroy()

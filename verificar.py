@@ -211,6 +211,29 @@ try:
 except Exception as erro:
     falha("escurecer a barra levantou erro: %r" % (erro,))
 
+# --- 4d. a janela de "Salvar como" tem que nascer NA MESMA TELA do programa --
+# Defeito de 16/10/2026: a janela de "Salvar resposta como..." abria em
+# x=138, y=0 (primeiro monitor) enquanto o programa estava no segundo
+# (x=2000). O Wolf olhava para o segundo monitor, via a janelinha no
+# primeiro e achava que o programa tinha travado. Este teste nao abre
+# janela nenhuma: confere so de onde a tela nova tira a ancora.
+try:
+    _app = importlib.import_module("app_web")
+    _ponte = _app.Ponte()
+    _x, _y = _ponte._onde_esta_a_janela()
+    if _x >= 1950:
+        ok("a janela de Salvar nasce no 2o monitor (a mesma tela do programa)")
+    else:
+        falha("a janela de Salvar nasceria em x=%d (1o monitor: o Wolf "
+              "nao veria ela e acharia que travou)" % (_x,))
+    if 'geometry("1x1+' in app_txt:
+        ok("a janela de Salvar é posicionada antes de abrir")
+    else:
+        falha("a janela de Salvar não é posicionada: ela nasce no canto "
+              "da tela, em outro monitor")
+except Exception as erro:
+    falha("conferir a posição da janela de Salvar deu erro: %r" % (erro,))
+
 # --- 5. testes com a janela de verdade -------------------------------------
 
 

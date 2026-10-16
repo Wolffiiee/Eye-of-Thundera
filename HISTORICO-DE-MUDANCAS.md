@@ -5,6 +5,66 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Defeito corrigido: "Salvar" abria na tela errada
+
+O Wolf avisou que o `7 - Usar a tela nova de verdade.bat` estava
+"crashando". **Não era crash.**
+
+- **O programa não caía.** Testado: a tela nova aberta no modo normal
+  fica de pé (14 s rodando, sem erro nenhum, e sem `erro.log`).
+- **A janela de "Salvar resposta como..." abria no MONITOR ERRADO.**
+  Medido com o programa de verdade, procurando a janela do Windows pelo
+  nome:
+
+  | | antes | depois |
+  |---|---|---|
+  | onde a tela nova estava | x=2000 (2º monitor) | x=2000 (2º monitor) |
+  | onde a janelinha abria | **x=138, y=0 (1º monitor, canto)** | **x=2068 (2º monitor)** |
+
+  O Wolf estava olhando o segundo monitor; a janelinha abria no
+  primeiro. O programa ficava **esperando** ela (e é isso que parece
+  "travou"), sem nenhuma pista na tela. Por isso parecia crash.
+- **A correção:** `Ponte._onde_esta_a_janela()` devolve o canto da tela
+  onde a janela foi aberta, e a janela de Salvar é posicionada ali
+  (`geometry("1x1+...")`) **antes** de abrir. A janela de arquivos do
+  Tk nasce em cima da janela "pai", então ela passa a nascer junto do
+  programa.
+- **Um detalhe que custou tempo:** usar `janela.x` do pywebview para
+  perguntar onde a janela está **trava até 15 segundos** (a propriedade
+  espera a janela ficar "pronta"), e a janelinha demorava tanto que
+  parecia que nem abria. Por isso a ancora é a posição **que nós mesmos
+  usamos ao abrir**, que é instantânea. Se o Wolf arrastar a janela
+  depois, a janelinha pode não sair bem em cima dela — mas continua
+  **na tela certa**, que é o que importa.
+- **Como a posição foi medida (e não achada):** um programa de teste
+  abriu a tela de verdade, chamou o mesmo caminho que o botão, e leu a
+  posição da janela do Windows por `EnumWindows` — 4 maneiras de
+  ancorar foram comparadas. A que funciona é `geometry("1x1+X+Y")`
+  antes de abrir (x=2068). As outras três deixavam a janela no canto
+  do primeiro monitor ou fora da tela.
+- **Erro meu no meio do caminho:** na primeira versão eu passei um
+  argumento a mais para `_onde_esta_a_janela`, e isso **quebrou o Salvar
+  inteiro** ("takes 1 positional argument but 2 were given"). Só
+  apareceu porque a medição mostra o que a ponte devolveu — um conserto
+  feito "no olho" teria passado batido.
+- **2 testes novos** (não abrem janela nenhuma): um confere que a
+  ancora fica no 2º monitor (o mesmo onde o programa abre), e outro que
+  a janela é posicionada antes de abrir.
+
+Verificação: `TUDO CERTO`, **261 testes, 0 falhas** (35 s).
+
+### O que ainda NÃO foi feito: barra de título embutida
+
+O Wolf perguntou se os botões de fechar/minimizar/maximizar e o
+arrasto da janela poderiam ficar **dentro** do programa, em vez da
+barra do Windows. **Dá**, e foi conferido no pywebview: a opção
+`frameless` existe e funciona com o motor `edgechromium` que o programa
+usa (o formulário que apaga a borda é criado pelo mesmo caminho do
+`winforms`). Nada foi feito ainda — é o trabalho de maior risco que
+sobra (mexe na janela do Windows por baixo dos panos), e ele só começa
+depois que este conserto estiver commitado. Perde-se "colar" a janela
+na borda arrastando e o Windows+setas; ganha-se a tela 100% escura.
+
 ## 2026-10-16 — Tela nova: PASSO 7 (a barra de título estava BRANCA)
 
 Defeito de verdade encontrado aqui: **a tela nova abria com a barra de
