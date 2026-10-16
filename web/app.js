@@ -353,6 +353,19 @@ function ligarMenuContexto() {
     if (!e.target.closest("#menu-contexto")) fecharMenuContexto();
   });
   window.addEventListener("blur", fecharMenuContexto);
+  // copiar texto selecionado na RESPOSTA da IA (botao direito)
+  document.addEventListener("contextmenu", (e) => {
+    const sel = (window.getSelection() || "").toString().trim();
+    if (sel && e.target && e.target.closest && e.target.closest(".corpo")) {
+      e.preventDefault();
+      try { navigator.clipboard.writeText(sel); } catch (_e) {
+        const ta = document.createElement("textarea");
+        ta.value = sel; document.body.appendChild(ta);
+        ta.select(); document.execCommand("copy"); ta.remove();
+      }
+      aviso("Copiado.");
+    }
+  });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") fecharMenuContexto(); });
 }
 
@@ -1242,25 +1255,26 @@ function cartaoChave(titulo, desc, campo, info, opc) {
 
 function abaChaves(corpo) {
   const cfg = estado.cfgTela;
-  corpo.append(el("h3", "", "Chaves de acesso"), el("p", "sub", "As chaves ficam só neste computador. Todas são gratuitas e não pedem cartão."));
+  const geminiCard = el("div", "cartao");
+  geminiCard.append(linhaToggle("Usar o Gemini (principal)",
+    "Desliga o Gemini e usa so o plano B (ChatGPT/Groq/OpenRouter).",
+    "usar_gemini"));
+  corpo.append(geminiCard);
   corpo.append(
-    cartaoChave("Google Gemini (principal)", "É ela que pesquisa e escreve as respostas.", "api_key", cfg.gemini, {
+    cartaoChave("Google Gemini (principal)", "% ela que pesquisa e escreve as respostas.", "api_key", cfg.gemini, {
       testar: true,
       pagina: "https://aistudio.google.com/apikey",
     }),
     cartaoChave("Google Gemini (reserva, opcional)", "Se a principal parar de funcionar, o programa troca sozinho para esta.", "api_key_reserva", cfg.gemini_reserva, { testar: true })
   );
   const plano = el("div", "cartao");
-  plano.append(linhaToggle("Usar o plano B", "Se o Gemini não responder, tenta estes serviços de reserva.", "usar_plano_b"));
+  plano.append(linhaToggle("Usar o plano B", "Se o Gemini nao responder, tenta estes servicos de reserva.", "usar_plano_b"));
   corpo.append(plano);
-  const geminiCard = el("div", "cartao");
-  geminiCard.append(linhaToggle("Usar o Gemini (principal)",
-    "Desliga o Gemini e usa so o plano B (ChatGPT/Groq/OpenRouter).",
-    "usar_gemini"));
-  corpo.append(geminiCard);
   for (const s of cfg.servicos) {
-    corpo.append(cartaoChave(s.nome, s.resumo ? "Grátis — " + s.resumo : "", s.campo, s, { passos: s.passos, pagina: s.pagina }));
+    corpo.append(cartaoChave(s.nome, s.resumo ? "Gratis: " + s.resumo : "", s.campo, s, { passos: s.passos, pagina: s.pagina }));
   }
+}
+
 }
 
 async function abaMemoria(corpo) {
