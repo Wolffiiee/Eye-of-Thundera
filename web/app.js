@@ -455,6 +455,7 @@ function esperar(ligado, texto) {
 }
 function atualizarEnviar() {
   $("#btn-enviar").disabled = estado.ocupado || !$("#entrada").value.trim();
+  $("#btn-serio").disabled = estado.ocupado || !$("#entrada").value.trim();
 }
 function ajustarAltura() {
   const e = $("#entrada");
@@ -1706,12 +1707,14 @@ function ligarEventos() {
   const entrada = $("#entrada");
   entrada.addEventListener("input", () => { ajustarAltura(); atualizarEnviar(); });
   entrada.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+    if (e.key === "S" && e.ctrlKey && e.shiftKey) { e.preventDefault(); enviar(undefined, true); return; }
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
       e.preventDefault();
       enviar();
     }
   });
   $("#btn-enviar").addEventListener("click", () => enviar());
+$("#btn-serio").addEventListener("click", () => enviar(undefined, true));
 $("#btn-deep").addEventListener("click", () => {
   estado.profundo = !estado.profundo;
   const b = $("#btn-deep");
