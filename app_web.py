@@ -1526,7 +1526,8 @@ def principal():
     else:
         print("Suas conversas e memoria podem ser atualizadas ao conversar.")
     try:
-        webview.start(ao_abrir, janela, gui="edgechromium")
+        webview.start(ao_abrir, janela, gui="edgechromium",
+                      icon=str(RAIZ / "icone.ico"))
     except Exception as erro:
         # O programa de sempre grava tudo no erro.log para podermos ver
         # depois. A tela nova nao gravava NADA: um erro aqui era simplesmente
