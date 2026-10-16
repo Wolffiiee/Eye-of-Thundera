@@ -82,10 +82,18 @@ nova der problema, o programa do Wolf não é afetado. Ainda não foi gerado
 (não é preciso até o passo 8).
 
 ## Ruído conhecido (não é defeito)
-O pywebview imprime um erro de COM do WebView2 ("CoreWebView2Controller
-members can only be accessed from the UI thread") quando tenta ler o
-zoom da página. A janela abre, carrega e funciona normalmente. É ruído do
-próprio pywebview.
+O pywebview imprime erros no console quando a janela abre e **a janela
+abre, carrega e funciona normalmente**. São três deles e nenhum é do
+nosso código:
+- `CoreWebView2Controller members can only be accessed from the UI thread`
+  — o pywebview lendo propriedades da janela de fora da thread certa;
+- `AccessibilityObject.Bounds ... maximum recursion depth exceeded` e
+  `ActiveControl ...` — a mesma coisa, do lado da acessibilidade do
+  Windows;
+- no teste com `--previa` o console saiu em branco, porque o processo foi
+  morto no meio (o Python não chega a esvaziar o buffer dos `print`).
+
+O que importa é a janela aparecer no segundo monitor e responder.
 
 ## Duas coisas que o teste descobriu (importante)
 - A ponte do pywebview é **assíncrona**: `window.pywebview.api.algo(...)`
