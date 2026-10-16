@@ -22,7 +22,6 @@ O QUE ESTE PASSO FAZ
 
 O QUE AINDA NAO FUNCIONA (e avisa na tela, sem quebrar)
     - microfone (passo 4);
-    - mudar qualquer coisa nas Configuracoes ou na Memoria (passo 5).
     Tudo que for isso devolve um aviso honesto. No modo exemplo
     (`--demo`) nada e gravado nunca.
 
@@ -605,28 +604,96 @@ class Ponte:
 
         threading.Thread(target=tarefa, daemon=True).start()
 
-    # --- o que ainda falta (avisa, sem quebrar) ---
+    # --- 5. Configuracoes e Memoria (passo 5) ---
+
+    def _demo_nada(self):
+        return {"erro": "No modo exemplo nada e gravado. Abra sem "
+                        "--demo para mudar de verdade."}
+
+    def _cfg_curta(self):
+        cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+        return {"modo_pesquisa": cfg.get("modo_pesquisa", "auto"),
+                "corretor": bool(cfg.get("corretor", True))}
 
     def definir_modo(self, modo):
-        return aviso_honesto("config")
+        if DEMO:
+            return {"cfg": {"modo_pesquisa": modo, "corretor": True}}
+        if modo not in ("auto", "sempre", "nunca"):
+            return {"erro": "Modo desconhecido."}
+        cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+        cfg["modo_pesquisa"] = modo
+        p.salvar_config(cfg)
+        return {"cfg": self._cfg_curta()}
 
     def config_salvar(self, dados):
-        return aviso_honesto("config")
+        """Grava as opcoes e as chaves coladas (chave vazia = nao mexe)."""
+        if DEMO:
+            return self._demo_nada()
+        cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+        dados = dados or {}
+        if dados.get("modo_pesquisa") in ("auto", "sempre", "nunca"):
+            cfg["modo_pesquisa"] = dados["modo_pesquisa"]
+        for campo in ("usar_contexto", "aprender", "voz_enviar",
+                      "usar_plano_b"):
+            if campo in dados:
+                cfg[campo] = bool(dados[campo])
+        if "web_corretor" in dados:
+            cfg["corretor"] = bool(dados["web_corretor"])
+        permitidos = {"api_key", "api_key_reserva"} | {
+            s["campo_chave"] for s in p.SERVICOS_RESERVA}
+        for campo, valor in (dados.get("chaves") or {}).items():
+            valor = str(valor).strip()
+            if campo in permitidos and valor:
+                cfg[campo] = valor
+                if campo == "api_key":
+                    self.chaves["falhou"] = False
+        p.salvar_config(cfg)
+        return {"cfg": self._cfg_curta()}
 
     def testar_chave(self, campo, valor):
-        return aviso_honesto("config")
+        """Testa a chave colada (ou a ja salva, se o campo veio vazio)."""
+        try:
+            cfg = dict(p._ler_json(p.ARQUIVO_CONFIG, {}))
+            if valor:
+                cfg[campo] = valor
+            chave = cfg.get(campo, "")
+            if not chave:
+                return {"ok": False, "texto": "Cole a chave antes de testar."}
+            if campo in ("api_key", "api_key_reserva"):
+                p.testar_chave(chave, cfg.get("modelo") or p.MODELO_PADRAO)
+            else:
+                p.testar_servico(cfg, campo)
+            return {"ok": True}
+        except Exception as erro:
+            try:
+                texto = p.traduzir_erro(erro)
+            except Exception:
+                texto = str(erro)
+            return {"ok": False, "texto": texto}
 
     def memoria_adicionar(self, texto):
-        return aviso_honesto("config")
+        if DEMO:
+            return self._demo_nada()
+        texto = (texto or "").strip()
+        if texto:
+            p._mesclar_memoria([texto])
+        return {"fatos": p.carregar_memoria()}
 
     def memoria_apagar(self, fato):
-        return aviso_honesto("config")
+        if DEMO:
+            return self._demo_nada()
+        return {"fatos": p.esquecer_memoria(fato)}
 
     def memoria_apagar_tudo(self):
-        return aviso_honesto("config")
+        if DEMO:
+            return self._demo_nada()
+        return {"fatos": p.esquecer_memoria()}
 
     def memoria_organizar(self):
-        return aviso_honesto("config")
+        if DEMO:
+            return self._demo_nada()
+        mudou = p.organizar_memoria()
+        return {"fatos": p.carregar_memoria(), "mudou": bool(mudou)}
 
 
 # --- montando a janela ------------------------------------------------------

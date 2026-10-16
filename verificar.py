@@ -2067,6 +2067,111 @@ if not falhas:
         falha("os testes da IA da tela nova quebraram: %r" % (erro,))
 
 
+def testes_tela_nova_config(p):
+    """Passo 5: Configuracoes e Memoria da tela nova gravam de verdade
+    (numa pasta de teste, nunca nos arquivos do Wolf)."""
+    import app_web
+
+    pasta = Path(PASTA) / "_tmp" / "teste-tela-nova-config"
+    shutil.rmtree(pasta, ignore_errors=True)
+    pasta.mkdir(parents=True, exist_ok=True)
+    guardados = {"ARQUIVO_MEMORIA": p.ARQUIVO_MEMORIA,
+                 "ARQUIVO_CONFIG": p.ARQUIVO_CONFIG,
+                 "_memoria_cache": p._memoria_cache,
+                 "testar_chave": p.testar_chave}
+    demo = app_web.DEMO
+    try:
+        p.ARQUIVO_MEMORIA = pasta / "memoria.json"
+        p.ARQUIVO_CONFIG = pasta / "config.json"
+        p._memoria_cache = None
+        app_web.DEMO = False
+        ponte = app_web.Ponte(None)
+
+        r = ponte.definir_modo("sempre")
+        if r.get("cfg", {}).get("modo_pesquisa") == "sempre" and \
+                p._ler_json(p.ARQUIVO_CONFIG, {}).get("modo_pesquisa") == "sempre":
+            ok("tela nova: definir_modo grava o modo da web")
+        else:
+            falha("tela nova: definir_modo devolveu %r" % (r,))
+        if "erro" in ponte.definir_modo("xyz"):
+            ok("tela nova: modo invalido e recusado")
+        else:
+            falha("tela nova: modo invalido foi aceito")
+
+        ponte.config_salvar({"aprender": False, "web_corretor": False,
+                             "chaves": {"api_key": "AIzaCHAVE1234",
+                                        "campo_falso": "x"}})
+        cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+        if cfg.get("aprender") is False and cfg.get("corretor") is False \
+                and cfg.get("api_key") == "AIzaCHAVE1234" \
+                and "campo_falso" not in cfg:
+            ok("tela nova: config_salvar grava opcoes e chave, ignora campo falso")
+        else:
+            falha("tela nova: config_salvar gravou %r" % (cfg,))
+        ponte.config_salvar({"chaves": {"api_key": ""}})
+        if p._ler_json(p.ARQUIVO_CONFIG, {}).get("api_key") == "AIzaCHAVE1234":
+            ok("tela nova: chave vazia nao apaga a chave salva")
+        else:
+            falha("tela nova: chave vazia apagou a chave salva")
+
+        p.testar_chave = lambda chave, modelo: "OK"
+        if ponte.testar_chave("api_key", "").get("ok") is True:
+            ok("tela nova: testar_chave usa a chave ja salva quando o campo vem vazio")
+        else:
+            falha("tela nova: testar_chave com chave salva falhou")
+        def quebra(chave, modelo):
+            raise RuntimeError("401 UNAUTHENTICATED")
+        p.testar_chave = quebra
+        r = ponte.testar_chave("api_key", "AIzaRUIM")
+        if r.get("ok") is False and r.get("texto"):
+            ok("tela nova: testar_chave com chave ruim explica em portugues")
+        else:
+            falha("tela nova: testar_chave ruim devolveu %r" % (r,))
+
+        r = ponte.memoria_adicionar("Gosta de RPG")
+        r = ponte.memoria_adicionar("Gosta de RPG")
+        if r.get("fatos") == ["Gosta de RPG"]:
+            ok("tela nova: memoria_adicionar nao repete fato")
+        else:
+            falha("tela nova: memoria ficou %r" % (r,))
+        ponte.memoria_adicionar("Mora em Santa Maria")
+        r = ponte.memoria_apagar("Gosta de RPG")
+        if r.get("fatos") == ["Mora em Santa Maria"]:
+            ok("tela nova: memoria_apagar tira so o item escolhido")
+        else:
+            falha("tela nova: memoria_apagar deixou %r" % (r,))
+        if "mudou" in ponte.memoria_organizar():
+            ok("tela nova: memoria_organizar responde")
+        else:
+            falha("tela nova: memoria_organizar nao respondeu")
+        if ponte.memoria_apagar_tudo().get("fatos") == []:
+            ok("tela nova: memoria_apagar_tudo esvazia")
+        else:
+            falha("tela nova: memoria_apagar_tudo nao esvaziou")
+
+        app_web.DEMO = True
+        antes = p.ARQUIVO_CONFIG.read_text(encoding="utf-8")
+        ponte.config_salvar({"aprender": True})
+        ponte.memoria_adicionar("nao pode gravar")
+        if p.ARQUIVO_CONFIG.read_text(encoding="utf-8") == antes \
+                and p.carregar_memoria() == []:
+            ok("tela nova: no modo exemplo configuracoes e memoria nao gravam")
+        else:
+            falha("tela nova: o modo exemplo gravou algo")
+    finally:
+        app_web.DEMO = demo
+        for nome, valor in guardados.items():
+            setattr(p, nome, valor)
+        shutil.rmtree(pasta, ignore_errors=True)
+
+
+if not falhas:
+    try:
+        testes_tela_nova_config(importlib.import_module("pesquisa_ia"))
+    except Exception as erro:
+        falha("os testes de config da tela nova quebraram: %r" % (erro,))
+
+
 # --- 5f. aba Memoria: a rolagem do mouse continua depois de apagar ------
 
 

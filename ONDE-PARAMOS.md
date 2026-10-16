@@ -109,3 +109,8 @@ duas coisas junto: cada passo é um commit e um `verificar.bat` verde.
 - A memória não pode perder informação: `memoria.py` tem a regra de ouro
   "organizar nunca pode apagar palavra" e o `autoteste()` barra a volta do
   defeito.
+
+---
+## ATUALIZACAO (15/10/2026, Claude): PASSO 5 PRONTO
+Configuracoes (4 abas, salvar chaves, testar chave, modo da web) e Memoria (adicionar, apagar, organizar, apagar tudo) da tela nova funcionam de verdade e estao testadas (verificar = TUDO CERTO). **Falta so o PASSO 4 (microfone: reaproveitar voz.py) e depois empacotar a tela nova e trocar o atalho.** Ideia do Symbium aprovada pelo Wolf para depois: barrinha discreta de uso de tokens. NAO instalar speech_recognition: a voz ja usa o Gemini via voz.py.
+

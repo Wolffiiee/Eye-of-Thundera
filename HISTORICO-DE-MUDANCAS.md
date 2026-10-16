@@ -879,3 +879,9 @@ foram instaladas junto; não precisam ser listadas.
 - O .exe novo abriu e ficou aberto 9 s sem criar `erro.log`.
 - NÃO testado: perguntas reais à IA (precisa de internet e da chave do
   Wolf) e o uso do .exe por um período mais longo.
+
+## 15/10/2026 - Tela nova: passo 5 (Configuracoes e Memoria de verdade) - feito pelo Claude
+- app_web.py: definir_modo, config_salvar, testar_chave, memoria_adicionar/apagar/apagar_tudo/organizar agora gravam de verdade (reaproveitam salvar_config, esquecer_memoria, _mesclar_memoria, organizar_memoria, testar_chave, testar_servico do pesquisa_ia.py).
+- Chave vazia nao apaga a chave salva; campos desconhecidos sao ignorados; no modo exemplo nada e gravado.
+- verificar.py: nova funcao testes_tela_nova_config (isolada em _tmp, nao toca nos arquivos do Wolf). Nenhum teste foi removido. Resultado: TUDO CERTO.
+
