@@ -392,6 +392,8 @@ try:
     _tmp_dt = Path(PASTA) / "_tmp" / "teste-datas"
     shutil.rmtree(_tmp_dt, ignore_errors=True)
     _tmp_dt.mkdir(parents=True)
+    _real_datas = Path(_pi3.PASTA_CONFIG) / "memoria_datas.json"
+    _datas_antes = _real_datas.read_bytes() if _real_datas.exists() else None
     _mem_orig = _pi3.ARQUIVO_MEMORIA
     _pi3.ARQUIVO_MEMORIA = _tmp_dt / "memoria.json"
     try:
@@ -424,8 +426,9 @@ try:
             ok("memória com data: as datas vão num arquivo ao lado")
         else:
             falha("memória com data: não foi criado o arquivo das datas")
-        if not (Path(_pi3.PASTA_CONFIG) / "memoria_datas.json").exists() \
-                or _pi3.PASTA_CONFIG == _tmp_dt:
+        # compara o ANTES com o DEPOIS: o arquivo real pode existir (uso normal)
+        if (_real_datas.read_bytes() if _real_datas.exists() else None) \
+                == _datas_antes or _pi3.PASTA_CONFIG == _tmp_dt:
             ok("memória com data: a pasta de verdade do Wolf não foi escrita")
         else:
             falha("memória com data: escreveu na pasta de verdade")
