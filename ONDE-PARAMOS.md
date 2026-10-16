@@ -4,13 +4,13 @@
 > Fale com ele em português simples, sem jargão, e chame-o de Wolf.
 
 ## Uma linha de resumo
-O Pesquisa IA tem UMA tela só: a **tela nova** (HTML/JS/pywebview).
+O Eye of Thundera tem UMA tela só: a **tela nova** (HTML/JS/pywebview).
 O programa antigo (tkinter) foi aposentado. O projeto agora foca
 100% na versão nova.
 
 ## Como ver o programa
-- **.**`Pesquisa IA Tela Nova.exe`** na Área de Trabalho (o .exe pronto).
-- **.**`2 - Abrir Pesquisa IA.bat`** abre pelo código-fonte (para desenvolvimento).
+- **.**`Eye of Thundera.exe`** na Área de Trabalho (o .exe pronto).
+- **.**`2 - Abrir Eye of Thundera.bat`** abre pelo código-fonte (para desenvolvimento).
 - **.**`Gerar o EXE.bat`** gera o .exe (só precisa rodar se mexer no código).
 
 ## Leia nesta ordem antes de mexer em qualquer coisa
@@ -37,7 +37,7 @@ Depois rode `verificar.bat`. **Só diga que terminou se a última linha for
    O programa de verdade abre onde o Wolf fechou da última vez.
 3. **Nada de `unbind_all("<Button-1>")`.** Menus usam
    `_registrar_clique_global` / `_remover_clique_global`.
-4. **Nunca mexer nos dados do Wolf** (`%LOCALAPPDATA%\PesquisaIA`) nos
+4. **Nunca mexer nos dados do Wolf** (`%LOCALAPPDATA%\EyeOfThundera`) nos
    testes: aponte `p.ARQUIVO_HISTORICO`, `p.ARQUIVO_MEMORIA` e
    `p.ARQUIVO_CONFIG` para uma pasta em `_tmp` e restaure no fim.
 5. **Nunca apagar nem renomear o `pesquisa_ia.py`.** É o motor do programa.

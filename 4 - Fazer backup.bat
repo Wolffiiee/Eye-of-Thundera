@@ -1,6 +1,6 @@
 @echo off
 rem ================================================================
-rem  Copia de seguranca do Pesquisa IA.
+rem  Copia de seguranca do Eye of Thundera.
 rem
 rem  Guarda o codigo e o historico do Git num .zip dentro do OneDrive
 rem  (que vai para a nuvem). Se este computador queimar ou a pasta for

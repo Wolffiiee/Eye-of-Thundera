@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Voz para texto do Pesquisa IA.
+Voz para texto do Eye of Thundera.
 
 Este arquivo cuida de duas coisas, sem depender do programa:
 

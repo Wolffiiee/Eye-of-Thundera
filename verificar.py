@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Verificação automática do Pesquisa IA.
+Verificação automática do Eye of Thundera.
 
 Rode SEMPRE depois de qualquer alteração no programa (duplo clique em
 "verificar.bat"). Se aparecer alguma linha [FALHA], a alteração NÃO está
@@ -373,7 +373,7 @@ try:
         ok("backup dos dados: sem arquivos, avisa e não cria zip vazio")
     else:
         falha("backup dos dados: criou um zip sem nenhum arquivo")
-    if _pi2.PASTA_CONFIG == _pasta_orig and _pasta_orig.name == "PesquisaIA":
+    if _pi2.PASTA_CONFIG == _pasta_orig and _pasta_orig.name == "EyeOfThundera":
         ok("backup dos dados: a pasta de verdade do Wolf não foi trocada")
     else:
         falha("backup dos dados: a pasta de dados ficou %r" % (_pi2.PASTA_CONFIG,))
@@ -900,7 +900,7 @@ try:
               "pensa que travou")
 
     # 2) nada de janela preta atras do programa
-    _spec5 = (Path(PASTA / "Pesquisa IA Tela Nova.spec")
+    _spec5 = (Path(PASTA / "Eye of Thundera.spec")
               .read_text(encoding="utf-8"))
     # Olhar so' a LINHA que manda, e nao o arquivo inteiro: o proprio
     # comentario do spec explica que a tela NAO tem console, e a palavra
@@ -1026,7 +1026,7 @@ try:
                   "(abriria no monitor errado)")
 
         # o .exe NAO pode ter janela de console
-        _spec3 = (Path(PASTA / "Pesquisa IA Tela Nova.spec")
+        _spec3 = (Path(PASTA / "Eye of Thundera.spec")
                   .read_text(encoding="utf-8"))
         _linhas3 = [l.strip() for l in _spec3.split(chr(10))]
         _manda3 = [l for l in _linhas3 if l.startswith("console=")]

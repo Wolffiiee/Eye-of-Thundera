@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Memoria do Pesquisa IA: junta fatos SEM repetir (funcoes puras, sem tela).
+"""Memoria do Eye of Thundera: junta fatos SEM repetir (funcoes puras, sem tela).
 
 Regras (tudo local, custa zero token):
  - fato repetido (mesmas palavras importantes) nao entra de novo;

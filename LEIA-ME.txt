@@ -1,12 +1,12 @@
 ﻿========================================================
-  PESQUISA IA - seu assistente pessoal de pesquisa na web
+  EYE OF THUNDERA - seu assistente pessoal de pesquisa na web
 ========================================================
 
 ATUALIZADO EM 16/10/2026
 -------------------------
 O programa se chama:
 
-      Pesquisa IA Tela Nova.exe
+      Eye of Thundera.exe
 
 É a tela em HTML (escura, com imagens, com memória). É o único
 programa do projeto. O programa antigo (janela cinza, em tkinter)
@@ -75,7 +75,7 @@ inteligência do Google. É de graça e leva uns 3 minutos.
 
  2. Agora, duplo clique no arquivo:
 
-      2 - Abrir Pesquisa IA.bat
+      2 - Abrir Eye of Thundera.bat
 
     A janela do programa vai abrir.
 
@@ -126,9 +126,9 @@ Palavras escritas errado aparecem com um sublinhado vermelho. Para
 ver as sugestões, clique com o botão direito na palavra sublinhada.
 
 As conversas ficam salvas no seu computador, na pasta:
-  %LOCALAPPDATA%\PesquisaIA\historico.json
+  %LOCALAPPDATA%\EyeOfThundera\historico.json
 O que a IA aprende sobre você fica em:
-  %LOCALAPPDATA%\PesquisaIA\memoria.json
+  %LOCALAPPDATA%\EyeOfThundera\memoria.json
 Nada é apagado sozinho.
 
 A barra da esquerda pode ser escondida com o botão "Menu" (no alto)
@@ -222,8 +222,8 @@ Atalhos de teclado:
 
 "Onde ficam essas coisas?"
   Só no seu usuário do Windows, em:
-    %LOCALAPPDATA%\PesquisaIA\historico.json   (as conversas)
-    %LOCALAPPDATA%\PesquisaIA\memoria.json     (o que ela sabe de você)
+    %LOCALAPPDATA%\EyeOfThundera\historico.json   (as conversas)
+    %LOCALAPPDATA%\EyeOfThundera\memoria.json     (o que ela sabe de você)
   Nada é enviado para lugar nenhum além dos serviços de IA (para a IA
   responder, como sempre).
 
@@ -283,7 +283,7 @@ Atalhos de teclado:
 
 "A chave fica salva onde?"
   Fica salva apenas no seu usuário do Windows, no arquivo:
-    %LOCALAPPDATA%\PesquisaIA\config.json
+    %LOCALAPPDATA%\EyeOfThundera\config.json
   Ninguém mais no computador vê essa pasta.
 
 
@@ -291,7 +291,7 @@ Atalhos de teclado:
   O QUE SÃO ESTES ARQUIVOS (para curiosidade)
 ========================================================
 
-  Pesquisa IA Tela Nova.exe -> versão pronta (o arquivo que fica na
+  Eye of Thundera.exe -> versão pronta (o arquivo que fica na
                              Área de Trabalho). Não precisa do
                              Python instalado.
   icone.ico                -> o ícone do programa.
@@ -311,7 +311,7 @@ Atalhos de teclado:
                              no código).
   requirements.txt         -> a lista do que o programa precisa.
   1 - Instalar.bat         -> instala o que falta (rodar uma vez).
-  2 - Abrir Pesquisa IA.bat -> abre o programa pelo código-fonte.
+  2 - Abrir Eye of Thundera.bat -> abre o programa pelo código-fonte.
   verificar.bat            -> confere se o programa continua inteiro
                              depois de uma alteração. Tem que terminar
                              com "TUDO CERTO".

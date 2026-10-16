@@ -1,6 +1,6 @@
 @echo off
 rem ================================================================
-rem  Abre o programa Pesquisa IA.
+rem  Abre o programa Eye of Thundera.
 rem  Basta dar um duplo clique neste arquivo.
 rem ================================================================
 cd /d "%~dp0"

@@ -33,6 +33,6 @@ if errorlevel 1 (
 )
 
 echo.
-echo Tudo pronto! Agora abra o arquivo  "2 - Abrir Pesquisa IA.bat".
+echo Tudo pronto! Agora abra o arquivo  "2 - Abrir Eye of Thundera.bat".
 echo.
 pause

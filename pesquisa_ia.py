@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Pesquisa IA - assistente pessoal que pesquisa na web.
+Eye of Thundera - assistente pessoal que pesquisa na web.
 
 Como funciona: você digita uma pergunta, este programa procura na web por
 você (busca gratuita) e manda os trechos encontrados para o Google Gemini
@@ -118,7 +118,7 @@ SERVICOS_RESERVA = [
     },
 ]
 
-PASTA_CONFIG = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "PesquisaIA"
+PASTA_CONFIG = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "EyeOfThundera"
 ARQUIVO_CONFIG = PASTA_CONFIG / "config.json"
 # Quando o programa roda como executável, grava o log junto das configurações
 # (a pasta do .exe pode ser só leitura, como a Área de Trabalho).
@@ -3297,7 +3297,7 @@ def fazer_backup_dados(destino=None, quantos=15):
     der — quem chama mostra a frase na tela.
 
     O `4 - Fazer backup.bat` cuida do CODIGO; este cuida do que nao da
-    para refazer. Guarda dentro da pasta "Backup Pesquisa IA" do OneDrive
+    para refazer. Guarda dentro da pasta "Backup Eye of Thundera" do OneDrive
     e apaga as copias com mais de `quantos`, para o computador nao
     encher.
 
@@ -3306,7 +3306,7 @@ def fazer_backup_dados(destino=None, quantos=15):
     import zipfile
 
     if destino is None:
-        destino = Path.home() / "OneDrive" / "Backup Pesquisa IA" / "dados"
+        destino = Path.home() / "OneDrive" / "Backup Eye of Thundera" / "dados"
     destino = Path(destino)
     destino.mkdir(parents=True, exist_ok=True)
     arquivos = sorted(x for x in PASTA_CONFIG.iterdir() if x.is_file())
@@ -3389,7 +3389,7 @@ class Aplicativo:
         self._checagem_id = None
         self._menu_ortografia_atual = None
 
-        raiz.title("Pesquisa IA")
+        raiz.title("Eye of Thundera")
         self._definir_icone(raiz)
         raiz.geometry("1000x740")
         raiz.minsize(760, 560)
@@ -3498,7 +3498,7 @@ class Aplicativo:
         textos = tk.Frame(marca, bg=COR_PAINEL)
         textos.pack(side="left", padx=(10, 0))
         tk.Label(
-            textos, text="Pesquisa IA", bg=COR_PAINEL, fg=COR_TEXTO,
+            textos, text="Eye of Thundera", bg=COR_PAINEL, fg=COR_TEXTO,
             font=(FONTE, 12, "bold"),
         ).pack(anchor="w")
 
@@ -6325,7 +6325,7 @@ class Aplicativo:
         margem.pack(fill="both", expand=True, padx=24, pady=22)
 
         tk.Label(
-            margem, text="Como usar o Pesquisa IA", bg=COR_FUNDO,
+            margem, text="Como usar o Eye of Thundera", bg=COR_FUNDO,
             fg=COR_TEXTO, font=(FONTE, 16, "bold"),
         ).pack(anchor="w")
 
@@ -6989,7 +6989,7 @@ if __name__ == "__main__":
             raiz_erro = tk.Tk()
             raiz_erro.withdraw()
             _dialogo_escuro(
-                raiz_erro, "Pesquisa IA - erro ao abrir",
+                raiz_erro, "Eye of Thundera - erro ao abrir",
                 "O programa não conseguiu abrir.\n\n"
                 "Detalhes foram salvos em:\n%s\n\n"
                 "Últimas linhas:\n%s" % (ARQUIVO_ERRO, detalhes[-600:]),

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Faz uma cópia de segurança do Pesquisa IA.
+Faz uma cópia de segurança do Eye of Thundera.
 
 Guarda o projeto (código + histórico do Git) num .zip dentro da pasta
-"Backup Pesquisa IA" do OneDrive, que é sincronizada com a nuvem. Assim
+"Backup Eye of Thundera" do OneDrive, que é sincronizada com a nuvem. Assim
 o código continua existindo mesmo que este computador queime, seja
 formatado ou perca a pasta.
 
@@ -29,7 +29,7 @@ if sys.stdout is not None:
         pass
 
 # Onde ficam as cópias. OneDrive é sincronizado com a nuvem.
-DESTINO = Path.home() / "OneDrive" / "Backup Pesquisa IA"
+DESTINO = Path.home() / "OneDrive" / "Backup Eye of Thundera"
 NOME_DESTINO = "pesquisa-ia"
 MAXIMO_DE_COPIAS = 10          # só as 10 últimas, para não encher o OneDrive
 

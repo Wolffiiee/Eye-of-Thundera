@@ -4,7 +4,7 @@ rem  FAZER BACKUP DOS SEUS DADOS.
 rem
 rem  Este backup NAO e' o do codigo (esse e' o "4 - Fazer backup.bat").
 rem  Este aqui copia as SUAS coisas: as conversas, a memoria e as
-rem  chaves, para um .zip dentro da pasta "Backup Pesquisa IA" do seu
+rem  chaves, para um .zip dentro da pasta "Backup Eye of Thundera" do seu
 rem  OneDrive (que vai para a nuvem).
 rem
 rem  Quando usar:
@@ -16,7 +16,7 @@ rem
 rem  Como recuperar, se precisar:
 rem    1) abra o .zip;
 rem    2) tire os arquivos de dentro;
-rem    3) copie para a pasta  C:\Users\Igor\AppData\Local\PesquisaIA
+rem    3) copie para a pasta  C:\Users\Igor\AppData\Local\EyeOfThundera
 rem       (pode estar oculta: va ate a barra de endereco do Explorer e
 rem        digite o caminho).
 rem

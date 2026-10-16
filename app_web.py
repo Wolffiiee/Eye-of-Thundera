@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tela nova do Pesquisa IA, feita em HTML (PASSO 1: so a tela, sem a IA).
+Tela nova do Eye of Thundera, feita em HTML (PASSO 1: so a tela, sem a IA).
 
 POR QUE EXISTE
     O programa de sempre e' feito com o Tk (tkinter), que e' antigo: ele
@@ -225,7 +225,7 @@ def _guardar_posicao(x, y):
     except Exception:
         pass
 
-TITULO_JANELA = "Pesquisa IA (tela nova - em construção)"
+TITULO_JANELA = "Eye of Thundera (tela nova - em construção)"
 
 
 # ---------------- imagens: da busca para a tela -------------------------
@@ -1450,7 +1450,7 @@ class Ponte:
         if not fatos:
             return {"erro": "A memória está vazia: não há nada para exportar."}
         data = datetime.now().strftime("%d/%m/%Y %H:%M")
-        linhas = ["MEMÓRIA DO PESQUISA IA", "salva em %s" % data,
+        linhas = ["MEMÓRIA DO EYE OF THUNDERA", "salva em %s" % data,
                   "%d item(ns):" % len(fatos), ""]
         linhas += ["- %s" % f for f in fatos]
         return self.salvar_texto("\n".join(linhas))

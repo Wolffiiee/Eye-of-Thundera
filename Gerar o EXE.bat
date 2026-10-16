@@ -2,7 +2,7 @@
 rem ================================================================
 rem  GERAR O .EXE — ESTE E' O PROGRAMA DE HOJE.
 rem
-rem  Isto cria o "Pesquisa IA Tela Nova.exe": a tela em HTML, num
+rem  Isto cria o "Eye of Thundera.exe": a tela em HTML, num
 rem  arquivo so, que roda sem o Python instalado. E' o programa que
 rem  esta na sua Area de Trabalho.
 rem
@@ -28,7 +28,7 @@ if errorlevel 1 (
 )
 
 echo [2/2] Gerando o .exe (leva alguns minutos)...
-".venv\Scripts\python.exe" -m PyInstaller --noconfirm --clean "Pesquisa IA Tela Nova.spec"
+".venv\Scripts\python.exe" -m PyInstaller --noconfirm --clean "Eye of Thundera.spec"
 if errorlevel 1 (
     echo O PyInstaller falhou. Veja as mensagens acima.
     pause
@@ -37,7 +37,7 @@ if errorlevel 1 (
 
 echo.
 echo Pronto! O arquivo novo esta em:
-echo     dist\Pesquisa IA Tela Nova.exe
+echo     dist\Eye of Thundera.exe
 echo.
 echo Copie para a Area de Trabalho.
 echo.

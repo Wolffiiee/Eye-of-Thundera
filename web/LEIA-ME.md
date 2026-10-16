@@ -156,8 +156,8 @@ Quando a tela nova virar *o* programa, a posição vai embora, como nas
 janelas do tkinter (que seguem o app).
 
 ## O `.exe` da tela nova
-Existe um spec separado, `Pesquisa IA Tela Nova.spec`, de propósito: o
-`Pesquisa IA.spec` (o programa que já funciona) não foi tocado. Se a tela
+Existe um spec separado, `Eye of Thundera.spec`, de propósito: o
+`Eye of Thundera.spec` (o programa que já funciona) não foi tocado. Se a tela
 nova der problema, o programa do Wolf não é afetado. Ainda não foi gerado
 (não é preciso até o passo 8).
 
@@ -182,7 +182,7 @@ O que importa é a janela aparecer no segundo monitor e responder.
   window.pywebview.api.ola('Wolf').then(v => mostrar(v));
   ```
 - O `pywebview` **precisa** entrar no `requirements.txt` e no
-  `Pesquisa IA.spec`. Ele está instalado nesta máquina, mas não está
+  `Eye of Thundera.spec`. Ele está instalado nesta máquina, mas não está
   registrado em nenhum dos dois: sem isso, o `.exe` gerado não abre.
 
 ## Regra de ouro desta fase

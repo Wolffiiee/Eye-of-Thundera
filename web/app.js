@@ -1,5 +1,5 @@
 "use strict";
-/* Pesquisa IA - tela nova. Fala com o Python por window.pywebview.api (ver app_web.py). */
+/* Eye of Thundera - tela nova. Fala com o Python por window.pywebview.api (ver app_web.py). */
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
