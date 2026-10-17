@@ -5,6 +5,17 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Melhora a hierarquia visual das configurações no app desktop
+
+- **Cartões:** aumentamos levemente o espaçamento e melhoramos a leitura das descrições, usando as cores do tema ativo em vez de tons fixos.
+- **Prioridade:** o cartão do Gemini principal agora tem um destaque discreto na borda, sem alterar sua função nem o estado da chave.
+- **Personalização:** o seletor de tema passou para um cartão próprio, com explicação clara de que a mudança é imediata e não altera conversas nem outras configurações.
+- **Controles:** as linhas de opções têm mais área de respiro e realce suave ao passar o mouse. O tema Ocean foi preservado; os destaques usam as variáveis de cor do tema escolhido.
+- **Regressão:** verificar.py confere o cartão destacado, o cartão de tema, o rótulo acessível e as regras visuais.
+- **Verificação:** verificar.py: 136 verificações, 0 falhas e 0 avisos; node --check web/app.js, compilação Python e git diff --check aprovados. A validação visual final precisa ser conferida com a janela reaberta.
+
+---
+
 ## 2026-10-16 — Evita perder rascunhos nas configurações e limpa a barra de escrita
 
 - **Chaves:** o que for digitado em um campo de chave fica no rascunho enquanto o usuário troca de aba; ao salvar com sucesso, o rascunho temporário é limpo. Chaves já salvas continuam protegidas: campo vazio não as apaga.

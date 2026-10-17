@@ -1,6 +1,6 @@
 # Onde paramos
 
-Atualizado em 16/10/2026, após corrigir o rascunho das chaves e simplificar a barra de escrita.
+Atualizado em 16/10/2026, após melhorar a hierarquia visual das configurações do app desktop.
 
 ## Resumo do estado atual
 

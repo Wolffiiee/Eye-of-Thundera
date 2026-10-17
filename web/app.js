@@ -1244,7 +1244,7 @@ function linhaTamalho() {
 }
 
 function cartaoChave(titulo, desc, campo, info, opc) {
-  const c = el("div", "cartao");
+  const c = el("div", "cartao" + (opc.destaque ? " cartao-destaque" : ""));
   c.append(el("h4", "", titulo), el("p", "desc", desc));
   if (opc.controle) {
     c.append(linhaToggle(opc.controle.titulo, opc.controle.desc, opc.controle.chave));
@@ -1295,7 +1295,8 @@ function cartaoChave(titulo, desc, campo, info, opc) {
 function abaChaves(corpo) {
   const cfg = estado.cfgTela;
   corpo.append(
-    cartaoChave("Google Gemini (principal)", "É ela que pesquisa e escreve as respostas.", "api_key", cfg.gemini, {
+    cartaoChave("Google Gemini (principal)", "Modelo principal: responde às perguntas e faz pesquisas. A chave fica guardada neste computador.", "api_key", cfg.gemini, {
+      destaque: true,
       testar: true,
       pagina: "https://aistudio.google.com/apikey",
       controle: {
@@ -1304,7 +1305,7 @@ function abaChaves(corpo) {
         chave: "usar_gemini",
       },
     }),
-    cartaoChave("Google Gemini (reserva, opcional)", "Se a principal parar de funcionar, o programa troca sozinho para esta.", "api_key_reserva", cfg.gemini_reserva, { testar: true })
+    cartaoChave("Google Gemini (reserva, opcional)", "Alternativa automática caso o Gemini principal falhe. Não é obrigatório configurar.", "api_key_reserva", cfg.gemini_reserva, { testar: true })
   );
   const plano = el("div", "cartao");
   plano.append(linhaToggle("Usar o plano B", "Se o Gemini não responder, tenta estes serviços de reserva.", "usar_plano_b"));
@@ -1661,9 +1662,12 @@ function abaPersonalizacao(corpo) {
   const cfg = estado.cfgTela;
   corpo.append(
     el("h3", "", "Personalização"),
-    el("p", "sub", "Escolha o visual da interface:")
+    el("p", "sub", "Ajuste a aparência do Eye of Thundera. A escolha é aplicada na hora e continua salva quando você abrir o app novamente.")
   );
-  const sel = el("select");
+  const cartao = el("div", "cartao cartao-tema");
+  cartao.append(el("h4", "", "Tema da interface"), el("p", "desc", "Escolha a paleta que deixa a leitura mais confortável. Isso não altera suas conversas nem as outras configurações."));
+  const sel = el("select", "select-tema");
+  sel.setAttribute("aria-label", "Tema da interface");
   TEMAS_UI.forEach((tema, i) => {
     const opcao = el("option", "", tema.nome);
     opcao.value = i;
@@ -1689,7 +1693,8 @@ function abaPersonalizacao(corpo) {
     estado.cfgTela.temaIdx = idx;
     aviso("Tema alterado para " + tema.nome);
   });
-  corpo.append(sel, el("p", "sub", "A mudança é aplicada na hora e fica salva para a próxima abertura."));
+  cartao.append(sel, el("p", "nota-tema", "A alteração é aplicada imediatamente e salva automaticamente."));
+  corpo.append(cartao);
 }
 
 async function salvarConfig() {

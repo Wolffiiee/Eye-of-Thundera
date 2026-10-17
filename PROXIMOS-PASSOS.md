@@ -20,6 +20,7 @@ Atualizado em 16/10/2026. Este documento contém pendências reais; o histórico
 - [x] Alterar o tema sem salvar opções de conversa que ainda estejam em rascunho.
 - [x] Durante o salvamento, bloquear temporariamente os controles da aba para evitar perder edições; garantir que eles sejam reabilitados mesmo se ocorrer uma falha.
 - [ ] Validar visualmente Configurações em janela menor e escala do Windows acima de 100%; as regras responsivas e os testes estáticos já foram adicionados.
+- [x] Melhorar a hierarquia dos cartões, destacar discretamente o Gemini principal, esclarecer descrições e colocar o seletor de tema em um cartão próprio sem alterar o tema Ocean.
 - Conferir se as chaves aparecem mascaradas e se o texto de ajuda é claro.
 - Testar edição e exportação de memória somente com cuidado para não alterar dados reais sem autorização.
 

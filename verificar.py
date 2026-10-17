@@ -1176,6 +1176,16 @@ if ('controle: {' in _js_deep
     ok("configurações: ativação do Gemini agrupada ao cartão da chave")
 else:
     falha("configurações: ativação do Gemini separada do cartão da chave")
+if ('opc.destaque ? " cartao-destaque" : ""' in _js_deep
+        and 'destaque: true' in _js_deep
+        and 'const cartao = el("div", "cartao cartao-tema")' in _js_deep
+        and 'setAttribute("aria-label", "Tema da interface")' in _js_deep
+        and '.cartao-destaque { border-color: var(--azul);' in _ui_css
+        and '.select-tema { width: 100%;' in _ui_css
+        and '.linha-opcao:hover {' in _ui_css):
+    ok("configurações: hierarquia visual, tema em cartão e controles mais legíveis")
+else:
+    falha("configurações: hierarquia visual ou cartão do tema incompleto")
 if ('if (botao.disabled) return;' in _js_deep
         and 'botao.textContent = "Salvando...";' in _js_deep
         and 'const controles = $$("#corpo-config input, #corpo-config select, #corpo-config button");' in _js_deep
