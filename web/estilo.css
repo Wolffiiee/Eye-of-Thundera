@@ -26,6 +26,8 @@ body {
   background: var(--bg); color: var(--texto);
   font: var(--tamanho, 15px)/1.6 var(--fonte);
   -webkit-font-smoothing: antialiased; overflow: hidden;
+  display: flex; flex-direction: column;
+  padding: var(--borda-max, 0px) var(--borda-max, 0px) 0;
 }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
 button:disabled { cursor: default; opacity: .45; }
@@ -41,7 +43,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 ::-webkit-scrollbar-thumb { background: #2c2c3a; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
 ::-webkit-scrollbar-thumb:hover { background: #3a3a4d; background-clip: padding-box; border: 2px solid transparent; }
 
-#app { display: flex; height: 100vh; }
+#app { display: flex; flex: 1; min-height: 0; }
 
 /* ---------- lateral ---------- */
 #lateral {
@@ -68,7 +70,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   overflow-wrap: anywhere; }
 .resultado mark { background: #3a4a8f; color: #e8ecff; border-radius: 3px; padding: 0 2px; }
 #resultados-busca .nada { padding: 8px 10px; font-size: 12.5px; color: var(--texto-3); }
-.topo-lateral { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 14px; }
+.topo-lateral { display: flex; align-items: center; justify-content: flex-end; padding: 4px 6px 14px; }
 .marca { display: flex; align-items: center; gap: 10px; font-weight: 650; letter-spacing: .2px; }
 .logo { width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, #2c3a6b, #1d2547);
   display: grid; place-items: center; color: #cfd9ff; }
@@ -464,3 +466,17 @@ kbd { font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--te
 .nome-tema { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 2px; font-size: 13.5px; font-weight: 600; }
 .marca-ativo { visibility: hidden; color: var(--azul-2); font-size: 14px; }
 .cartao-amostra.ativo .marca-ativo { visibility: visible; }
+
+/* ---- barra de titulo PROPRIA (PLANO-BARRA-PROPRIA.md) ----
+   Sem nome e sem icone. A faixa inteira arrasta a janela (ver ligarBarraTitulo
+   em app.js); so os tres botoes sao clicaveis. Usa so variaveis de tema. */
+#barra-titulo { position: relative; z-index: 1000; flex: none; height: 32px; display: flex;
+  align-items: stretch; justify-content: flex-end; background: var(--bg); user-select: none; -webkit-user-select: none; }
+.botoes-janela { display: flex; }
+.botoes-janela button { width: 46px; height: 32px; display: grid; place-items: center; color: var(--texto-2); border-radius: 0; }
+.botoes-janela button:hover { background: var(--superficie-2); color: var(--texto); }
+.botoes-janela button.fechar:hover { background: #e5484d; color: #fff; }
+.botoes-janela svg { width: 12px; height: 12px; stroke-width: 1.2; }
+.botoes-janela .i-rest { display: none; }
+body.maximizada .botoes-janela .i-rest { display: block; }
+body.maximizada .botoes-janela .i-max { display: none; }

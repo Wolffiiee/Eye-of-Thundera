@@ -1302,6 +1302,67 @@ class Ponte:
                 "tema": cfg.get("tema", "Clássico Dark"),
                 "temaIdx": tema_idx}
 
+    # --- barra de titulo propria: a tela manda, o Python mexe na janela ---
+
+    def _estado_da_janela(self):
+        maximizada = _janela_maximizada()
+        return {"maximizada": maximizada,
+                "borda": _borda_maximizada() if maximizada else 0}
+
+    def janela_estado(self):
+        return self._estado_da_janela()
+
+    def janela_minimizar(self):
+        try:
+            import ctypes
+            hwnd = _hwnd_da_janela()
+            if hwnd:
+                ctypes.windll.user32.ShowWindow(hwnd, 6)            # SW_MINIMIZE
+        except Exception as erro:
+            p.registrar_erro("janela_minimizar", erro)
+        return {}
+
+    def janela_maximizar(self):
+        """Alterna maximizar/restaurar e diz como ficou."""
+        try:
+            import ctypes
+            hwnd = _hwnd_da_janela()
+            if hwnd:
+                ctypes.windll.user32.ShowWindow(
+                    hwnd, 9 if _janela_maximizada(hwnd) else 3)     # RESTORE / MAXIMIZE
+        except Exception as erro:
+            p.registrar_erro("janela_maximizar", erro)
+        return self._estado_da_janela()
+
+    def janela_fechar(self):
+        # WM_CLOSE: o mesmo que o X nativo (dispara o `closing` que guarda a
+        # posicao da janela). Se nao der, cai no destroy do pywebview.
+        try:
+            import ctypes
+            hwnd = _hwnd_da_janela()
+            if hwnd:
+                ctypes.windll.user32.PostMessageW(hwnd, 0x0010, 0, 0)
+                return {}
+            if self._janela is not None:
+                self._janela.destroy()
+        except Exception as erro:
+            p.registrar_erro("janela_fechar", erro)
+        return {}
+
+    def janela_arrastar(self):
+        """Comeca o arrasto da janela como se fosse a barra nativa."""
+        try:
+            import ctypes
+            hwnd = _hwnd_da_janela()
+            if hwnd and not _janela_maximizada(hwnd):
+                ctypes.windll.user32.ReleaseCapture()
+                # SendMessage (e nao Post): so volta quando o arrasto termina, e o
+                # Windows ja trata encaixe nas bordas e tremer-para-minimizar.
+                ctypes.windll.user32.SendMessageW(hwnd, 0x00A1, 2, 0)   # WM_NCLBUTTONDOWN, HTCAPTION
+        except Exception as erro:
+            p.registrar_erro("janela_arrastar", erro)
+        return {}
+
     def definir_modo(self, modo):
         if DEMO:
             return {"cfg": {"modo_pesquisa": modo, "corretor": True}}
@@ -1436,6 +1497,64 @@ class Ponte:
 
 # --- montando a janela ------------------------------------------------------
 
+# --- barra de titulo propria (PLANO-BARRA-PROPRIA.md) -----------------------
+# A barra branca do Windows e' retirada POR DENTRO (tira o bit WS_CAPTION, mantem
+# WS_THICKFRAME): a janela continua redimensionavel pelas bordas, com sombra e
+# encaixe (Win+setas). Quem desenha minimizar/maximizar/fechar e' a tela (HTML).
+
+def _hwnd_da_janela(titulo=None):
+    """Janela do programa, achada pelo titulo (o mesmo de TITULO_JANELA)."""
+    try:
+        import ctypes
+        return ctypes.windll.user32.FindWindowW(None, titulo or TITULO_JANELA) or None
+    except Exception:
+        return None
+
+
+def _tirar_barra_nativa(titulo=None, tentativas=40, espera=0.25):
+    """Tira a barra de titulo do Windows. Devolve True se conseguiu."""
+    try:
+        import ctypes
+        usuario = ctypes.windll.user32
+        usuario.GetWindowLongPtrW.restype = ctypes.c_ssize_t
+        usuario.GetWindowLongPtrW.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        usuario.SetWindowLongPtrW.restype = ctypes.c_ssize_t
+        usuario.SetWindowLongPtrW.argtypes = [ctypes.c_void_p, ctypes.c_int,
+                                              ctypes.c_ssize_t]
+    except Exception:
+        return False
+    for _ in range(tentativas):
+        hwnd = _hwnd_da_janela(titulo)
+        if hwnd:
+            estilo = usuario.GetWindowLongPtrW(hwnd, -16)           # GWL_STYLE
+            novo = (estilo & ~0x00C00000) | 0x00040000              # sem CAPTION, com THICKFRAME
+            usuario.SetWindowLongPtrW(hwnd, -16, novo)
+            # SWP_NOSIZE|NOMOVE|NOZORDER|NOACTIVATE|FRAMECHANGED
+            usuario.SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020)
+            return True
+        time.sleep(espera)
+    return False
+
+
+def _janela_maximizada(hwnd=None):
+    try:
+        import ctypes
+        hwnd = hwnd or _hwnd_da_janela()
+        return bool(hwnd and ctypes.windll.user32.IsZoomed(hwnd))
+    except Exception:
+        return False
+
+
+def _borda_maximizada():
+    """Pixels fisicos que a janela maximizada sem barra passa da tela."""
+    try:
+        import ctypes
+        m = ctypes.windll.user32.GetSystemMetrics
+        return int(m(32) + m(92))      # SM_CXSIZEFRAME + SM_CXPADDEDBORDER
+    except Exception:
+        return 0
+
+
 def _endereco_de(arquivo):
     """webview.create_window nao aceita caminho com acento: usa file://."""
     return arquivo.resolve().as_uri()
@@ -1479,7 +1598,8 @@ def principal():
         try:
             x = getattr(janela, "x", None)
             y = getattr(janela, "y", None)
-            if isinstance(x, int) and isinstance(y, int) and (x or y):
+            if (isinstance(x, int) and isinstance(y, int) and (x or y)
+                    and not _janela_maximizada()):
                 _guardar_posicao(x, y)
         except Exception as erro:
             p.registrar_erro("ao_fechar (posicao)", erro)
@@ -1505,6 +1625,7 @@ def principal():
                 pass
 
         threading.Thread(target=escurecer, daemon=True).start()
+        threading.Thread(target=_tirar_barra_nativa, daemon=True).start()
 
     # O dicionário do corretor leva quase 4 segundos para carregar na
     # primeira vez (são dois dicionários: português e inglês). Se isso

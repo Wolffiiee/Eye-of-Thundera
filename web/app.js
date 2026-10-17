@@ -2140,6 +2140,33 @@ async function iniciar() {
   if (!r.tem_chave) aviso("Cole a sua chave do Google em Configurações > Chaves para começar.");
 }
 
+/* ---- barra de titulo propria (PLANO-BARRA-PROPRIA.md) ---- */
+function ligarBarraTitulo() {
+  const barra = $("#barra-titulo");
+  const btnMax = $("#jan-max");
+  if (!barra || !btnMax) return;
+  const marcar = (r) => {
+    if (!r || typeof r.maximizada !== "boolean") return;
+    document.body.classList.toggle("maximizada", r.maximizada);
+    btnMax.title = r.maximizada ? "Restaurar" : "Maximizar";
+    btnMax.setAttribute("aria-label", btnMax.title);
+    // A janela maximizada sem moldura passa uns pixels da tela; o Python diz
+    // quantos (em pixels fisicos) e a tela recua esse tanto.
+    const px = r.maximizada && r.borda ? r.borda / (window.devicePixelRatio || 1) : 0;
+    document.documentElement.style.setProperty("--borda-max", px + "px");
+  };
+  $("#jan-min").addEventListener("click", () => chamar("janela_minimizar"));
+  btnMax.addEventListener("click", async () => marcar(await chamar("janela_maximizar")));
+  $("#jan-fechar").addEventListener("click", () => chamar("janela_fechar"));
+  barra.addEventListener("mousedown", (e) => {
+    if (e.button !== 0 || e.target.closest(".botoes-janela")) return;
+    if (e.detail === 2) { btnMax.click(); return; }
+    chamar("janela_arrastar");
+  });
+  window.addEventListener("resize", async () => marcar(await chamar("janela_estado")));
+}
+
+ligarBarraTitulo();
 ligarEventos();
 ligarMenuContexto();
 window.addEventListener("pywebviewready", iniciar);
