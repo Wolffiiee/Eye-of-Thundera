@@ -312,7 +312,7 @@ PASSO = {
 def aviso_honesto(assunto):
     """Resposta para o que ainda nao foi ligado nesta tela."""
     return {
-        "erro": "Na tela nova isso ainda nao funciona (passo %s). "
+        "erro": "Na tela nova isso ainda não funciona (passo %s). "
                 "Use o programa de sempre, que continua funcionando."
                 % PASSO.get(assunto, "?"),
     }
@@ -758,10 +758,10 @@ class Ponte:
             dados = _ler_json_da_ia(getattr(r, "text", "") or "")
             itens = (dados or {}).get("perguntas")
             if not isinstance(itens, list):
-                return {"erro": "Nao consegui sugerir perguntas agora."}
+                return {"erro": "Não consegui sugerir perguntas agora."}
             limpas = [str(x).strip() for x in itens if str(x).strip()][:3]
             if not limpas:
-                return {"erro": "Nao consegui sugerir perguntas agora."}
+                return {"erro": "Não consegui sugerir perguntas agora."}
             return {"perguntas": limpas}
         except Exception as erro:
             return {"erro": p.traduzir_erro(erro)}
@@ -922,11 +922,11 @@ class Ponte:
             dados = base64.b64decode("".join(pedacos))
         except Exception as erro:
             p.registrar_erro("pdf_extrair (base64)", erro)
-            return {"erro": "Nao consegui ler esse arquivo (parece corrompido)."}
+            return {"erro": "Não consegui ler esse arquivo (parece corrompido)."}
         try:
             import pdf_leitor
         except ImportError:
-            return {"erro": "Falta o modulo de leitura de PDF neste programa."}
+            return {"erro": "Falta o módulo de leitura de PDF neste programa."}
         texto, erro = pdf_leitor.texto_de_pdf(dados)
         if erro:
             return {"erro": erro}
@@ -1200,14 +1200,14 @@ class Ponte:
         sem gastar uma unica chamada de IA.
         """
         partes = [
-            "Voce esta vendo uma resposta de EXEMPLO. 🙂",
+            "Você está vendo uma resposta de EXEMPLO. 🙂",
             "",
-            "- No modo exemplo eu **nao** chamo o Google: nao gasta token.",
+            "- No modo exemplo eu **não** chamo o Google: não gasta token.",
             "- O desenho da tela e' o mesmo de verdade (mesmos eventos).",
             "- Para a IA de verdade, abra sem o modo exemplo.",
         ]
         try:
-            for etapa in ("Pensando...", "Conversando com voce..."):
+            for etapa in ("Pensando...", "Conversando com você..."):
                 self._evento({"tipo": "etapa", "texto": etapa})
                 time.sleep(0.6)
             for parte in partes:
@@ -1344,7 +1344,7 @@ class Ponte:
     # --- 5. Configuracoes e Memoria (passo 5) ---
 
     def _demo_nada(self):
-        return {"erro": "No modo exemplo nada e gravado. Abra sem "
+        return {"erro": "No modo exemplo nada é gravado. Abra sem "
                         "--demo para mudar de verdade."}
 
     def _cfg_curta(self):
@@ -1430,14 +1430,14 @@ class Ponte:
             kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
             kernel32.GlobalUnlock.argtypes = [ctypes.c_void_p]
             if not user32.OpenClipboard(None):
-                return {"texto": "", "erro": "Nao foi possivel abrir a area de transferencia."}
+                return {"texto": "", "erro": "Não foi possível abrir a área de transferência."}
             try:
                 handle = user32.GetClipboardData(CF_UNICODETEXT)
                 if not handle:
-                    return {"texto": "", "erro": "Nenhum texto na area de transferencia."}
+                    return {"texto": "", "erro": "Nenhum texto na área de transferência."}
                 ptr = kernel32.GlobalLock(handle)
                 if not ptr:
-                    return {"texto": "", "erro": "Nao foi possivel ler a area de transferencia."}
+                    return {"texto": "", "erro": "Não foi possível ler a área de transferência."}
                 try:
                     texto = ctypes.wstring_at(ptr)
                 finally:

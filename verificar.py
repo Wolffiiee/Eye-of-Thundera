@@ -1663,6 +1663,92 @@ except Exception as _erro_ui:
     falha("interface: teste de responsividade/acessibilidade falhou: %r" % (_erro_ui,))
 
 
+# --- lista de conversas e menus: navegação por teclado --------------------
+# Sem isso, quem não usa o mouse não abre uma conversa nem usa o menu "...".
+try:
+    _js_kb = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    _css_kb = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+    _html_kb = (PASTA / "web" / "index.html").read_text(encoding="utf-8")
+    _teclado_ok = (
+        # conversa: a área do título é um botão que abre com Enter/Espaço
+        'textos.setAttribute("role", "button")' in _js_kb
+        and "textos.tabIndex = 0" in _js_kb
+        and 'ev.key === "Enter" || ev.key === " "' in _js_kb
+        # o "..." tem nome acessível e aparece quando focado
+        and 'mais.setAttribute("aria-label"' in _js_kb
+        and ".conv .mais:focus-visible { opacity: 1; }" in _css_kb
+        # menu da conversa com papel, itens e navegação por setas
+        and 'pop.setAttribute("role", "menu")' in _js_kb
+        and 'fixar.setAttribute("role", "menuitem")' in _js_kb
+        and '"ArrowDown", "ArrowUp", "Home", "End"' in _js_kb
+        # foco volta ao botão que abriu, ao fechar pelo teclado
+        and "function fecharMenu(voltarFoco)" in _js_kb
+        and "fecharMenu(true)" in _js_kb
+        # Esc fecha também o menu "Mais" e devolve o foco
+        and 'modos.open = false' in _js_kb
+        # rótulos acessíveis no campo de busca e na lista
+        and 'aria-label="Procurar nas conversas"' in _html_kb
+        and 'aria-label="Conversas"' in _html_kb
+    )
+    if _teclado_ok:
+        ok("teclado: conversas abrem com Enter/Espaço; menus com setas, Esc e foco de volta")
+    else:
+        falha("teclado: falta acesso por teclado na lista de conversas ou nos menus")
+except Exception as _erro_teclado:
+    falha("teclado: teste de navegação falhou: %r" % (_erro_teclado,))
+
+
+# --- textos: acentos e padronizacao das mensagens ao usuario --------------
+# O Wolf ve estas frases na tela: precisam estar em portugues correto e a
+# mesma situacao nao pode aparecer escrita de dois jeitos diferentes.
+try:
+    _py_txt = (PASTA / "app_web.py").read_text(encoding="utf-8")
+    _js_txt = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    _sem_acento = [
+        "Nao consegui sugerir perguntas agora.",
+        "Nao consegui ler esse arquivo (parece corrompido).",
+        "Falta o modulo de leitura de PDF neste programa.",
+        "No modo exemplo nada e gravado. Abra sem ",
+        "Nao foi possivel abrir a area de transferencia.",
+        "Nenhum texto na area de transferencia.",
+        "Nao foi possivel ler a area de transferencia.",
+        "Voce esta vendo uma resposta de EXEMPLO",
+        "Conversando com voce...",
+        "Na tela nova isso ainda nao funciona",
+    ]
+    _com_acento = [
+        "Não consegui sugerir perguntas agora.",
+        "Não consegui ler esse arquivo (parece corrompido).",
+        "Falta o módulo de leitura de PDF neste programa.",
+        "No modo exemplo nada é gravado. Abra sem ",
+        "Não foi possível abrir a área de transferência.",
+        "Nenhum texto na área de transferência.",
+        "Não foi possível ler a área de transferência.",
+        "Você está vendo uma resposta de EXEMPLO",
+        "Conversando com você...",
+        "Na tela nova isso ainda não funciona",
+    ]
+    _faltando = [t for t in _sem_acento if t in _py_txt]
+    _textos_ok = (
+        not _faltando
+        and all(t in _py_txt for t in _com_acento)
+        # mesma situacao ("ocupado"), mesma frase, nos dois lados da ponte
+        and "Espere a resposta terminar" not in _js_txt
+        and "Espere a resposta terminar" not in _py_txt
+        # a mesma acao ("sem chave"), a mesma frase
+        and "Cole a sua chave do Google nas Configurações" not in _js_txt
+        and _js_txt.count(
+            "Cole a sua chave do Google em Configurações > Chaves para começar."
+        ) == 2
+    )
+    if _textos_ok:
+        ok("textos: mensagens ao usuário com acentos corretos e linguagem única")
+    else:
+        falha("textos: acento ou padronização de mensagem fora do padrão: %r" % (_faltando,))
+except Exception as _erro_textos:
+    falha("textos: teste de padronização falhou: %r" % (_erro_textos,))
+
+
 # --- diálogo de Configurações: foco preso e devolvido (teclado) -----------
 # O Tab não pode escapar para a tela de trás enquanto a janela de
 # Configurações está aberta; e o foco deve entrar nela ao abrir e

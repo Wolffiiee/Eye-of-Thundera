@@ -1,10 +1,12 @@
 # Onde paramos
 
-Atualizado em 17/10/2026, após acrescentar a leitura de PDF, o foco preso no diálogo e avisos de erro que duram mais.
+Atualizado em 17/10/2026, após melhorar a navegação por teclado das conversas e dos menus e padronizar as mensagens da tela.
 
 ## Resumo do estado atual
 
-A rodada mais recente acrescentou a **leitura de PDF** arrastado para a conversa. O arquivo vira texto **no próprio computador** (biblioteca `pypdf`, no módulo `pdf_leitor.py`) e o texto entra na caixa de digitar para o usuário conferir e enviar quando quiser — nada é enviado à IA antes do Enter. O arquivo viaja da tela para o Python em pedaços base64, e os casos ruins (PDF com senha, corrompido, grande demais ou digitalizado sem texto) recebem aviso claro, sem travar a janela. O `pypdf` entrou no `requirements.txt`, nos dois `.spec` do PyInstaller e na verificação automática.
+A rodada mais recente deixou a interface usável **sem mouse**: a área do título de cada conversa abre a conversa com Enter ou Espaço; o menu “…“ de cada conversa recebe o foco ao abrir, anda com as setas (e Home/End), fecha com Tab ou Esc e devolve o foco ao botão; o menu “Mais” fecha com Esc (o navegador não faz isso sozinho para `details/summary`); e o botão “…“ passou a aparecer também quando recebe foco pelo teclado (antes só aparecia no hover). Também foram padronizados os textos que o usuário vê: a frase de “ocupado” virou uma só (“Aguarde a resposta terminar.”), a frase de “sem chave” também, e foram corrigidos acentos que faltavam em mensagens de sugestões, PDF, área de transferência, modo exemplo e voz.
+
+A rodada anterior acrescentou a **leitura de PDF** arrastado para a conversa. O arquivo vira texto **no próprio computador** (biblioteca `pypdf`, no módulo `pdf_leitor.py`) e o texto entra na caixa de digitar para o usuário conferir e enviar quando quiser — nada é enviado à IA antes do Enter. O arquivo viaja da tela para o Python em pedaços base64, e os casos ruins (PDF com senha, corrompido, grande demais ou digitalizado sem texto) recebem aviso claro, sem travar a janela. O `pypdf` entrou no `requirements.txt`, nos dois `.spec` do PyInstaller e na verificação automática.
 
 Também nesta rodada: o **foco do diálogo** de Configurações agora fica preso dentro da janela enquanto ela está aberta (Tab não escapa para a tela de trás), entra no diálogo ao abrir e volta ao botão que o abriu ao fechar; **avisos de erro** ficam 8 segundos na tela (o normal fica 4,2 s) e podem ser fechados com um clique; e testes novos confirmam que a resposta da IA, a galeria e a voz sempre liberam a tela. Na acessibilidade, os botões e links de “sites consultados” e o campo de pergunta ganharam rótulos e navegação por teclado.
 
@@ -36,7 +38,7 @@ A revisão estática confirmou que todos os nomes usados nas chamadas da interfa
 
 ### Verificação executada
 
-- `verificar.py`: 151 verificações, 0 falhas, 0 avisos; RESULTADO: TUDO CERTO. Inclui a sintaxe JavaScript (Node.js), a leitura de PDF com arquivos sintéticos (simples e comprimido, além de PDF vazio, corrompido e não-PDF), a ponte recebendo o PDF em pedaços, o foco preso no diálogo, a liberação de `ocupado` no `finally` e a duração dos avisos de erro.
+- `verificar.py`: 153 verificações, 0 falhas, 0 avisos; RESULTADO: TUDO CERTO. Inclui a sintaxe JavaScript (Node.js), a leitura de PDF com arquivos sintéticos (simples e comprimido, além de PDF vazio, corrompido e não-PDF), a ponte recebendo o PDF em pedaços, o foco preso no diálogo, a liberação de `ocupado` no `finally`, a duração dos avisos de erro, a navegação por teclado (conversas abrem com Enter/Espaço e menus com setas, Esc e retorno de foco) e o padrão de texto/acentuação das mensagens ao usuário.
 - Os testes de PDF usam apenas arquivos sintéticos em `_tmp`; nenhum documento pessoal é lido e nenhum dado real é alterado.
 - A leitura de PDF depende do `pypdf`, declarado no `requirements.txt`. Se ele faltar, o programa avisa e continua funcionando; a verificação automática aponta a biblioteca faltando.
 - Rodada anterior: capturas em modo demonstração conferidas em 1180 px e 900 px; falha/sucesso da cópia simulados com valores sintéticos e sem alterar a área de transferência real.
@@ -75,10 +77,11 @@ Os dados do usuário ficam em %LOCALAPPDATA%/PesquisaIA, fora do repositório. N
 1. Fechar e reabrir o Eye of Thundera pelo atalho da Área de Trabalho para carregar a versão atualizada da interface.
 2. Testar a leitura de PDF: arrastar um PDF com texto para a janela e conferir se o texto aparece na caixa para revisão antes de enviar. Testar também um PDF digitalizado (deve avisar, sem travar).
 3. Confirmar visualmente que a barra principal tem Web, Mais, microfone e Enviar; dentro de Mais, conferir “Modo profundo”, “Enviar com pesquisa profunda”, “Privada” e “Resumo do dia”.
-4. Em Configurações > Chaves, digitar um texto de teste que não seja uma chave real, trocar para outra aba e voltar: o rascunho deve permanecer. Apagar esse texto de teste sem salvar. Não exibir nem compartilhar chaves reais.
-5. Se quiser confirmar a persistência no uso real, escolher uma das novas paletas pelo atalho e reabrir a aplicação; os dados de configuração real não foram alterados durante esta rodada.
-6. Conferir a interface em escala do Windows acima de 100%; nenhuma pergunta à IA é necessária.
-7. Se algum clique falhar, consultar %LOCALAPPDATA%/PesquisaIA/erro.log e registrar o erro sem incluir credenciais.
+4. Testar sem mouse: com Tab, chegar até uma conversa da lista e abrir com Enter ou Espaço; no botão “…“ da conversa, conferir que o foco entra no menu, que as setas andam entre as opções e que Esc fecha devolvendo o foco ao botão. No menu “Mais”, conferir que Esc também fecha.
+5. Em Configurações > Chaves, digitar um texto de teste que não seja uma chave real, trocar para outra aba e voltar: o rascunho deve permanecer. Apagar esse texto de teste sem salvar. Não exibir nem compartilhar chaves reais.
+6. Se quiser confirmar a persistência no uso real, escolher uma das novas paletas pelo atalho e reabrir a aplicação; os dados de configuração real não foram alterados durante esta rodada.
+7. Conferir a interface em escala do Windows acima de 100%; nenhuma pergunta à IA é necessária.
+8. Se algum clique falhar, consultar %LOCALAPPDATA%/PesquisaIA/erro.log e registrar o erro sem incluir credenciais.
 
 ## Estado do Git
 

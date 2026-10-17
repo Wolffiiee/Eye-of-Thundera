@@ -5,6 +5,16 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-17 — Teclado nas conversas, menus acessíveis e textos padronizados
+
+- **Teclado na lista de conversas:** a área do título de cada conversa virou um controle de verdade — abre a conversa com Enter ou Espaço. Antes, quem não usava o mouse não conseguia abrir uma conversa; a área clicável não recebia foco e não respondia ao teclado. O menu “…“ fica fora desse controle, para não aninhar dois botões dentro de um só.
+- **Menu “...“ da conversa:** agora tem papel de menu, os itens recebem o foco ao abrir, as setas (e Home/End) andam entre eles, Tab fecha o menu e Esc fecha **devolvendo o foco** ao botão que o abriu. A confirmação de exclusão põe o foco em “Cancelar” (a escolha segura: apertar Enter por engano não apaga nada).
+- **Menu “Mais”:** Esc agora fecha o menu de `details/summary` (que não fecha sozinho no navegador) e devolve o foco ao resumo.
+- **Rótulos acessíveis:** o botão “…“ ganhou nome acessível com o título da conversa; o campo de busca e a lista de conversas ganharam `aria-label`.
+- **Visibilidade por teclado:** o botão “…“ só aparecia ao passar o mouse; agora aparece também quando recebe o foco pelo teclado (senão quem usa teclado nem enxergava o botão).
+- **Textos padronizados:** a frase de “ocupado” ficou uma só (“Aguarde a resposta terminar.” — antes misturava “Espere” e “Aguarde”), e a frase de “sem chave” também (“Cole a sua chave do Google em Configurações > Chaves para começar.”). Corrigidos acentos que faltavam em mensagens que aparecem na tela: sugestões de perguntas, leitura de PDF, área de transferência, modo exemplo e transcrição de voz.
+- **Verificação:** `verificar.py`: 153 verificações, 0 falhas e 0 avisos. Dois testes novos: navegação por teclado (conversas e menus) e padrão de texto/acentuação. Nenhum documento pessoal é lido e nenhum dado real é alterado.
+
 ## 2026-10-17 — Leitura de PDF, foco no diálogo e avisos de erro
 
 - **PDF arrastado:** agora dá para arrastar um `.pdf` para a conversa. O texto é extraído **no computador** (biblioteca `pypdf`, no módulo novo `pdf_leitor.py`) e entra na caixa de digitar para o usuário conferir antes de enviar — nada sai para a internet antes do Enter. O arquivo vai da tela para o Python em pedaços base64 (512 KB) para não travar a ponte. PDF com senha, arquivo corrompido, grande demais (limite de 25 MB) e PDF digitalizado (sem texto) recebem mensagem clara, sem travar a janela. `pypdf==6.1.1` entrou no `requirements.txt`, nos dois `.spec` do PyInstaller e no `verificar.py`.

@@ -554,7 +554,7 @@ const PERGUNTA_RESUMO =
   "Em tópicos curtos, e no fim diga de onde você tirou.";
 
 function resumoDoDia() {
-  if (estado.ocupado) return aviso("Espere a resposta terminar.", true);
+  if (estado.ocupado) return aviso("Aguarde a resposta terminar.", true);
   $("#entrada").value = PERGUNTA_RESUMO;
   ajustarAltura();
   atualizarEnviar();
@@ -1018,7 +1018,7 @@ async function enviar(texto, profundo = estado.profundo) {
   }
   if (r.erro) {
     if (r.erro === "sem_chave") {
-      aviso("Cole a sua chave do Google nas Configurações para começar.");
+      aviso("Cole a sua chave do Google em Configurações > Chaves para começar.");
       abrirConfig("chaves");
     } else aviso(r.erro, true);
   }
@@ -1034,11 +1034,17 @@ window.PIA = {
 
 /* ---------------- barra lateral ---------------- */
 let menuAberto = null;
-function fecharMenu() {
+function fecharMenu(voltarFoco) {
   if (!menuAberto) return;
-  menuAberto.pop.remove();
-  menuAberto.botao.classList.remove("aberto");
+  const { pop, botao } = menuAberto;
+  pop.remove();
+  botao.classList.remove("aberto");
   menuAberto = null;
+  // Ao fechar pelo teclado (Esc), o foco volta para o botão "..." que
+  // abriu o menu. Fechar por clique fora NÃO rouba o foco de quem clicou.
+  if (voltarFoco && botao && botao.isConnected && typeof botao.focus === "function") {
+    try { botao.focus({ preventScroll: true }); } catch (_e) { /* o botão sumiu */ }
+  }
 }
 
 function abrirMenuConversa(botao, c) {
@@ -1046,8 +1052,12 @@ function abrirMenuConversa(botao, c) {
   fecharMenu();
   if (mesmo) return;
   const pop = el("div", "pop");
+  pop.setAttribute("role", "menu");
+  pop.setAttribute("aria-label", "Opções da conversa");
   // Fixar no topo: a conversa vai para o comeco da lista e fica la.
   const fixar = el("button", c.fixada ? "" : "");
+  fixar.setAttribute("role", "menuitem");
+  fixar.tabIndex = -1;
   fixar.append(ico(c.fixada ? "i-soltar" : "i-fixar"),
                el("span", "", c.fixada ? "Soltar do topo" : "Fixar no topo"));
   fixar.addEventListener("click", async () => {
@@ -1059,6 +1069,8 @@ function abrirMenuConversa(botao, c) {
     aviso(r.fixada ? "Conversa fixada no topo." : "Conversa solta.");
   });
   const pedir = el("button", "perigo");
+  pedir.setAttribute("role", "menuitem");
+  pedir.tabIndex = -1;
   pedir.append(ico("i-lixo"), el("span", "", "Excluir"));
   pedir.addEventListener("click", () => {
     pop.replaceChildren(el("div", "texto", "Excluir esta conversa?"));
@@ -1066,13 +1078,18 @@ function abrirMenuConversa(botao, c) {
     const linha = el("div", "linha");
     const nao = el("button", "", "Cancelar");
     const sim = el("button", "perigo", "Excluir");
-    nao.addEventListener("click", fecharMenu);
+    nao.tabIndex = -1;
+    sim.tabIndex = -1;
+    nao.addEventListener("click", () => fecharMenu(true));
     sim.addEventListener("click", async () => {
       fecharMenu();
       await excluirConversa(c.id);
     });
     linha.append(nao, sim);
     pop.append(linha);
+    // A escolha segura (Cancelar) recebe o foco: quem abriu por engano
+    // aperta Enter e não apaga nada.
+    nao.focus({ preventScroll: true });
   });
   pop.append(fixar, pedir);
   document.body.append(pop);
@@ -1081,13 +1098,39 @@ function abrirMenuConversa(botao, c) {
   pop.style.top = r.bottom + 4 + "px";
   botao.classList.add("aberto");
   menuAberto = { pop, botao };
+  // Teclado: setas andam pelos itens, Home/End vão ao primeiro/último,
+  // Tab fecha o menu, e o foco entra nele assim que ele abre.
+  pop.addEventListener("keydown", (ev) => {
+    const itens = [...pop.querySelectorAll("button:not([disabled])")];
+    if (!itens.length) return;
+    if (["ArrowDown", "ArrowUp", "Home", "End"].includes(ev.key)) {
+      ev.preventDefault();
+      let idx = itens.indexOf(document.activeElement);
+      if (ev.key === "Home") idx = 0;
+      else if (ev.key === "End") idx = itens.length - 1;
+      else if (idx < 0) idx = 0;
+      else idx = (idx + (ev.key === "ArrowDown" ? 1 : -1) + itens.length) % itens.length;
+      itens[idx].focus();
+    } else if (ev.key === "Tab") {
+      ev.preventDefault();
+      fecharMenu(true);
+    }
+  });
+  fixar.focus({ preventScroll: true });
 }
 document.addEventListener("mousedown", (e) => {
   if (menuAberto && !menuAberto.pop.contains(e.target) && e.target.closest(".mais") !== menuAberto.botao) fecharMenu();
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    fecharMenu();
+    fecharMenu(true);
+    // O menu "Mais" (details/summary) não fecha sozinho com Esc.
+    const modos = $("#menu-modos");
+    if (modos && modos.open) {
+      modos.open = false;
+      const resumo = modos.querySelector("summary");
+      if (resumo) resumo.focus({ preventScroll: true });
+    }
     if (!$("#modal").classList.contains("oculto")) fecharConfig();
     return;
   }
@@ -1317,9 +1360,21 @@ function desenharConversas() {
   for (const c of estado.conversas) {
     const item = el("div", "conv" + (c.id === estado.atual ? " ativa" : ""));
     const textos = el("div", "textos");
+    // Teclado: a área do título é o controle de abrir a conversa
+    // (Enter/Espaço). O menu "..." fica FORA dela, para não aninhar dois
+    // controles dentro de um só (o que leitores de tela não entendem).
+    textos.setAttribute("role", "button");
+    textos.tabIndex = 0;
     textos.append(el("span", "t", c.titulo), el("span", "q", c.quando));
+    textos.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" || ev.key === " " || ev.key === "Spacebar") {
+        ev.preventDefault();
+        abrirConversa(c.id);
+      }
+    });
     const mais = el("button", "mais");
     mais.title = "Mais opções";
+    mais.setAttribute("aria-label", "Mais opções da conversa " + (c.titulo || ""));
     mais.append(ico("i-pontos"));
     mais.addEventListener("click", (ev) => {
       ev.stopPropagation();
@@ -1332,7 +1387,7 @@ function desenharConversas() {
 }
 
 async function abrirConversa(id) {
-  if (estado.ocupado) return aviso("Espere a resposta terminar.", true);
+  if (estado.ocupado) return aviso("Aguarde a resposta terminar.", true);
   const r = await chamar("abrir_conversa", id);
   if (r.erro) return aviso(r.erro, true);
   estado.mensagens = r.mensagens;
@@ -1341,7 +1396,7 @@ async function abrirConversa(id) {
   desenharMensagens();
 }
 async function novaConversa() {
-  if (estado.ocupado) return aviso("Espere a resposta terminar.", true);
+  if (estado.ocupado) return aviso("Aguarde a resposta terminar.", true);
   const r = await chamar("nova_conversa");
   if (r.erro) return aviso(r.erro, true);
   estado.mensagens = [];

@@ -93,11 +93,14 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   cursor: pointer; color: var(--texto-2); }
 .conv:hover { background: var(--superficie); color: var(--texto); }
 .conv.ativa { background: var(--superficie-2); color: var(--texto); }
-.conv .textos { min-width: 0; flex: 1; }
+.conv .textos { min-width: 0; flex: 1; cursor: pointer; }
 .conv .t { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
 .conv .q { display: block; font-size: 11.5px; color: var(--texto-3); }
 .conv .mais { opacity: 0; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: var(--texto-2); }
 .conv:hover .mais, .conv .mais.aberto { opacity: 1; }
+/* Teclado: o "..." some no hover, então precisa aparecer também quando
+   recebe o foco (senão quem usa teclado não enxerga o botão). */
+.conv .mais:focus-visible { opacity: 1; }
 .conv .mais:hover { background: #2f2f3d; color: var(--texto); }
 .vazio-lista { color: var(--texto-3); font-size: 13px; padding: 8px 10px; }
 .rodape-lateral { padding-top: 8px; border-top: 1px solid var(--borda); margin-top: 8px; }
