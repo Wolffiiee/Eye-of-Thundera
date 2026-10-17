@@ -31,3 +31,4 @@ erro.log
 
 # configuracao pessoal (tem as chaves de API - NUNCA versionar)
 config.json
+_troca/
