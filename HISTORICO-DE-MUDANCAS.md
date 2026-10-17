@@ -5,6 +5,14 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Corrige o estilo das sugestões da página inicial
+
+- **Defeito:** a regra visual `.sugestoes` para perguntas sugeridas depois de uma resposta também atingia o bloco `#sugestoes` da página inicial, substituindo os cartões em duas colunas por chips compactos.
+- **Correção:** os estilos de chips agora se aplicam apenas às sugestões dinâmicas; a página inicial mantém os cartões em grade e usa uma coluna em janelas estreitas.
+- **Verificação:** `git diff --check`, `node --check web/app.js`, compilação Python e `verificar.py`: 127 verificações, 0 falhas e 0 avisos. A correção de CSS não altera a lógica dos botões.
+
+---
+
 ## 2026-10-16 — Corrige o envio pela Pesquisa séria
 
 - **Defeito:** o botão dedicado “Pesquisa séria” e Ctrl+Shift+S chamavam `enviar(undefined, true)`, mas `enviar` aceitava só um argumento e ignorava o `true`. O pedido só entrava em pesquisa profunda quando o alternador separado já estava ligado.

@@ -21,7 +21,7 @@ Atualizado em 16/10/2026. Este documento contém pendências reais; o histórico
 
 ## Prioridade 3 — melhorar a experiência visual
 
-- Simplificar a barra de escrita: os quatro botões Web, Pesquisa séria, Privada e Resumo do dia competem por atenção. Considerar agrupar opções secundárias em um menu, mantendo os estados ativos visíveis.
+- Simplificar a barra de escrita: os quatro botões Web, Pesquisa séria, Privada e Resumo do dia competem por atenção. Considerar agrupar opções secundárias em um menu, mantendo os estados ativos visíveis. A correção de estilo dos cartões de sugestão da página inicial já foi aplicada; ainda precisa ser conferida visualmente no app real.
 - Na aba Chaves, agrupar o botão de ativação de cada provedor com o cartão da respectiva chave; hoje o controle do Gemini fica separado do cartão da chave.
 - Padronizar acentuação, pontuação, nomes de controles e descrições em português brasileiro.
 - Garantir foco visível, rótulos acessíveis, estados de carregamento e mensagens de erro que não desapareçam antes de poderem ser lidas.

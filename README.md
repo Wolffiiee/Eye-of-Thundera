@@ -2,7 +2,7 @@
 
 Assistente pessoal de pesquisa, com interface escura em HTML/JavaScript e integração Python via pywebview.
 
-**Estado conferido em 16/10/2026:** o atalho da Área de Trabalho abre o código-fonte em app_web.py. A sintaxe da interface está verificada automaticamente; a aba Personalização oferece cinco temas que são salvos e reaplicados na próxima abertura. O botão de salvar resposta usa o diálogo da janela pywebview, em vez de criar uma raiz Tkinter extra. A suíte passou com 126 verificações, sem falhas nem avisos; ainda falta confirmar visualmente os fluxos no aplicativo real.
+**Estado conferido em 16/10/2026:** o atalho da Área de Trabalho abre o código-fonte em app_web.py. A sintaxe da interface está verificada automaticamente; a aba Personalização oferece cinco temas persistentes; o botão de salvar resposta usa o diálogo da janela pywebview; e o botão/atalho de Pesquisa séria agora força o modo de pesquisa profunda corretamente. A suíte passou com 127 verificações, sem falhas nem avisos. Ainda falta validar manualmente os cliques no aplicativo real.
 
 ## Comece por aqui
 

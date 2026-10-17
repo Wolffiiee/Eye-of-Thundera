@@ -18,7 +18,7 @@ A verificação automática agora executa node --check web/app.js quando Node.js
 
 ### Revisão de ações e botões — correção encontrada
 
-A revisão estática confirmou que todos os nomes usados nas chamadas da interface existem na ponte Python e que não há IDs duplicados no HTML. Ela também encontrou uma falha funcional que os testes antigos não detectavam: `enviar(texto)` ignorava o segundo argumento, então o botão dedicado “Pesquisa séria” e Ctrl+Shift+S não forçavam pesquisa profunda; só funcionavam se o alternador separado já estivesse ligado. A função agora aceita `profundo = estado.profundo` e passa esse valor à ponte. Foi adicionado um teste de regressão para o botão, o atalho e o envio normal.
+A revisão estática confirmou que todos os nomes usados nas chamadas da interface existem na ponte Python e que não há IDs duplicados no HTML. Também corrigiu uma colisão de CSS: as sugestões dinâmicas de continuação estavam alterando o estilo dos cartões da página inicial; agora cada bloco tem regras próprias e a grade da página inicial vira uma coluna em janelas estreitas. A revisão encontrou ainda uma falha funcional que os testes antigos não detectavam: `enviar(texto)` ignorava o segundo argumento, então o botão dedicado “Pesquisa séria” e Ctrl+Shift+S não forçavam pesquisa profunda; só funcionavam se o alternador separado já estivesse ligado. A função agora aceita `profundo = estado.profundo` e passa esse valor à ponte. Foi adicionado um teste de regressão para o botão, o atalho e o envio normal.
 
 ### Verificação executada
 
