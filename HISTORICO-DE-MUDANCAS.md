@@ -5,6 +5,15 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-17 — Janela redimensionável de novo e contraste medido nos 10 temas
+
+- **Redimensionamento (patch recebido):** `_tirar_barra_nativa` tirava o `WS_CAPTION` **e o `WS_THICKFRAME`** (`& ~0x00C00000 & ~0x00040000`), então a janela perdia a borda que se arrasta para redimensionar — e também o encaixe com Win+setas. Vale notar: o comentário de topo do bloco já dizia que era para *manter* o `WS_THICKFRAME`; o código não fazia o que o comentário dizia. A lógica saiu para uma função própria, `_estilo_sem_barra(estilo)`, que remove só o `WS_CAPTION`. Correção proposta em `PATCH_redimensionamento.md` e `_tirar_barra_nativa_CORRIGIDA.py`.
+- **Teste da janela:** `verificar.py` ganhou um teste comportamental (não de texto): estilo sintético com CAPTION + THICKFRAME + SYSMENU + minimizar/maximizar passa pela função e o teste confirma que o CAPTION sai e **todo o resto permanece**; ainda confirma que nenhum outro ponto do arquivo volta a tirar o `WS_THICKFRAME`. O teste foi validado rodando contra a expressão antiga, que ele acusa.
+- **Contraste dos temas (Prioridade 3 do documento de sugestões):** o teste passou a varrer **os 10 temas e os 4 fundos de cada um** (`--bg`, `--painel`, `--superficie`, `--superficie-2`) — antes comparava só `--texto` e `--texto-2` contra `--bg`. Texto principal, secundário e link passam em todos os temas, sobre todos os fundos.
+- **Achado do contraste:** os pares que o teste antigo não cobria estão abaixo da norma em **32 casos**. O mais grave é visível: o **texto branco do botão** (Enviar e botão primário, que no hover vira `--azul-2`) **falha em 9 dos 10 temas** — pior caso Grafite Dourado, 1,53:1. O texto apagado (`--texto-3`, de 11,5 a 13 px) fica entre 3,28 e 4,49:1 em 7 temas, e o `--azul` como borda de foco fica abaixo de 3,0 em Thundera e Forest. A viabilidade foi medida antes de decidir: **8 dos 10 temas resolvem só trocando a cor do texto do botão**, sem alterar nenhuma cor escolhida; Clássico Dark e Thundera precisariam escurecer o acento ~15%, e 7 temas precisariam clarear o `--texto-3` de 2% a 14%.
+- **Pendência:** como corrigir muda a aparência escolhida, ficou registrado em `PROXIMOS-PASSOS.md` (Prioridade 3.6) aguardando decisão. O `verificar.py` passou a emitir um aviso a cada execução com a contagem, para isso não ser esquecido.
+- **Verificação:** `verificar.py`: **155 verificações, 0 falhas, 1 aviso** (o contraste pendente). Nenhum dado real é lido ou alterado.
+
 ## 2026-10-17 — Teclado nas conversas, menus acessíveis e textos padronizados
 
 - **Teclado na lista de conversas:** a área do título de cada conversa virou um controle de verdade — abre a conversa com Enter ou Espaço. Antes, quem não usava o mouse não conseguia abrir uma conversa; a área clicável não recebia foco e não respondia ao teclado. O menu “…“ fica fora desse controle, para não aninhar dois botões dentro de um só.

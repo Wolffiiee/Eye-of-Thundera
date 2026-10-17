@@ -1,10 +1,14 @@
 # Onde paramos
 
-Atualizado em 17/10/2026, após melhorar a navegação por teclado das conversas e dos menus e padronizar as mensagens da tela.
+Atualizado em 17/10/2026, após restaurar o redimensionamento da janela e medir o contraste de todos os temas.
 
 ## Resumo do estado atual
 
-A rodada mais recente deixou a interface usável **sem mouse**: a área do título de cada conversa abre a conversa com Enter ou Espaço; o menu “…“ de cada conversa recebe o foco ao abrir, anda com as setas (e Home/End), fecha com Tab ou Esc e devolve o foco ao botão; o menu “Mais” fecha com Esc (o navegador não faz isso sozinho para `details/summary`); e o botão “…“ passou a aparecer também quando recebe foco pelo teclado (antes só aparecia no hover). Também foram padronizados os textos que o usuário vê: a frase de “ocupado” virou uma só (“Aguarde a resposta terminar.”), a frase de “sem chave” também, e foram corrigidos acentos que faltavam em mensagens de sugestões, PDF, área de transferência, modo exemplo e voz.
+A rodada mais recente **restaurou o redimensionamento da janela**. A correção recebida (`PATCH_redimensionamento.md`) mostrou que `_tirar_barra_nativa` removia o `WS_CAPTION` **e** o `WS_THICKFRAME`, o que apagava a borda que se arrasta para mudar o tamanho da janela — e também o encaixe com Win+setas. Vale notar que o comentário do próprio bloco já dizia que era para manter o `WS_THICKFRAME`; só o código não cumpria. A lógica agora vive em `_estilo_sem_barra(estilo)`, que tira só o `WS_CAPTION`, e ganhou um teste comportamental no `verificar.py`: passa um estilo sintético completo e confirma que sai só a barra, que todo o resto (SYSMENU, minimizar, maximizar, `WS_THICKFRAME`) permanece, e que nenhum outro ponto do arquivo volta a remover o `WS_THICKFRAME`. O teste foi validado rodando contra a expressão antiga, que ele acusa.
+
+Também nesta rodada: o teste de contraste dos temas — **Prioridade 3** do documento de sugestões recebido (`SUGESTOES-MELHORIAS-Eye-of-Thundera.md`) — passou a varrer **os 10 temas e os 4 fundos de cada um**, antes só comparava `--texto` e `--texto-2` contra o `--bg`. Texto principal, secundário e link passam em todos os temas, sobre todos os fundos. A varredura completa encontrou **32 pares abaixo da norma**, e o mais grave é visível: o texto branco do botão Enviar/primário falha em **9 dos 10 temas** (pior caso Grafite Dourado, 1,53:1; no Ocean fica 2,69:1). A viabilidade foi medida antes de decidir, como o documento pede: **8 dos 10 temas resolvem só trocando a cor do texto do botão**, sem alterar nenhuma cor escolhida; Clássico Dark e Thundera precisariam escurecer o acento ~15%, e 7 temas clarear o `--texto-3` de 2% a 14%. Como corrigir muda a aparência escolhida, virou pendência em `PROXIMOS-PASSOS.md` (Prioridade 3.6) aguardando decisão; o `verificar.py` passou a emitir um aviso a cada execução para não ser esquecido.
+
+A rodada anterior deixou a interface usável **sem mouse**: a área do título de cada conversa abre a conversa com Enter ou Espaço; o menu “…“ de cada conversa recebe o foco ao abrir, anda com as setas (e Home/End), fecha com Tab ou Esc e devolve o foco ao botão; o menu “Mais” fecha com Esc (o navegador não faz isso sozinho para `details/summary`); e o botão “…“ passou a aparecer também quando recebe foco pelo teclado (antes só aparecia no hover). Também foram padronizados os textos que o usuário vê: a frase de “ocupado” virou uma só (“Aguarde a resposta terminar.”), a frase de “sem chave” também, e foram corrigidos acentos que faltavam em mensagens de sugestões, PDF, área de transferência, modo exemplo e voz.
 
 A rodada anterior acrescentou a **leitura de PDF** arrastado para a conversa. O arquivo vira texto **no próprio computador** (biblioteca `pypdf`, no módulo `pdf_leitor.py`) e o texto entra na caixa de digitar para o usuário conferir e enviar quando quiser — nada é enviado à IA antes do Enter. O arquivo viaja da tela para o Python em pedaços base64, e os casos ruins (PDF com senha, corrompido, grande demais ou digitalizado sem texto) recebem aviso claro, sem travar a janela. O `pypdf` entrou no `requirements.txt`, nos dois `.spec` do PyInstaller e na verificação automática.
 
@@ -38,7 +42,7 @@ A revisão estática confirmou que todos os nomes usados nas chamadas da interfa
 
 ### Verificação executada
 
-- `verificar.py`: 153 verificações, 0 falhas, 0 avisos; RESULTADO: TUDO CERTO. Inclui a sintaxe JavaScript (Node.js), a leitura de PDF com arquivos sintéticos (simples e comprimido, além de PDF vazio, corrompido e não-PDF), a ponte recebendo o PDF em pedaços, o foco preso no diálogo, a liberação de `ocupado` no `finally`, a duração dos avisos de erro, a navegação por teclado (conversas abrem com Enter/Espaço e menus com setas, Esc e retorno de foco) e o padrão de texto/acentuação das mensagens ao usuário.
+- `verificar.py`: **155 verificações, 0 falhas, 1 aviso**; RESULTADO: TUDO CERTO. Inclui a sintaxe JavaScript (Node.js), a leitura de PDF com arquivos sintéticos, a ponte recebendo o PDF em pedaços, o foco preso no diálogo, a liberação de `ocupado` no `finally`, a duração dos avisos de erro, a navegação por teclado (conversas com Enter/Espaço e menus com setas, Esc e retorno de foco), o padrão de texto/acentuação, o teste comportamental da barra de título (`_estilo_sem_barra`) e a varredura de contraste dos 10 temas contra os 4 fundos. **O único aviso** é a pendência de contraste de `PROXIMOS-PASSOS.md` (Prioridade 3.6): 32 pares abaixo do mínimo em texto apagado, texto do botão e borda — ele deve sumir quando essa rodada de cores for decidida.
 - Os testes de PDF usam apenas arquivos sintéticos em `_tmp`; nenhum documento pessoal é lido e nenhum dado real é alterado.
 - A leitura de PDF depende do `pypdf`, declarado no `requirements.txt`. Se ele faltar, o programa avisa e continua funcionando; a verificação automática aponta a biblioteca faltando.
 - Rodada anterior: capturas em modo demonstração conferidas em 1180 px e 900 px; falha/sucesso da cópia simulados com valores sintéticos e sem alterar a área de transferência real.
@@ -77,11 +81,13 @@ Os dados do usuário ficam em %LOCALAPPDATA%/PesquisaIA, fora do repositório. N
 1. Fechar e reabrir o Eye of Thundera pelo atalho da Área de Trabalho para carregar a versão atualizada da interface.
 2. Testar a leitura de PDF: arrastar um PDF com texto para a janela e conferir se o texto aparece na caixa para revisão antes de enviar. Testar também um PDF digitalizado (deve avisar, sem travar).
 3. Confirmar visualmente que a barra principal tem Web, Mais, microfone e Enviar; dentro de Mais, conferir “Modo profundo”, “Enviar com pesquisa profunda”, “Privada” e “Resumo do dia”.
-4. Testar sem mouse: com Tab, chegar até uma conversa da lista e abrir com Enter ou Espaço; no botão “…“ da conversa, conferir que o foco entra no menu, que as setas andam entre as opções e que Esc fecha devolvendo o foco ao botão. No menu “Mais”, conferir que Esc também fecha.
-5. Em Configurações > Chaves, digitar um texto de teste que não seja uma chave real, trocar para outra aba e voltar: o rascunho deve permanecer. Apagar esse texto de teste sem salvar. Não exibir nem compartilhar chaves reais.
-6. Se quiser confirmar a persistência no uso real, escolher uma das novas paletas pelo atalho e reabrir a aplicação; os dados de configuração real não foram alterados durante esta rodada.
-7. Conferir a interface em escala do Windows acima de 100%; nenhuma pergunta à IA é necessária.
-8. Se algum clique falhar, consultar %LOCALAPPDATA%/PesquisaIA/erro.log e registrar o erro sem incluir credenciais.
+4. Testar o redimensionamento da janela (correção desta rodada): arrastar uma das bordas e confirmar que a janela muda de tamanho; conferir também que o encaixe com Win+setas voltou a funcionar.
+5. Testar sem mouse: com Tab, chegar até uma conversa da lista e abrir com Enter ou Espaço; no botão “…“ da conversa, conferir que o foco entra no menu, que as setas andam entre as opções e que Esc fecha devolvendo o foco ao botão. No menu “Mais”, conferir que Esc também fecha.
+6. Em Configurações > Chaves, digitar um texto de teste que não seja uma chave real, trocar para outra aba e voltar: o rascunho deve permanecer. Apagar esse texto de teste sem salvar. Não exibir nem compartilhar chaves reais.
+7. Se quiser confirmar a persistência no uso real, escolher uma das novas paletas pelo atalho e reabrir a aplicação; os dados de configuração real não foram alterados durante esta rodada.
+8. Conferir a interface em escala do Windows acima de 100%; nenhuma pergunta à IA é necessária.
+9. Decidir sobre a **Prioridade 3.6** do `PROXIMOS-PASSOS.md` (contraste dos temas). O `verificar.py` vai mostrar 1 aviso até essa decisão — ele não é defeito desta rodada, é a pendência ficando visível.
+10. Se algum clique falhar, consultar %LOCALAPPDATA%/PesquisaIA/erro.log e registrar o erro sem incluir credenciais.
 
 ## Estado do Git
 

@@ -1597,6 +1597,17 @@ def _hwnd_da_janela(titulo=None):
         return None
 
 
+def _estilo_sem_barra(estilo):
+    """Estilo novo da janela quando a barra de título do Windows sai.
+
+    Tira só o WS_CAPTION (0x00C00000), que é o que desenha a barra branca,
+    e mantém o WS_THICKFRAME (0x00040000): sem ele a janela perde a borda
+    redimensionável — não dá mais para arrastar as bordas nem encaixar a
+    janela com Win+setas.
+    """
+    return estilo & ~0x00C00000
+
+
 def _tirar_barra_nativa(titulo=None, tentativas=20, espera=0.1):
     """Tira a barra de titulo do Windows. Devolve True se conseguiu."""
     try:
@@ -1613,8 +1624,8 @@ def _tirar_barra_nativa(titulo=None, tentativas=20, espera=0.1):
         hwnd = _hwnd_da_janela(titulo)
         if hwnd:
             estilo = usuario.GetWindowLongPtrW(hwnd, -16)           # GWL_STYLE
-            # Remove CAPTION and THICKFRAME, add thin BORDER
-            novo = (estilo & ~0x00C00000 & ~0x00040000)  # sem CAPTION, sem THICKFRAME
+            # Sem CAPTION, mantendo o redimensionamento (ver _estilo_sem_barra).
+            novo = _estilo_sem_barra(estilo)
             usuario.SetWindowLongPtrW(hwnd, -16, novo)
             # Also remove the top border by extending client area
             try:

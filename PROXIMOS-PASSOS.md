@@ -37,7 +37,7 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
 - [x] Corrigir cópia/recorte para usar fallback e preservar o texto em falha; incluir atalhos no menu e navegação por teclado.
 - [x] Simular falha e sucesso do fallback em modo demonstração, sem modificar a área de transferência real.
 - A correção de estilo dos cartões de sugestão da página inicial já foi aplicada; confirmar que a grade se adapta bem em janela estreita.
-- Padronizar acentuação, pontuação, nomes de controles e descrições em português brasileiro.
+- [x] Padronizar acentuação, pontuação, nomes de controles e descrições em português brasileiro (auditado em 17/10: corrigidos acentos que faltavam em `app_web.py`, unificada a frase de “ocupado” e a de “sem chave”; rótulos acessíveis do campo de busca, da lista de conversas e do botão “⋯”).
 - [x] Garantir foco visível, rótulos acessíveis e mensagens de erro que não desapareçam antes de poderem ser lidas (erros agora duram 8 s e podem ser fechados com um clique).
 - [x] Prender o foco dentro do diálogo de Configurações (Tab), trazer o foco ao abrir e devolvê-lo ao botão de origem ao fechar; Esc fecha.
 - [x] Rótulos acessíveis e navegação por teclado em “sites consultados” e no campo de pergunta.
@@ -50,6 +50,16 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
 - [x] `pypdf` declarado no `requirements.txt`, nos dois `.spec` do PyInstaller e no `verificar.py`; testes com PDFs sintéticos em `_tmp`.
 - [ ] Testar manualmente arrastando um PDF de verdade (com texto) e um digitalizado pelo atalho real.
 - [ ] (Opcional, etapa futura) Anexar imagens depende de OCR/visão e de consentimento explícito; ainda não iniciado.
+
+## Prioridade 3.6 — contraste dos temas (rodada de cores, aguarda decisão)
+
+- [x] O teste de contraste agora varre **os 10 temas e os 4 fundos de cada um** (antes só checava `--texto` e `--texto-2` sobre o `--bg`). Texto principal, texto secundário e link passam em todos os temas, em todos os fundos.
+- [x] A viabilidade da correção foi medida antes de implementar (como pedido em `SUGESTOES-MELHORIAS-Eye-of-Thundera.md`, Prioridade 3). Restam **32 pares** abaixo do mínimo, contados a cada execução pelo aviso `contraste:` do `verificar.py`:
+  - **Texto apagado** (`--texto-3` — horário da conversa, notas e botões de ação, de 11,5 a 13 px): 7 dos 10 temas ficam entre 3,28 e 4,49:1. Precisa clarear de 2% a 14% (ex.: Clássico Dark `#70708a` → `#8989a8`).
+  - **Texto branco do botão** (`--azul` no Enviar e no botão primário; `--azul-2` no hover): falha em **9 dos 10 temas** — só o Thundera passa. Pior caso: Grafite Dourado com **1,53:1** (fundo `#f1cd7d` quase branco com letra branca). Em **8 dos 10** temas resolve **só trocando a cor do texto** (branco → escuro), sem tocar em nenhuma cor do tema; Clássico Dark e Thundera precisam escurecer o acento por volta de 15%.
+  - **`--azul` como borda/anel de foco** em Thundera (2,83:1) e Forest (2,91:1): abaixo dos 3,0 pedidos para elementos não textuais (WCAG 1.4.11).
+- [ ] **Aguarda confirmação do usuário:** corrigir muda a aparência escolhida (cor do texto nos botões de 8 temas, texto apagado mais claro em 7). A cor dos acentos ficaria praticamente igual; a maior diferença é o texto do botão ficar escuro nos temas claros.
+- [ ] Depois de aplicar: o aviso `contraste:` do `verificar.py` deve sumir (voltar a 0 avisos).
 
 ## Prioridade 4 — manter os documentos coerentes
 

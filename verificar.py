@@ -1295,7 +1295,9 @@ else:
     falha("personalização: cartões de tema incompletos (ver PLANO-PERSONALIZACAO.md)")
 
 _paletas_parseadas = re.findall(r'\{ nome: "([^"]+)", cores: \{ ([^}]+) \} \}', _temas_bloco_ui)
+_fundos_da_paleta = ("--bg", "--painel", "--superficie", "--superficie-2")
 _paletas_legiveis = len(_paletas_parseadas) == 10
+_roteiro_cores = []            # pares ainda abaixo do mínimo: avisam, não travam
 for _nome_paleta, _texto_cores in _paletas_parseadas:
     _cores_paleta = dict(re.findall(r'"(--[\w-]+)": "(#[0-9a-fA-F]{6})"', _texto_cores))
     if len(_cores_paleta) != 10:
@@ -1305,16 +1307,48 @@ for _nome_paleta, _texto_cores in _paletas_parseadas:
         _rgb = [int(hex_cor[_i:_i + 2], 16) / 255 for _i in (1, 3, 5)]
         _rgb = [v / 12.92 if v <= .04045 else ((v + .055) / 1.055) ** 2.4 for v in _rgb]
         return .2126 * _rgb[0] + .7152 * _rgb[1] + .0722 * _rgb[2]
-    _lum_fundo = _lum(_cores_paleta["--bg"])
+    def _contraste(_cor_a, _cor_b):
+        _la, _lb = _lum(_cor_a), _lum(_cor_b)
+        return (max(_la, _lb) + .05) / (min(_la, _lb) + .05)
+
+    # Texto de verdade em cima de CADA fundo do tema — antes só checava o --bg,
+    # e um tema pode ficar ilegível sobre o --superficie-2 sem ninguém notar.
     for _chave_texto in ("--texto", "--texto-2"):
-        _lum_texto = _lum(_cores_paleta[_chave_texto])
-        _contraste = (max(_lum_texto, _lum_fundo) + .05) / (min(_lum_texto, _lum_fundo) + .05)
-        if _contraste < 4.5:
-            _paletas_legiveis = False
+        for _fundo in _fundos_da_paleta:
+            if _contraste(_cores_paleta[_chave_texto], _cores_paleta[_fundo]) < 4.5:
+                _paletas_legiveis = False
+    # O link (--azul-2) aparece sempre sobre o --bg, onde a resposta é escrita.
+    if _contraste(_cores_paleta["--azul-2"], _cores_paleta["--bg"]) < 4.5:
+        _paletas_legiveis = False
+
+    # --- pendências conhecidas do contraste (ver PROXIMOS-PASSOS.md) -------
+    # texto apagado (horário da conversa, notas): é texto pequeno -> 4,5
+    for _fundo in _fundos_da_paleta:
+        _c = _contraste(_cores_paleta["--texto-3"], _cores_paleta[_fundo])
+        if _c < 4.5:
+            _roteiro_cores.append((_c, "%s: --texto-3 em %s" % (_nome_paleta, _fundo)))
+    # o botão principal e o Enviar pintam o fundo de --azul/--azul-2 com
+    # texto branco; no hover o fundo vira --azul-2, que em vários temas é claro
+    for _acento in ("--azul", "--azul-2"):
+        _c = _contraste("#ffffff", _cores_paleta[_acento])
+        if _c < 4.5:
+            _roteiro_cores.append((_c, "%s: branco sobre %s (botão)" % (_nome_paleta, _acento)))
+    # borda e anel de foco não são texto: aí 3,0 já basta (WCAG 1.4.11)
+    for _fundo in ("--bg", "--superficie-2"):
+        _c = _contraste(_cores_paleta["--azul"], _cores_paleta[_fundo])
+        if _c < 3.0:
+            _roteiro_cores.append((_c, "%s: --azul como borda em %s" % (_nome_paleta, _fundo)))
+
 if _paletas_legiveis:
-    ok("personalização: dez paletas completas e texto com contraste legível")
+    ok("personalização: dez paletas completas e texto legível sobre todos os fundos (4,5:1)")
 else:
     falha("personalização: paleta incompleta ou contraste de texto abaixo de 4,5:1")
+if _roteiro_cores:
+    _roteiro_cores.sort()
+    _temas_gap = len({d.split(":")[0] for _c, d in _roteiro_cores})
+    aviso("contraste: %d pares em %d temas ainda abaixo do mínimo (pior: %s = %.2f:1); "
+          "só texto apagado, botão e borda — pendência em PROXIMOS-PASSOS.md"
+          % (len(_roteiro_cores), _temas_gap, _roteiro_cores[0][1], _roteiro_cores[0][0]))
 
 # --- personalização: aba, tema inicial e gravação isolada -------------------
 try:
@@ -1747,6 +1781,40 @@ try:
         falha("textos: acento ou padronização de mensagem fora do padrão: %r" % (_faltando,))
 except Exception as _erro_textos:
     falha("textos: teste de padronização falhou: %r" % (_erro_textos,))
+
+
+# --- janela: a barra de título sai, o redimensionamento fica ---------------
+# Regressão: a primeira versão da barra própria tirava o WS_THICKFRAME junto
+# com o CAPTION, e a janela perdeu a borda que você arrasta para redimensionar
+# (e o encaixe com Win+setas). A correção tira só o CAPTION.
+try:
+    import app_web as _aw5
+
+    _CAPTION = 0x00C00000      # WS_BORDER | WS_DLGFRAME: a barra branca
+    _THICKFRAME = 0x00040000   # WS_SIZEBOX: borda redimensionável
+    _SYSMENU = 0x00080000      # botão fechar/minimizar/maximizar do sistema
+    _MENUMIN = 0x00020000      # WS_MINIMIZEBOX
+    _MENUMAX = 0x00010000      # WS_MAXIMIZEBOX
+    _estilo_cheio = (_CAPTION | _THICKFRAME | _SYSMENU | _MENUMIN | _MENUMAX)
+    _novo = _aw5._estilo_sem_barra(_estilo_cheio)
+    _fonte = (PASTA / "app_web.py").read_text(encoding="utf-8")
+    _janela_ok = (
+        not (_novo & _CAPTION)          # a barra saiu
+        and bool(_novo & _THICKFRAME)   # redimensionamento ficou
+        and bool(_novo & _SYSMENU)
+        and bool(_novo & _MENUMIN)
+        and bool(_novo & _MENUMAX)
+        # ninguém tirando o THICKFRAME em outro lugar do arquivo
+        and "~0x00040000" not in _fonte
+        # e o resto do estilo passa intacto (nenhuma outra marca perdida)
+        and _novo == (_estilo_cheio & ~_CAPTION)
+    )
+    if _janela_ok:
+        ok("janela: barra de título sai e a janela continua redimensionável (WS_THICKFRAME intacto)")
+    else:
+        falha("janela: a correção removeu o WS_THICKFRAME e deixou a janela sem borda redimensionável")
+except Exception as _erro_janela:
+    falha("janela: teste da barra de título falhou: %r" % (_erro_janela,))
 
 
 # --- diálogo de Configurações: foco preso e devolvido (teclado) -----------
