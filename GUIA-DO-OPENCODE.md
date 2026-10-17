@@ -38,3 +38,6 @@ O plugin local gratis-sempre fica em %USERPROFILE%/.config/opencode/plugin/grati
 - [ ] Histórico e estado atual atualizados.
 - [ ] Commit seletivo feito.
 - [ ] Usuário informado sobre o que mudou e o que não foi testado.
+
+- **NUNCA apague testes** (o commit 408bc42 apagou ~220 e escondeu coisas que ainda existem: roteador, voz, memoria, ponte, microfone). Eles foram restaurados em `verificar_motor.py` (171 verificacoes). Teste de tela do programa antigo pode ir embora; teste de motor/ponte NAO. Se um teste ficar velho, CONSERTE o teste (ex.: mock sem o parametro novo) e diga ao Wolf.
+- `verificar.bat` agora roda os dois arquivos: `verificar.py` e `verificar_motor.py`. Os dois precisam dar TUDO CERTO.

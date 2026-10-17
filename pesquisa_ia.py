@@ -316,7 +316,7 @@ def carregar_config():
 
 def salvar_config(cfg):
     """Grava a configuracao com substituicao atomica, preservando a versao anterior se falhar."""
-    PASTA_CONFIG.mkdir(parents=True, exist_ok=True)
+    ARQUIVO_CONFIG.parent.mkdir(parents=True, exist_ok=True)
     temporario = None
     try:
         # O arquivo temporario fica na mesma pasta/volume para que os.replace
@@ -324,7 +324,7 @@ def salvar_config(cfg):
         with tempfile.NamedTemporaryFile(
             mode="w",
             encoding="utf-8",
-            dir=str(PASTA_CONFIG),
+            dir=str(ARQUIVO_CONFIG.parent),
             prefix=".config-",
             suffix=".tmp",
             delete=False,

@@ -14,5 +14,11 @@ if not exist ".venv\Scripts\python.exe" (
 )
 
 ".venv\Scripts\python.exe" verificar.py
+set R1=%errorlevel%
+echo.
+echo === Testes do motor (roteador, voz, memoria, ponte, microfone) ===
+".venv\Scripts\python.exe" verificar_motor.py
+set R2=%errorlevel%
+if not "%R1%%R2%"=="00" echo ATENCAO: alguma verificacao falhou!
 echo.
 pause
