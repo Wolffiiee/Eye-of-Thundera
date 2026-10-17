@@ -982,6 +982,25 @@ class Ponte:
                              daemon=True).start()
             return {}
 
+        # Lembretes ("me lembra amanhã às 9h de pagar a conta"): quem
+        # responde é o módulo `lembretes`, tudo local, sem IA e SEM precisar
+        # de chave (ver lembretes.py e PLANO-LEMBRETES.md). Se a frase não
+        # for sobre lembretes, `responder` devolve None e o caminho normal
+        # continua logo abaixo. No modo exemplo nem chega aqui (a resposta
+        # de exemplo saiu logo acima), então nada é gravado.
+        resposta_lembrete = None
+        try:
+            import lembretes
+            resposta_lembrete = lembretes.responder(texto)
+        except Exception as erro:
+            p.registrar_erro("lembretes.responder", erro)
+        if resposta_lembrete:
+            self.ocupado = True
+            self.mensagens.append({"role": "user", "text": texto})
+            threading.Thread(target=self._responder_lembrete,
+                             args=(resposta_lembrete,), daemon=True).start()
+            return {}
+
         cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
         chave = (cfg.get("api_key") or "").strip()
 
@@ -1221,6 +1240,29 @@ class Ponte:
         finally:
             self.ocupado = False
 
+    def _responder_lembrete(self, resposta):
+        """Responde um lembrete na conversa, sem chamar a IA.
+
+        É tudo local (arquivo em %LOCALAPPDATA%), então a resposta sai na
+        hora — mas numa thread, como as outras respostas, para não segurar
+        a janela enquanto a tela espera. Não gasta token e funciona mesmo
+        sem chave.
+        """
+        try:
+            self.mensagens.append({"role": "model", "text": resposta})
+            self._gravar_conversa()
+            self._evento({"tipo": "resposta", "texto": resposta})
+            if not DEMO:
+                # A lista da esquerda mostra a conversa nova.
+                self._evento({"tipo": "conversas",
+                              "conversas": _conversas_para_a_tela(),
+                              "atual": self.id_atual})
+        except Exception as erro:
+            p.registrar_erro("_responder_lembrete", erro)
+            self._evento({"tipo": "erro", "texto": p.traduzir_erro(erro)})
+        finally:
+            self.ocupado = False
+
     # --- 4. o microfone (este passo) ---
 
     def mic_alternar(self):
@@ -1356,6 +1398,56 @@ class Ponte:
                 "corretor": bool(cfg.get("corretor", True)),
                 "tema": cfg.get("tema", "Clássico Dark"),
                 "temaIdx": tema_idx}
+
+    # --- lembretes (PLANO-LEMBRETES.md): a tela pergunta, o Python cuida ---
+    #
+    # A tela chama `lembretes_vencidos` de tempos em tempos (e ao abrir) e
+    # mostra um cartão para cada um; "Feito" e "Adiar 10 min" chamam os
+    # outros dois. Nada sai daqui para a internet e nada é gravado no modo
+    # exemplo.
+
+    def lembretes_vencidos(self):
+        """Lembretes cuja hora já chegou, prontos para a tela mostrar.
+
+        Cada um vai com o `id`, o `texto` e o horário já em português
+        ("hoje às 09:00"). No modo exemplo devolve lista vazia: não existe
+        lembrete de verdade para avisar.
+        """
+        if DEMO:
+            return {"lembretes": []}
+        try:
+            import lembretes
+            agora = datetime.now()
+            return {"lembretes": [
+                {"id": i["id"], "texto": i["texto"],
+                 "quando": lembretes.descrever(
+                     datetime.fromisoformat(i["quando"]), agora)}
+                for i in lembretes.vencidos(agora)]}
+        except Exception as erro:
+            p.registrar_erro("lembretes_vencidos", erro)
+            return {"lembretes": []}
+
+    def lembrete_concluir(self, id):
+        """O Wolf apertou "Feito": o lembrete sai da lista."""
+        if DEMO:
+            return {}
+        try:
+            import lembretes
+            lembretes.concluir(str(id))
+        except Exception as erro:
+            p.registrar_erro("lembrete_concluir", erro)
+        return {}
+
+    def lembrete_adiar(self, id, minutos=10):
+        """O Wolf apertou "Adiar": o lembrete fica para daqui a pouco."""
+        if DEMO:
+            return {}
+        try:
+            import lembretes
+            lembretes.adiar(str(id), minutos)
+        except Exception as erro:
+            p.registrar_erro("lembrete_adiar", erro)
+        return {}
 
     # --- barra de titulo propria: a tela manda, o Python mexe na janela ---
 

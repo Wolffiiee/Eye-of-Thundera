@@ -495,3 +495,21 @@ body.maximizada .botoes-janela .i-max { display: none; }
 #bordas [data-borda="topo-dir"] { top: 0; right: 0; width: 12px; height: 12px; cursor: nesw-resize; }
 #bordas [data-borda="base-esq"] { bottom: 0; left: 0; width: 12px; height: 12px; cursor: nesw-resize; }
 body.maximizada #bordas { display: none; }
+
+/* lembretes vencidos (PLANO-LEMBRETES.md): cartões no canto, cores do tema.
+   Ficam no alto à direita, logo abaixo da barra de título (32px): assim não
+   cobrem os botões de microfone e enviar, que ficam na direita do compositor. */
+#lembretes { position: fixed; right: 16px; top: 42px; z-index: 70; display: flex;
+  flex-direction: column; gap: 10px; max-width: min(360px, calc(100vw - 32px)); }
+.lembrete { background: var(--superficie); border: 1px solid var(--borda);
+  border-left: 3px solid var(--azul); border-radius: 12px; padding: 12px 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  display: flex; flex-direction: column; gap: 10px; }
+.lembrete-hora { display: block; font-size: 12px; color: var(--texto-3); }
+.lembrete-recado { display: block; color: var(--texto); font-size: 14px; margin-top: 2px; }
+.lembrete-acoes { display: flex; gap: 8px; }
+.lembrete-acoes .btn { flex: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .lembrete { animation: lembrete-entra .2s ease-out; }
+  @keyframes lembrete-entra { from { opacity: 0; transform: translateY(8px); } }
+}

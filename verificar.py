@@ -1914,6 +1914,185 @@ except Exception as _erro_aviso:
     falha("avisos: teste de duração/clique falhou: %r" % (_erro_aviso,))
 
 
+# --- lembretes (PLANO-LEMBRETES.md) -----------------------------------------
+# "me lembra amanhã às 9h de pagar a conta" — tudo local, sem IA e sem chave.
+# Nada aqui toca o arquivo de verdade: os testes usam um arquivo em _tmp.
+
+try:
+    from datetime import datetime as _dt_lem, timedelta as _td_lem
+    import lembretes as _lem
+
+    _AGORA_LEM = _dt_lem(2026, 10, 17, 20, 0)      # sábado, 17/10/2026, 20h
+    _esperado = [
+        ("me lembra amanhã às 9h de pagar a conta", "2026-10-18T09:00:00", "pagar a conta"),
+        ("me lembra segunda às 14h30 de reunião", "2026-10-19T14:30:00", "reunião"),
+        ("me lembra de ligar pro João daqui a 30 minutos", "2026-10-17T20:30:00", "ligar pro João"),
+        ("me lembra dia 25 de comprar pão", "2026-10-25T09:00:00", "comprar pão"),
+    ]
+    _datas_ok = True
+    for _frase, _quando, _texto in _esperado:
+        _r = _lem.entender(_frase, agora=_AGORA_LEM)
+        if not (isinstance(_r, dict) and _r.get("quando") and _r.get("texto") == _texto
+                and _r["quando"].isoformat() == _quando):
+            _datas_ok = False
+    # o que NÃO é lembrete continua indo para a IA; sem horário, ele pede o horário
+    _filtro_ok = (_lem.entender("como me lembrar de coisas?", agora=_AGORA_LEM) is None
+                  and _lem.entender("me avisa quando chegar", agora=_AGORA_LEM) is None
+                  and "erro" in _lem.entender("me lembra de algo", agora=_AGORA_LEM))
+    if _datas_ok and _filtro_ok:
+        ok("lembretes: entende as frases certas, pede o horário e deixa o resto para a IA")
+    else:
+        falha("lembretes: o interpretador errou as datas ou filtrou a mais/menos")
+except Exception as _erro_lem1:
+    falha("lembretes: teste do interpretador falhou: %r" % (_erro_lem1,))
+
+try:
+    import lembretes as _lem2
+    _AGORA2 = _dt_lem(2026, 10, 17, 20, 0)
+    _ARQ = PASTA / "_tmp" / "lembretes_teste.json"
+    if _ARQ.exists():
+        _ARQ.unlink()
+    _lem2.responder("me lembra amanhã às 9h de pagar a conta", agora=_AGORA2, arquivo=_ARQ)
+    _lem2.responder("me lembra de ligar pro João daqui a 30 minutos", agora=_AGORA2, arquivo=_ARQ)
+    _guardados = _lem2.pendentes(_ARQ)
+    _nada_vencido = _lem2.vencidos(_AGORA2, _ARQ) == []
+    _um_vencido = [i["texto"] for i in _lem2.vencidos(
+        _dt_lem(2026, 10, 17, 21, 0), _ARQ)] == ["ligar pro João"]
+    _lem2.adiar(_guardados[1]["id"], minutos=10, agora=_AGORA2, arquivo=_ARQ)
+    _adiado = _lem2.pendentes(_ARQ)[0]["quando"] == "2026-10-17T20:10:00"
+    _lem2.concluir(_guardados[0]["id"], _ARQ)
+    _sobrou = [i["texto"] for i in _lem2.pendentes(_ARQ)] == ["pagar a conta"]
+    _cancelou = "cancelei o lembrete 1" in _lem2.responder(
+        "cancelar lembrete 1", agora=_AGORA2, arquivo=_ARQ)
+    _listou = "pagar a conta" in _lem2.responder("meus lembretes", agora=_AGORA2, arquivo=_ARQ)
+    _limpo = _lem2.pendentes(_ARQ) == []
+    # arquivo estragado = lista vazia (nunca derruba o programa)
+    _ARQ.write_text("{lixo", encoding="utf-8")
+    _resiste = _lem2.pendentes(_ARQ) == []
+    if (len(_guardados) == 2 and _nada_vencido and _um_vencido and _adiado and _sobrou
+            and _cancelou and _listou and _limpo and _resiste):
+        ok("lembretes: guarda, vence, adia, conclui, lista e cancela (e sobrevive a arquivo estragado)")
+    else:
+        falha("lembretes: guardar/vencer/adiar/concluir/cancelar com problema")
+except Exception as _erro_lem2:
+    falha("lembretes: teste do armazenamento falhou: %r" % (_erro_lem2,))
+finally:
+    try:
+        if _ARQ.exists():
+            _ARQ.unlink()
+    except Exception:
+        pass
+
+try:
+    import app_web as _aw_lem
+    import lembretes as _lem3
+    _tem_metodos = all(callable(getattr(_aw_lem.Ponte, _m, None))
+                       for _m in ("lembretes_vencidos", "lembrete_concluir", "lembrete_adiar"))
+    # no modo exemplo: lista vazia e nada de gravar
+    _antes_demo = _aw_lem.DEMO
+    _aw_lem.DEMO = True
+    try:
+        _falsa = _aw_lem.Ponte.__new__(_aw_lem.Ponte)
+        _exemplo_vazio = _falsa.lembretes_vencidos() == {"lembretes": []}
+        _exemplo_calado = (_falsa.lembrete_concluir("x") == {}
+                           and _falsa.lembrete_adiar("x", 10) == {})
+    finally:
+        _aw_lem.DEMO = _antes_demo
+    # fora do modo exemplo: lê o lembrete vencido (de um arquivo de teste)
+    _ARQ2 = PASTA / "_tmp" / "lembretes_ponte.json"
+    _antes_arq = _lem3.ARQUIVO
+    try:
+        _lem3.ARQUIVO = _ARQ2
+        _agora_real = _dt_lem.now()
+        # um lembrete que já venceu e outro no futuro
+        _lem3.criar("pagar a conta", _agora_real - _td_lem(hours=1), _ARQ2)
+        _lem3.criar("coisa do futuro", _agora_real + _td_lem(days=1), _ARQ2)
+        _r = _aw_lem.Ponte.__new__(_aw_lem.Ponte).lembretes_vencidos()
+        _leu = (isinstance(_r.get("lembretes"), list) and len(_r["lembretes"]) == 1
+                and _r["lembretes"][0]["texto"] == "pagar a conta"
+                and bool(_r["lembretes"][0].get("quando")))
+    finally:
+        _lem3.ARQUIVO = _antes_arq
+        if _ARQ2.exists():
+            _ARQ2.unlink()
+    if _tem_metodos and _exemplo_vazio and _exemplo_calado and _leu:
+        ok("lembretes: a ponte existe, fica quieta no modo exemplo e devolve só o lembrete vencido")
+    else:
+        falha("lembretes: a ponte não devolveu o lembrete vencido ou não ficou quieta no exemplo")
+except Exception as _erro_lem3:
+    falha("lembretes: teste da ponte falhou: %r" % (_erro_lem3,))
+
+try:
+    # O caminho de verdade: "me lembra ..." chega em `enviar`, responde sem
+    # chave nenhuma e grava o lembrete; uma pergunta comum continua indo à IA.
+    # Tudo isolado (arquivo de lembretes e de configuração em _tmp) e sem
+    # janela: nenhuma conversa de verdade é gravada (privada = True).
+    import app_web as _aw_lem2
+    import lembretes as _lem4
+    import pesquisa_ia as _pia4
+
+    _ARQ3 = PASTA / "_tmp" / "lembretes_envio.json"
+    _CFG3 = PASTA / "_tmp" / "cfg_envio_inexistente.json"
+    if _ARQ3.exists():
+        _ARQ3.unlink()
+    _antes4 = (_lem4.ARQUIVO, _aw_lem2.DEMO, _pia4.ARQUIVO_CONFIG)
+    try:
+        _lem4.ARQUIVO = _ARQ3
+        _aw_lem2.DEMO = False
+        _pia4.ARQUIVO_CONFIG = _CFG3
+        _ponte = _aw_lem2.Ponte.__new__(_aw_lem2.Ponte)
+        _ponte.ocupado = False
+        _ponte.mensagens = []
+        _ponte.id_atual = None
+        _ponte.privada = True          # não grava conversa nenhuma
+        _ponte._janela = None          # sem janela: _evento é ignorado
+        _retorno = _ponte.enviar("me lembra amanhã às 9h de pagar a conta")
+        _fim = time.time() + 3
+        while len(_ponte.mensagens) < 2 and time.time() < _fim:
+            time.sleep(0.05)
+        _sem_chave_ok = _retorno == {} and len(_ponte.mensagens) == 2
+        _respondeu = (_ponte.mensagens[0].get("role") == "user"
+                      and _ponte.mensagens[1].get("role") == "model"
+                      and "Combinado" in _ponte.mensagens[1].get("text", ""))
+        _guardou = [i["texto"] for i in _lem4.pendentes(_ARQ3)] == ["pagar a conta"]
+        # pergunta normal não é engolida: continua pedindo a chave
+        _normal_ok = _ponte.enviar("quanto é 2+2?") == {"erro": "sem_chave"}
+    finally:
+        _lem4.ARQUIVO, _aw_lem2.DEMO, _pia4.ARQUIVO_CONFIG = _antes4
+        if _ARQ3.exists():
+            _ARQ3.unlink()
+    if _sem_chave_ok and _respondeu and _guardou and _normal_ok:
+        ok("lembretes: a frase vira resposta sem precisar de chave e grava o lembrete")
+    else:
+        falha("lembretes: o envio de lembrete não funcionou pelo caminho de verdade")
+except Exception as _erro_lem5:
+    falha("lembretes: teste do envio falhou: %r" % (_erro_lem5,))
+
+
+try:
+    _html_lem = (PASTA / "web" / "index.html").read_text(encoding="utf-8")
+    _js_lem = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    _css_lem = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+    _tela_lem = (
+        'id="lembretes"' in _html_lem
+        and 'setAttribute("role", "alert")' in _js_lem
+        and "lembretes_vencidos" in _js_lem
+        and "lembrete_concluir" in _js_lem
+        and "lembrete_adiar" in _js_lem
+        and "30000" in _js_lem                 # pergunta de 30 em 30 segundos
+        and ".lembrete" in _css_lem
+    )
+    # o módulo tem que entrar no pacote (os dois .spec do PyInstaller)
+    _spec_lem = all("lembretes" in (PASTA / _n).read_text(encoding="utf-8")
+                    for _n in ("Eye of Thundera.spec", "Eye of Thundera (debug).spec"))
+    if _tela_lem and _spec_lem:
+        ok("lembretes: a tela pergunta de tempos em tempos e mostra o cartão (Feito/Adiar)")
+    else:
+        falha("lembretes: falta ligar na tela ou no pacote (.spec)")
+except Exception as _erro_lem4:
+    falha("lembretes: teste da tela/pacote falhou: %r" % (_erro_lem4,))
+
+
 # --- resumo -----------------------------------------------------------------
 print()
 print('VERIFICACOES: %d | FALHA: %d | AVISO: %d' % (verificacoes, len(falhas), len(avisos)))

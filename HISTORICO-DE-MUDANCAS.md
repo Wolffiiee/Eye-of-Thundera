@@ -5,6 +5,20 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-17 — Lembretes ligados no programa ("me lembra amanhã às 9h de ...")
+
+- **O que o usuário ganha:** escrevendo na conversa, em português normal, "me lembra amanhã às 9h de pagar a conta", o programa guarda o lembrete. Na hora marcada (com o programa aberto) aparece um cartão no canto superior direito com **Feito** e **Adiar 10 min**. Se o programa estava fechado, o cartão aparece assim que abrir. Também entende "daqui a 30 minutos", "segunda às 14h30", "dia 25", "20/10 às 7h", "hoje às 18h" e "depois de amanhã às 10 da noite"; lista com "meus lembretes" e cancela com "cancelar lembrete 2". **Nada sai para a internet, a IA não é chamada e funciona sem chave** (nenhum token gasto).
+- **O que faltava:** o módulo `lembretes.py` já existia, com plano em `PLANO-LEMBRETES.md`, guardando os lembretes em `%LOCALAPPDATA%/PesquisaIA/lembretes.json`. Mas **nenhum arquivo o chamava** — era código órfão: para o usuário, o recurso não existia.
+- **Ligação no Python (`app_web.py`):** em `Ponte.enviar`, logo depois do bloco do modo exemplo e **antes** da checagem de chave, a frase passa por `lembretes.responder()`. Se ela for sobre lembrete, a resposta sai como mensagem normal da conversa (numa thread, como as outras respostas) e o caminho da IA nem é tocado; se não for, `responder()` devolve `None` e tudo segue como antes. Três métodos novos na ponte: `lembretes_vencidos` (devolve o que já venceu, com o horário em português), `lembrete_concluir` e `lembrete_adiar`. No modo exemplo nada é lido nem gravado.
+- **Ligação na tela (`web/`):** contêiner `#lembretes` novo no `index.html`; em `app.js`, a tela pergunta `lembretes_vencidos` ao abrir e **de 30 em 30 segundos**, e desenha um cartão com `role="alert"` para cada lembrete vencido (cada um aparece **uma vez por sessão**, até ser marcado como Feito ou adiado). O visual usa as cores do tema.
+- **Defeito achado e corrigido antes do commit:** a primeira versão punha os cartões no **canto inferior direito** — e as capturas mostraram que eles cobriam os botões de **microfone e enviar**, que ficam na direita do compositor. Os cartões passaram para o canto **superior direito**, logo abaixo da barra de título (32 px). Também foi ajustado o fundo do cartão (`--superficie`, em vez de `--superficie-2`) porque o botão "Adiar 10 min" ficava da mesma cor do cartão e não aparecia.
+- **Pacote:** `lembretes` entrou nos dois `.spec` do PyInstaller (junto de `pdf_leitor`), para o `.exe` distribuível incluir o módulo.
+- **Verificação:** `verificar.py`: **161 verificações, 0 falhas, 1 aviso** (o aviso é a pendência de contraste, Prioridade 3.6 — não é defeito desta rodada). Cinco testes novos: o interpretador com datas fixas (4 frases + 3 filtros que devem ir para a IA), o armazenamento (criar, vencer, adiar, concluir, listar, cancelar e sobreviver a arquivo estragado), a ponte (existe, fica quieta no modo exemplo e devolve só o vencido), o **caminho de verdade** do `enviar` (a frase responde **sem chave** e grava o lembrete; uma pergunta normal continua indo à IA) e a ligação na tela/pacote. Tudo com arquivos sintéticos em `_tmp` — nenhum dado real é lido ou alterado.
+- **Conferido na tela:** o app foi aberto com uma pasta de dados isolada (em `_tmp`) e dois lembretes já vencidos; as capturas mostram os dois cartões no canto superior direito e confirmam que os botões de enviar e microfone ficaram livres.
+
+## 17/10/2026 - faixas de redimensionar na tela
+O redimensionar pelas bordas nao funcionava (o WebView2 cobre a janela e engole o mouse). Agora 8 faixas em HTML chamam Ponte.janela_redimensionar (WM_NCLBUTTONDOWN com HT_*). Plano: PLANO-BORDAS-REDIMENSIONAR.md. Teste novo no verificar.py (156 verificacoes).
+
 ## 2026-10-17 — Janela redimensionável de novo e contraste medido nos 10 temas
 
 - **Redimensionamento (patch recebido):** `_tirar_barra_nativa` tirava o `WS_CAPTION` **e o `WS_THICKFRAME`** (`& ~0x00C00000 & ~0x00040000`), então a janela perdia a borda que se arrasta para redimensionar — e também o encaixe com Win+setas. Vale notar: o comentário de topo do bloco já dizia que era para *manter* o `WS_THICKFRAME`; o código não fazia o que o comentário dizia. A lógica saiu para uma função própria, `_estilo_sem_barra(estilo)`, que remove só o `WS_CAPTION`. Correção proposta em `PATCH_redimensionamento.md` e `_tirar_barra_nativa_CORRIGIDA.py`.
@@ -1979,7 +1993,3 @@ foram instaladas junto; não precisam ser listadas.
 - app_web.py: definir_modo, config_salvar, testar_chave, memoria_adicionar/apagar/apagar_tudo/organizar agora gravam de verdade (reaproveitam salvar_config, esquecer_memoria, _mesclar_memoria, organizar_memoria, testar_chave, testar_servico do pesquisa_ia.py).
 - Chave vazia nao apaga a chave salva; campos desconhecidos sao ignorados; no modo exemplo nada e gravado.
 - verificar.py: nova funcao testes_tela_nova_config (isolada em _tmp, nao toca nos arquivos do Wolf). Nenhum teste foi removido. Resultado: TUDO CERTO.
-
-
-## 17/10/2026 - faixas de redimensionar na tela
-O redimensionar pelas bordas nao funcionava (o WebView2 cobre a janela e engole o mouse). Agora 8 faixas em HTML chamam Ponte.janela_redimensionar (WM_NCLBUTTONDOWN com HT_*). Plano: PLANO-BORDAS-REDIMENSIONAR.md. Teste novo no verificar.py (156 verificacoes).

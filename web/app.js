@@ -2395,7 +2395,60 @@ function ligarBarraTitulo() {
   window.addEventListener("resize", async () => marcar(await chamar("janela_estado")));
 }
 
+/* ---- lembretes (PLANO-LEMBRETES.md) ---- */
+// A tela pergunta ao Python, de 30 em 30 segundos (e ao abrir), se algum
+// lembrete já venceu e mostra um cartão para cada um. Cada lembrete
+// aparece UMA vez por sessão — mesmo que seja adiado, ele não volta a
+// piscar aqui; "Feito" e "Adiar 10 min" avisam o Python.
+const lembretesMostrados = new Set();
+
+function mostrarCartaoLembrete(l) {
+  const caixa = $("#lembretes");
+  if (!caixa) return;
+  const cartao = el("div", "lembrete");
+  cartao.setAttribute("role", "alert");
+  const texto = el("div", "lembrete-texto");
+  texto.append(el("span", "lembrete-hora", l.quando || "Lembrete"));
+  texto.append(el("span", "lembrete-recado", l.texto || ""));
+  const acoes = el("div", "lembrete-acoes");
+  const feito = el("button", "btn primario", "Feito");
+  feito.type = "button";
+  feito.addEventListener("click", async () => {
+    cartao.remove();
+    await chamar("lembrete_concluir", l.id);
+  });
+  const adiar = el("button", "btn", "Adiar 10 min");
+  adiar.type = "button";
+  adiar.addEventListener("click", async () => {
+    cartao.remove();
+    await chamar("lembrete_adiar", l.id, 10);
+  });
+  acoes.append(feito, adiar);
+  cartao.append(texto, acoes);
+  caixa.append(cartao);
+}
+
+async function verificarLembretes() {
+  let r = {};
+  try {
+    r = (await chamar("lembretes_vencidos")) || {};
+  } catch (_e) {
+    return;
+  }
+  for (const l of (r.lembretes || [])) {
+    if (!l || !l.id || lembretesMostrados.has(l.id)) continue;
+    lembretesMostrados.add(l.id);
+    mostrarCartaoLembrete(l);
+  }
+}
+
+function ligarLembretes() {
+  verificarLembretes();
+  setInterval(verificarLembretes, 30000);
+}
+
 ligarBarraTitulo();
 ligarEventos();
 ligarMenuContexto();
+ligarLembretes();
 window.addEventListener("pywebviewready", iniciar);

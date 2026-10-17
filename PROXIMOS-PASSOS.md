@@ -61,6 +61,15 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
 - [ ] **Aguarda confirmação do usuário:** corrigir muda a aparência escolhida (cor do texto nos botões de 8 temas, texto apagado mais claro em 7). A cor dos acentos ficaria praticamente igual; a maior diferença é o texto do botão ficar escuro nos temas claros.
 - [ ] Depois de aplicar: o aviso `contraste:` do `verificar.py` deve sumir (voltar a 0 avisos).
 
+## Prioridade 8 — lembretes ("me lembra amanhã às 9h de pagar a conta")
+
+- [x] O módulo `lembretes.py` (com plano em `PLANO-LEMBRETES.md`) estava **órfão** — nenhum arquivo o chamava, então o recurso não existia para o usuário. Agora está ligado em `Ponte.enviar`, **antes** da checagem de chave, com os métodos `lembretes_vencidos`, `lembrete_concluir` e `lembrete_adiar`.
+- [x] Frases entendidas: "amanhã às 9h", "daqui a 30 minutos", "segunda às 14h30", "dia 25", "20/10 às 7h", "hoje às 18h", "depois de amanhã às 10 da noite" e "lembrete: ..."; listar com "meus lembretes" e cancelar com "cancelar lembrete 2". Frases que só *parecem* lembrete ("como me lembrar de coisas?") continuam indo para a IA.
+- [x] Cartões na tela com `role="alert"`, perguntados ao abrir e **de 30 em 30 segundos**, com "Feito" e "Adiar 10 min"; cada lembrete aparece uma vez por sessão. Ficam no **alto à direita**, abaixo da barra de título, para não cobrir os botões de microfone e enviar (o defeito foi visto em captura de tela e corrigido antes do commit).
+- [x] Tudo local (`%LOCALAPPDATA%/PesquisaIA/lembretes.json`), sem IA e **funcionando sem chave**. O módulo entrou nos dois `.spec` do PyInstaller, para o `.exe` distribuível incluí-lo.
+- [x] Cinco testes novos no `verificar.py` (interpretador com datas fixas, armazenamento, a ponte, o envio sem chave pelo caminho de verdade e a ligação na tela/pacote), todos com arquivos em `_tmp` — nenhum dado real é lido ou alterado.
+- [ ] **Testar manualmente** pelo atalho: criar um lembrete para daqui a 1 minuto e conferir o cartão, "Feito" e "Adiar 10 min"; conferir também o cartão que aparece ao abrir o programa com um lembrete já vencido.
+
 ## Prioridade 4 — manter os documentos coerentes
 
 - Usar README.md como ponto de entrada.

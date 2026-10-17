@@ -20,6 +20,8 @@ datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 hiddenimports += ['pdf_leitor']
 tmp_ret = collect_all('pypdf')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+# Lembretes ("me lembra amanha as 9h de ..."): modulo local, tudo local.
+hiddenimports += ['lembretes']
 
 
 a = Analysis(
