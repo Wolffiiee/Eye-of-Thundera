@@ -25,3 +25,6 @@ truque do `janela_arrastar` (que ja funciona). O Windows assume o redimensioname
 
 ## Nao fazer
 Nao remover o gancho WNDPROC sem Wolf testar a janela. Nao apagar testes.
+
+## Atualizacao 17/10 11:30
+O WM_NCLBUTTONDOWN com HT_* NAO redimensionou (o cursor mudava, nada acontecia). Trocado por redimensionar manual: a tela manda dx/dy do mouse (pointer capture) e Ponte.janela_redimensionar_ini / janela_redimensionar_mover fazem SetWindowPos (minimo 640x480).

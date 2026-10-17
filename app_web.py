@@ -1419,17 +1419,58 @@ class Ponte:
     _BORDAS_HT = {"esquerda": 10, "direita": 11, "topo": 12, "topo-esq": 13,
                   "topo-dir": 14, "base": 15, "base-esq": 16, "base-dir": 17}
 
-    def janela_redimensionar(self, borda=""):
-        """Comeca o redimensionar pela borda/canto (faixas da tela)."""
+    _ret0 = None
+
+    def janela_redimensionar_ini(self):
+        """Guarda o retangulo da janela no inicio do arrasto de uma borda."""
         try:
             import ctypes
-            codigo = self._BORDAS_HT.get(str(borda))
+            from ctypes import wintypes
             hwnd = _hwnd_da_janela()
-            if codigo and hwnd and not _janela_maximizada(hwnd):
-                ctypes.windll.user32.ReleaseCapture()
-                ctypes.windll.user32.SendMessageW(hwnd, 0x00A1, codigo, 0)   # WM_NCLBUTTONDOWN
+            if hwnd and not _janela_maximizada(hwnd):
+                r = wintypes.RECT()
+                ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(r))
+                self._ret0 = (r.left, r.top, r.right, r.bottom)
+            else:
+                self._ret0 = None
         except Exception as erro:
-            p.registrar_erro("janela_redimensionar", erro)
+            self._ret0 = None
+            p.registrar_erro("janela_redimensionar_ini", erro)
+        return {}
+
+    def janela_redimensionar_mover(self, borda="", dx=0, dy=0):
+        """Muda o tamanho da janela: dx/dy = quanto o mouse andou (pixels fisicos)."""
+        try:
+            import ctypes
+            borda = str(borda)
+            hwnd = _hwnd_da_janela()
+            if not (hwnd and self._ret0 and borda in self._BORDAS_HT):
+                return {}
+            dx, dy = int(dx), int(dy)
+            e, t, d, b = self._ret0
+            if "esq" in borda:
+                e += dx
+            if "dir" in borda:
+                d += dx
+            if "topo" in borda:
+                t += dy
+            if "base" in borda:
+                b += dy
+            minl, mina = 640, 480
+            if d - e < minl:
+                if "esq" in borda:
+                    e = d - minl
+                else:
+                    d = e + minl
+            if b - t < mina:
+                if "topo" in borda:
+                    t = b - mina
+                else:
+                    b = t + mina
+            # 0x0014 = SWP_NOZORDER | SWP_NOACTIVATE
+            ctypes.windll.user32.SetWindowPos(hwnd, 0, e, t, d - e, b - t, 0x0014)
+        except Exception as erro:
+            p.registrar_erro("janela_redimensionar_mover", erro)
         return {}
 
     def colar_texto(self):

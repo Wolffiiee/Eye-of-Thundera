@@ -2362,11 +2362,35 @@ function ligarBarraTitulo() {
     }
   });
   document.querySelectorAll("#bordas .grip").forEach((g) => {
-    g.addEventListener("mousedown", (e) => {
+    let ativo = false, sx = 0, sy = 0, dx = 0, dy = 0, enviando = false;
+    const enviar = async () => {
+      if (enviando) return;
+      enviando = true;
+      while (ativo) {
+        const x = dx, y = dy;
+        await chamar("janela_redimensionar_mover", g.dataset.borda, x, y);
+        if (x === dx && y === dy) break;
+      }
+      enviando = false;
+    };
+    g.addEventListener("pointerdown", async (e) => {
       if (e.button !== 0) return;
       e.preventDefault();
-      chamar("janela_redimensionar", g.dataset.borda);
+      try { g.setPointerCapture(e.pointerId); } catch (_e) { /* sem captura */ }
+      sx = e.screenX; sy = e.screenY; dx = 0; dy = 0;
+      await chamar("janela_redimensionar_ini");
+      ativo = true;
     });
+    g.addEventListener("pointermove", (e) => {
+      if (!ativo) return;
+      const k = window.devicePixelRatio || 1;
+      dx = Math.round((e.screenX - sx) * k);
+      dy = Math.round((e.screenY - sy) * k);
+      enviar();
+    });
+    const soltar = () => { ativo = false; };
+    g.addEventListener("pointerup", soltar);
+    g.addEventListener("pointercancel", soltar);
   });
   window.addEventListener("resize", async () => marcar(await chamar("janela_estado")));
 }
