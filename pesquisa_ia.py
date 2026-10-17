@@ -18,6 +18,7 @@ import queue
 import re
 import difflib
 import sys
+import tempfile
 import threading
 import time
 import traceback
@@ -314,11 +315,35 @@ def carregar_config():
 
 
 def salvar_config(cfg):
-    """Grava a configuracao no computador (somente do seu usuario)."""
+    """Grava a configuracao com substituicao atomica, preservando a versao anterior se falhar."""
     PASTA_CONFIG.mkdir(parents=True, exist_ok=True)
-    ARQUIVO_CONFIG.write_text(
-        json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    temporario = None
+    try:
+        # O arquivo temporario fica na mesma pasta/volume para que os.replace
+        # substitua o config.json de uma vez, sem deixa-lo pela metade.
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=str(PASTA_CONFIG),
+            prefix=".config-",
+            suffix=".tmp",
+            delete=False,
+        ) as arquivo:
+            temporario = Path(arquivo.name)
+            json.dump(cfg, arquivo, indent=2, ensure_ascii=False)
+            arquivo.write("\n")
+            arquivo.flush()
+            os.fsync(arquivo.fileno())
+        os.replace(temporario, ARQUIVO_CONFIG)
+        temporario = None
+    finally:
+        # Se a escrita ou a troca falhar, limpa apenas o temporario criado.
+        # O config.json anterior permanece intacto.
+        if temporario is not None:
+            try:
+                temporario.unlink(missing_ok=True)
+            except OSError:
+                pass
 
 
 # ----------------------------------------------------------------------------

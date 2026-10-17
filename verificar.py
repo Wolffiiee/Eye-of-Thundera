@@ -1322,12 +1322,27 @@ try:
             and _cfg_lido.get("web_corretor") is False
             and _cfg_lido.get("temaIdx") == 3
         )
+        # Simula falha na troca final: a versão anterior deve continuar intacta.
+        from unittest.mock import patch as _patch
+        _cfg_bytes_antes = _cfg_p.ARQUIVO_CONFIG.read_bytes()
+        _cfg_replace_falhou = False
+        try:
+            with _patch.object(_cfg_p.os, "replace", side_effect=OSError("falha simulada")):
+                _cfg_p.salvar_config({"api_key": "nao-gravar"})
+        except OSError:
+            _cfg_replace_falhou = True
+        _cfg_atomico_ok = (
+            _cfg_replace_falhou
+            and _cfg_p.ARQUIVO_CONFIG.read_bytes() == _cfg_bytes_antes
+            and not list(Path(_tmp_cfg).glob(".config-*.tmp"))
+        )
+        _cfg_ok = _cfg_ok and _cfg_atomico_ok
     _cfg_p.PASTA_CONFIG = _cfg_pasta_original
     _cfg_p.ARQUIVO_CONFIG = _cfg_arquivo_original
     if _cfg_ok:
-        ok("configurações: opções persistem, chave vazia preserva segredo e campos desconhecidos são ignorados")
+        ok("configurações: persistência e proteção das chaves; falha simulada preserva o arquivo anterior")
     else:
-        falha("configurações: persistência, preservação da chave ou lista permitida falhou")
+        falha("configurações: persistência, proteção das chaves ou gravação atômica falhou")
 except Exception as _erro_cfg:
     try:
         _cfg_p.PASTA_CONFIG = _cfg_pasta_original

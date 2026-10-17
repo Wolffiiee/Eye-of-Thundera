@@ -29,7 +29,7 @@ A revisão estática confirmou que todos os nomes usados nas chamadas da interfa
 - O usuário confirmou que a validação manual da janela real está em ordem: Nova conversa, Configurações, abas, alternância Web e tema Ocean.
 - Nesta rodada, Pesquisa séria, Privada e Resumo do dia foram agrupados em “Mais”; os estados ativos aparecem no rótulo e o menu abre para cima. O controle de ativação do Gemini agora fica no cartão da chave.
 - O usuário confirmou que o menu “Mais” e o cartão Gemini ficaram bonitos e funcionais.
-- O salvamento das configurações mostra “Salvando...”, bloqueia cliques duplicados e desativa temporariamente os controles da aba para não perder alterações concorrentes. Um `finally` reabilita os controles após falha; mensagens de erro ficam visíveis no rodapé.
+- O salvamento das configurações mostra “Salvando...”, bloqueia cliques duplicados e desativa temporariamente os controles da aba para não perder alterações concorrentes. Um `finally` reabilita os controles após falha; mensagens de erro ficam visíveis no rodapé. A gravação de `config.json` usa arquivo temporário + `os.replace`, e o teste isolado confirma que uma falha simulada preserva a versão anterior.
 - Teste isolado cobre persistência das opções, preservação da chave principal quando o campo fica vazio, atualização da chave reserva e rejeição de campos não permitidos.
 - Configurações: foco de teclado destacado, abas podem rolar horizontalmente e o corpo permanece rolável em janelas estreitas/baixas; a interface respeita `prefers-reduced-motion`. O diálogo tem nome acessível e declara modalidade.
 - `show.png` aparece como excluído no diretório de trabalho. Não foi alterado nem incluído no commit desta rodada.

@@ -9,6 +9,7 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 - **Salvamento:** o botão indica “Salvando...” e fica desativado durante a gravação para impedir cliques duplicados. Os controles da aba também ficam temporariamente desativados, evitando que mudanças feitas durante a espera sejam perdidas quando a aba é redesenhada.
 - **Recuperação:** um `finally` restaura os controles mesmo se a gravação ou a atualização da tela falhar; erros inesperados deixam uma mensagem no rodapé e são registrados no console sem incluir dados secretos.
+- **Arquivo protegido:** `pesquisa_ia.salvar_config()` grava primeiro em um temporário no mesmo diretório e só então substitui `config.json` com `os.replace`. Se a escrita ou a troca falhar, o arquivo anterior é preservado e o temporário é limpo. Teste isolado simula a falha e confirma isso sem tocar na configuração real.
 - **Regressão:** teste estático verifica o bloqueio e a recuperação dos controles. O teste isolado de persistência confirma preservação da chave principal quando o campo fica vazio, atualização da chave reserva, manutenção de campos existentes e rejeição de campos não permitidos; usa diretório temporário, sem tocar nas chaves reais.
 - **Verificação final:** `verificar.py`: 132 verificações, 0 falhas, 0 avisos; `node --check web/app.js`, compilação Python e `git diff --check` aprovados.
 
