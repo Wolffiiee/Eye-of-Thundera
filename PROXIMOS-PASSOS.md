@@ -21,8 +21,9 @@ Atualizado em 16/10/2026. Este documento contém pendências reais; o histórico
 
 ## Prioridade 3 — melhorar a experiência visual
 
-- Simplificar a barra de escrita: os quatro botões Web, Pesquisa séria, Privada e Resumo do dia competem por atenção. Considerar agrupar opções secundárias em um menu, mantendo os estados ativos visíveis. A correção de estilo dos cartões de sugestão da página inicial já foi aplicada; ainda precisa ser conferida visualmente no app real.
-- Na aba Chaves, agrupar o botão de ativação de cada provedor com o cartão da respectiva chave; hoje o controle do Gemini fica separado do cartão da chave.
+- [x] Agrupar Pesquisa séria, Privada e Resumo do dia em “Mais”, mantendo indicação dos modos ativos e atalhos existentes. Conferir visualmente após reabrir o app.
+- [x] Agrupar “Usar o Gemini (principal)” no cartão da chave correspondente. Conferir visualmente na aba Chaves.
+- A correção de estilo dos cartões de sugestão da página inicial já foi aplicada; confirmar que a grade se adapta bem em janela estreita.
 - Padronizar acentuação, pontuação, nomes de controles e descrições em português brasileiro.
 - Garantir foco visível, rótulos acessíveis, estados de carregamento e mensagens de erro que não desapareçam antes de poderem ser lidas.
 - Verificar a janela de Configurações em resolução menor e com escala de tela do Windows acima de 100%.

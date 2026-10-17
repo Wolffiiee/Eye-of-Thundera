@@ -1,6 +1,6 @@
 # Onde paramos
 
-Atualizado em 16/10/2026, após corrigir a persistência do tema e a ação de pesquisa profunda.
+Atualizado em 16/10/2026, após validar os cliques no aplicativo e agrupar opções secundárias da interface.
 
 ## Resumo do estado atual
 
@@ -24,9 +24,11 @@ A revisão estática confirmou que todos os nomes usados nas chamadas da interfa
 
 - JavaScript: sintaxe aprovada com Node.js.
 - Python: app_web.py, pesquisa_ia.py, memoria.py e roteador.py passaram na compilação de sintaxe.
-- verificar.py: VERIFICACOES: 127 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO. Inclui teste de regressão para o botão/atalho de pesquisa profunda, testes isolados dos cinco temas e teste de salvar resposta via diálogo pywebview, sem tocar no config.json real.
+- verificar.py: VERIFICACOES: 129 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO. Inclui regressão da pesquisa profunda, menu de modos, agrupamento do controle Gemini, testes isolados dos cinco temas e salvar resposta via diálogo pywebview, sem tocar no config.json real.
 - Teste de abertura: o comando usado pelo atalho foi iniciado novamente, a janela com título Eye of Thundera ficou visível no Windows e não foi criado erro.log.
-- Ainda falta confirmar manualmente que os cliques respondem. A suíte automatizada e a abertura da janela não substituem esse teste manual completo.
+- O usuário confirmou que a validação manual da janela real está em ordem: Nova conversa, Configurações, abas, alternância Web e tema Ocean.
+- Nesta rodada, Pesquisa séria, Privada e Resumo do dia foram agrupados em “Mais”; os estados ativos aparecem no rótulo e o menu abre para cima. O controle de ativação do Gemini agora fica no cartão da chave.
+- A validação visual específica dessas duas alterações ainda precisa ser feita na janela real após reabrir o atalho.
 
 ## Arquivos centrais
 

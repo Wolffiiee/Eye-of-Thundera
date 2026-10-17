@@ -2,7 +2,7 @@
 
 Assistente pessoal de pesquisa, com interface escura em HTML/JavaScript e integração Python via pywebview.
 
-**Estado conferido em 16/10/2026:** o atalho da Área de Trabalho abre o código-fonte em app_web.py. A sintaxe da interface está verificada automaticamente; a aba Personalização oferece cinco temas persistentes; o botão de salvar resposta usa o diálogo da janela pywebview; e o botão/atalho de Pesquisa séria agora força o modo de pesquisa profunda corretamente. A suíte passou com 127 verificações, sem falhas nem avisos. Ainda falta validar manualmente os cliques no aplicativo real.
+**Estado conferido em 16/10/2026:** o atalho da Área de Trabalho abre o código-fonte em app_web.py. A sintaxe da interface está verificada automaticamente; a aba Personalização oferece cinco temas persistentes; o botão de salvar resposta usa o diálogo da janela pywebview; o botão/atalho de Pesquisa séria força a pesquisa profunda; e as opções secundárias estão agrupadas em “Mais”. A suíte passou com 129 verificações, sem falhas nem avisos. O usuário confirmou que os fluxos principais respondem; a validação visual do novo menu e do cartão Gemini ainda está pendente.
 
 ## Comece por aqui
 

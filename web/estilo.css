@@ -164,6 +164,25 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .pilula:hover { background: var(--superficie-2); color: var(--texto); }
 .pilula.ligada { color: #b8c8ff; border-color: #34458f; background: #1c2447; }
 #btn-privada.ligada { color: #ffd39a; border-color: #7a5a22; background: #2f2513; }
+/* Opções secundárias sob uma gaveta, aberta para cima para não cobrir a caixa de texto. */
+.menu-modos { position: relative; flex: none; }
+.menu-modos > summary { list-style: none; user-select: none; }
+.menu-modos > summary::-webkit-details-marker { display: none; }
+.menu-modos > summary::marker { content: ""; }
+#menu-modos:not([open]) .menu-modos-lista { display: none; }
+.menu-modos.tem-ativo > summary { color: #b8c8ff; border-color: #34458f; background: #1c2447; }
+.menu-modos-lista { position: absolute; z-index: 35; left: 0; bottom: calc(100% + 8px);
+  min-width: 196px; padding: 6px; display: flex; flex-direction: column; gap: 4px;
+  background: var(--superficie-2); border: 1px solid var(--borda); border-radius: 13px;
+  box-shadow: var(--sombra); }
+.menu-modos-lista .pilula { width: 100%; justify-content: flex-start; border-color: transparent;
+  border-radius: 9px; padding: 9px 10px; text-align: left; }
+.menu-modos-lista .pilula:hover { background: var(--superficie); }
+.menu-modos-lista .pilula.ligada { border-color: #34458f; }
+.menu-modos-lista #btn-privada.ligada { border-color: #7a5a22; }
+.menu-modos > summary:focus-visible, .menu-modos-lista .pilula:focus-visible {
+  outline: 2px solid var(--azul-2); outline-offset: 2px;
+}
 /* tamanho da letra: botoes da aba Conversa */
 .grupo-letra { display: flex; align-items: center; gap: 6px; }
 .grupo-letra .btn.letra { min-width: 40px; font-weight: 700; }

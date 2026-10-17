@@ -5,6 +5,15 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Organiza os modos secundários e as configurações do Gemini
+
+- **Interface:** Pesquisa séria, Privada e Resumo do dia agora ficam sob “Mais”, reduzindo a quantidade de botões sempre visíveis na barra de escrita.
+- **Estados:** o menu mostra quantos modos estão ativos e fica destacado quando Pesquisa séria ou Privada está ligada; a gaveta abre para cima e preserva os IDs e os atalhos já existentes.
+- **Configurações:** o controle “Usar o Gemini (principal)” foi agrupado no cartão da própria chave.
+- **Verificação:** adicionados testes estáticos para o menu, os estados ativos e o cartão do Gemini. A conferência visual dessas mudanças ainda está pendente.
+
+---
+
 ## 2026-10-16 — Corrige o estilo das sugestões da página inicial
 
 - **Defeito:** a regra visual `.sugestoes` para perguntas sugeridas depois de uma resposta também atingia o bloco `#sugestoes` da página inicial, substituindo os cartões em duas colunas por chips compactos.

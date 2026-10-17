@@ -996,9 +996,19 @@ async function alternarPrivada() {
     : "Conversa privada desligada: a partir de agora tudo é salvo de novo.");
 }
 
+function atualizarMenuModos() {
+  const ativos = Number(!!estado.profundo) + Number(!!estado.privada);
+  const menu = $("#menu-modos");
+  const rotulo = $("#rotulo-modos");
+  if (!menu || !rotulo) return;
+  rotulo.textContent = ativos ? "Mais · " + ativos + " ativo(s)" : "Mais";
+  menu.classList.toggle("tem-ativo", ativos > 0);
+}
+
 function mostrarPrivada() {
   const b = $("#btn-privada");
   b.classList.toggle("ligada", !!estado.privada);
+  atualizarMenuModos();
   b.title = estado.privada
     ? "Conversa privada LIGADA: nada é salvo nem entra na memória (clique para desligar)"
     : "Conversa privada: o que for dito aqui não é salvo nem entra na sua memória (clique para ligar)";
@@ -1236,6 +1246,9 @@ function linhaTamalho() {
 function cartaoChave(titulo, desc, campo, info, opc) {
   const c = el("div", "cartao");
   c.append(el("h4", "", titulo), el("p", "desc", desc));
+  if (opc.controle) {
+    c.append(linhaToggle(opc.controle.titulo, opc.controle.desc, opc.controle.chave));
+  }
   const linha = el("div", "campo");
   const inp = el("input");
   inp.type = "password";
@@ -1275,15 +1288,15 @@ function cartaoChave(titulo, desc, campo, info, opc) {
 
 function abaChaves(corpo) {
   const cfg = estado.cfgTela;
-  const geminiCard = el("div", "cartao");
-  geminiCard.append(linhaToggle("Usar o Gemini (principal)",
-    "Desliga o Gemini e usa só o plano B (ChatGPT/Groq/OpenRouter).",
-    "usar_gemini"));
-  corpo.append(geminiCard);
   corpo.append(
     cartaoChave("Google Gemini (principal)", "É ela que pesquisa e escreve as respostas.", "api_key", cfg.gemini, {
       testar: true,
       pagina: "https://aistudio.google.com/apikey",
+      controle: {
+        titulo: "Usar o Gemini (principal)",
+        desc: "Desliga o Gemini e usa só o plano B (ChatGPT/Groq/OpenRouter).",
+        chave: "usar_gemini",
+      },
     }),
     cartaoChave("Google Gemini (reserva, opcional)", "Se a principal parar de funcionar, o programa troca sozinho para esta.", "api_key_reserva", cfg.gemini_reserva, { testar: true })
   );
@@ -1806,11 +1819,19 @@ function ligarEventos() {
     b.title = estado.profundo
       ? "Pesquisa profunda LIGADA (clique para desligar)"
       : "Pesquisa profunda: mais sites, resposta em tópicos com fontes (clique para ligar)";
+    atualizarMenuModos();
+    $("#menu-modos").open = false;
     aviso(estado.profundo ? "Pesquisa profunda LIGADA." : "Pesquisa profunda desligada.");
   });
   $("#btn-mic").addEventListener("click", () => alternarMicrofone());
-  $("#btn-privada").addEventListener("click", () => alternarPrivada());
-  $("#btn-resumo").addEventListener("click", () => resumoDoDia());
+  $("#btn-privada").addEventListener("click", () => {
+    $("#menu-modos").open = false;
+    alternarPrivada();
+  });
+  $("#btn-resumo").addEventListener("click", () => {
+    $("#menu-modos").open = false;
+    resumoDoDia();
+  });
   $("#btn-nova").addEventListener("click", novaConversa);
   $("#btn-config").addEventListener("click", () => abrirConfig());
   $("#btn-fechar-config").addEventListener("click", fecharConfig);

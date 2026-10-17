@@ -1151,6 +1151,27 @@ else:
     falha("Tarefa D: botão/atalho não garantem o envio em pesquisa profunda")
 
 
+# --- UX: opções secundárias agrupadas sem perder os estados ativos ----------
+_ui_html = Path(PASTA / "web" / "index.html").read_text(encoding="utf-8")
+_ui_css = Path(PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+if ('<details id="menu-modos" class="menu-modos">' in _ui_html
+        and 'id="btn-deep"' in _ui_html and 'id="btn-privada"' in _ui_html
+        and 'id="btn-resumo"' in _ui_html
+        and 'function atualizarMenuModos()' in _js_deep
+        and 'menu.classList.toggle("tem-ativo", ativos > 0)' in _js_deep
+        and 'bottom: calc(100% + 8px)' in _ui_css
+        and '#menu-modos:not([open]) .menu-modos-lista { display: none; }' in _ui_css):
+    ok("UX: modos secundários agrupados, ativos indicados e menu abre para cima")
+else:
+    falha("UX: menu de modos ou indicação de estado está incompleto")
+if ('controle: {' in _js_deep
+        and 'titulo: "Usar o Gemini (principal)"' in _js_deep
+        and 'if (opc.controle)' in _js_deep):
+    ok("configurações: ativação do Gemini agrupada ao cartão da chave")
+else:
+    falha("configurações: ativação do Gemini separada do cartão da chave")
+
+
 # --- Tarefa D + drag-drop UI evidence ----------------------------
 _d = (Path(PASTA / 'web' / 'app.js').read_text(encoding='utf-8') + '\n' +
      Path(PASTA / 'web' / 'index.html').read_text(encoding='utf-8'))
