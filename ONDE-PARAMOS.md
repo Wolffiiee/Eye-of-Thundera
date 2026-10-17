@@ -48,7 +48,7 @@ A revisão estática confirmou que todos os nomes usados nas chamadas da interfa
 - Os testes de PDF usam apenas arquivos sintéticos em `_tmp`; nenhum documento pessoal é lido e nenhum dado real é alterado.
 - A leitura de PDF depende do `pypdf`, declarado no `requirements.txt`. Se ele faltar, o programa avisa e continua funcionando; a verificação automática aponta a biblioteca faltando.
 - Rodada anterior: capturas em modo demonstração conferidas em 1180 px e 900 px; falha/sucesso da cópia simulados com valores sintéticos e sem alterar a área de transferência real.
-- Não foi gerado EXE porque o atalho de uso diário executa `app_web.py` diretamente.
+- O `.exe` distribuível foi **recompilado nesta rodada** (`dist/Eye of Thundera.exe`, com `lembretes` dentro do pacote), porque os dois `.spec` mudaram. O atalho de uso diário continua executando `app_web.py` pelo `.venv`. O pacote foi aberto com dados isolados em `_tmp` e o **cartão de lembrete apareceu dentro do `.exe`**; nenhum `erro.log` foi criado. Detalhe do teste: o `.exe` é *onefile*, então quem abre a janela é um processo **filho** do bootloader — ao automatizar, feche a árvore inteira (`taskkill /T`), senão a janela fica aberta na tela.
 
 - JavaScript: sintaxe aprovada com Node.js.
 - Python: app_web.py, pesquisa_ia.py e verificar.py passaram na compilação de sintaxe.
