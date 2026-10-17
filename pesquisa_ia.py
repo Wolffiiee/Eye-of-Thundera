@@ -3419,20 +3419,44 @@ def fazer_backup_dados(destino=None, quantos=15):
     return alvo, [a.name for a in arquivos]
 
 
-def registrar_erro(onde, erro):
-    """Grava um erro no erro.log, sem nunca levantar erro ela mesma.
+def _sanitizar_erro_log(texto):
+    """Oculta formatos comuns de chaves/tokens antes de gravar o log."""
+    texto = str(texto)
+    # Chaves conhecidas pelos provedores usados neste projeto.
+    texto = re.sub(r"AIza[0-9A-Za-z_-]{20,}", "[CHAVE REDIGIDA]", texto)
+    texto = re.sub(r"(?i)\bsk-or-[A-Za-z0-9_-]{12,}", "[CHAVE REDIGIDA]", texto)
+    texto = re.sub(r"(?i)\bgsk_[A-Za-z0-9_-]{12,}", "[CHAVE REDIGIDA]", texto)
+    texto = re.sub(r"(?i)\bsk-[A-Za-z0-9_-]{16,}", "[CHAVE REDIGIDA]", texto)
+    texto = re.sub(
+        r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]+",
+        "Bearer [TOKEN REDIGIDO]",
+        texto,
+    )
+    # Campos de credencial em mensagens estruturadas ou exceções HTTP.
+    texto = re.sub(
+        r"(?i)(api[_-]?key|authorization|access[_-]?token|client[_-]?secret)"
+        r"(\s*[:=]\s*[\"']?)([^\s,;\"'}]+)",
+        r"\1\2[SEGREDO REDIGIDO]",
+        texto,
+    )
+    return texto
 
-    Fica no nivel do modulo (e nao dentro do `main` do tkinter) para que
-    a tela nova em HTML tambem possa usar: em 16/10/2026 o Wolf viu a tela
-    fechar sem deixar rastro nenhum, porque a tela nova engolia tudo em
-    silencio.
+
+def registrar_erro(onde, erro):
+    """Grava erros no erro.log, ocultando formatos comuns de credenciais.
+
+    Fica no nivel do modulo para que a tela HTML e o programa antigo usem
+    o mesmo registro. Esta funcao nunca deve derrubar o programa por falha
+    no proprio log.
     """
     try:
         ARQUIVO_ERRO.parent.mkdir(parents=True, exist_ok=True)
+        mensagem = _sanitizar_erro_log(erro)
+        origem = _sanitizar_erro_log(onde)
         with ARQUIVO_ERRO.open("a", encoding="utf-8") as arquivo:
             arquivo.write(
                 "\n===== %s | %s =====\n%s\n"
-                % (time.strftime("%d/%m/%Y %H:%M:%S"), onde, erro)
+                % (time.strftime("%d/%m/%Y %H:%M:%S"), origem, mensagem)
             )
     except Exception:
         pass

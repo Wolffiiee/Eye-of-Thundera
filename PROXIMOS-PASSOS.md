@@ -40,4 +40,6 @@ Atualizado em 16/10/2026. Este documento contém pendências reais; o histórico
 
 ## Regras de segurança
 
-Não fazer uma grande reescrita da interface de uma vez. Não apagar arquivos, dados de conversa, memória ou chaves. Toda correção de comportamento deve ter uma verificação que detecte a regressão.
+- [x] O logger mascara padrões conhecidos de credenciais antes de gravar mensagens no `erro.log`; o teste usa valores sintéticos e não chama APIs.
+- [ ] Se surgirem novos provedores ou formatos de autenticação, revisar `_sanitizar_erro_log()` e adicionar exemplos sintéticos. A redação por padrões não é garantia absoluta: não incluir segredos em mensagens de erro.
+- Não fazer uma grande reescrita da interface de uma vez. Não apagar arquivos, dados de conversa, memória ou chaves. Toda correção de comportamento deve ter uma verificação que detecte a regressão.

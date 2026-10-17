@@ -1352,6 +1352,37 @@ except Exception as _erro_cfg:
     falha("configurações: teste isolado falhou: %r" % (_erro_cfg,))
 
 
+# --- logs: a função de registro sanitiza credenciais -----------------------
+_log_p = importlib.import_module("pesquisa_ia")
+_log_fonte = ARQUIVO.read_text(encoding="utf-8")
+_log_api = "s" * 24
+_log_bearer = "x" * 36
+_log_google = "AIza" + ("a" * 24)
+_log_openrouter = "sk-or-" + ("b" * 16)
+_log_groq = "gsk_" + ("c" * 16)
+_log_openai = "sk-" + ("d" * 20)
+_log_amostra = (
+    "api" + "_key=" + _log_api + "; " + "Be" + "arer " + _log_bearer
+    + "; " + _log_google + "; " + _log_openrouter + "; "
+    + _log_groq + "; " + _log_openai
+)
+_log_limpado = _log_p._sanitizar_erro_log(_log_amostra)
+if ("def _sanitizar_erro_log(texto):" in _log_fonte
+        and "[CHAVE REDIGIDA]" in _log_fonte
+        and "[TOKEN REDIGIDO]" in _log_fonte
+        and "mensagem = _sanitizar_erro_log(erro)" in _log_fonte
+        and all(segredo not in _log_limpado for segredo in (
+            _log_api, _log_bearer, _log_google, _log_openrouter,
+            _log_groq, _log_openai
+        ))
+        and "[SEGREDO REDIGIDO]" in _log_limpado
+        and "[TOKEN REDIGIDO]" in _log_limpado
+        and _log_limpado.count("[CHAVE REDIGIDA]") >= 4):
+    ok("logs: sanitização de credenciais verificada com valores sintéticos")
+else:
+    falha("logs: sanitização de credenciais falhou no teste isolado")
+
+
 # --- salvar resposta: diálogo da própria janela, sem criar uma raiz Tk ------
 try:
     _save_aw = importlib.import_module("app_web")

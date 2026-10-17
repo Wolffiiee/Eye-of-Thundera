@@ -1,8 +1,10 @@
 # Onde paramos
 
-Atualizado em 16/10/2026, após validar os cliques e reforçar o salvamento das configurações.
+Atualizado em 16/10/2026, após validar a suíte e reforçar a proteção do log.
 
 ## Resumo do estado atual
+
+A rodada mais recente adicionou `_sanitizar_erro_log()` ao `pesquisa_ia.py`: antes de gravar, o logger mascara padrões conhecidos de chaves de provedores, tokens Bearer e campos comuns de autenticação. O teste novo usa somente valores sintéticos e não escreve em `erro.log` nem chama serviços externos. A cobertura é por padrões conhecidos, portanto não garante remover todo segredo de mensagens inesperadas.
 
 O Eye of Thundera usa a interface HTML/JavaScript em web/ e a janela Python em app_web.py. O atalho real da Área de Trabalho é Eye of Thundera.lnk e aponta para .venv/Scripts/pythonw.exe com o argumento app_web.py, usando D:/Projetos/PesquisaIA como pasta de trabalho.
 
@@ -24,7 +26,7 @@ A revisão estática confirmou que todos os nomes usados nas chamadas da interfa
 
 - JavaScript: sintaxe aprovada com Node.js.
 - Python: app_web.py, pesquisa_ia.py, memoria.py e roteador.py passaram na compilação de sintaxe.
-- verificar.py: VERIFICACOES: 132 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO. Inclui regressão da pesquisa profunda, menu de modos, proteção contra duplo salvamento, persistência isolada das opções, preservação de chaves e campos permitidos, cinco temas, salvar resposta via diálogo pywebview e regras responsivas/acessíveis, sem tocar no config.json real.
+- verificar.py: VERIFICACOES: 133 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO. Inclui regressão da pesquisa profunda, menu de modos, proteção contra duplo salvamento, persistência isolada das opções, preservação de chaves e campos permitidos, cinco temas, sanitização de credenciais com valores sintéticos, salvar resposta via diálogo pywebview e regras responsivas/acessíveis, sem tocar no config.json real.
 - Teste de abertura: o comando usado pelo atalho foi iniciado novamente, a janela com título Eye of Thundera ficou visível no Windows e não foi criado erro.log.
 - O usuário confirmou que a validação manual da janela real está em ordem: Nova conversa, Configurações, abas, alternância Web e tema Ocean.
 - Nesta rodada, Pesquisa séria, Privada e Resumo do dia foram agrupados em “Mais”; os estados ativos aparecem no rótulo e o menu abre para cima. O controle de ativação do Gemini agora fica no cartão da chave.

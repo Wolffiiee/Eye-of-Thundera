@@ -5,6 +5,16 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Redige credenciais antes de gravar erros no log
+
+- **Risco encontrado:** `registrar_erro()` gravava mensagens de exceção diretamente em `erro.log`; algumas respostas HTTP podem incluir tokens ou campos de autenticação.
+- **Correção:** antes de registrar a origem e a mensagem, `_sanitizar_erro_log()` mascara formatos conhecidos de chaves Google/Gemini, OpenRouter, Groq e OpenAI, tokens Bearer e valores em campos como `api_key`, `authorization`, `access_token` e `client_secret`.
+- **Teste seguro:** `verificar.py` valida a sanitização com valores sintéticos; não usa credenciais reais, não chama APIs e não escreve no log real.
+- **Limite conhecido:** a sanitização é baseada em padrões e não garante remover todo segredo ou dado pessoal de mensagens inesperadas. Evitar incluir credenciais em exceções continua sendo necessário.
+- **Verificação:** `verificar.py`: 133 verificações, 0 falhas, 0 avisos; `py_compile`, `node --check web/app.js` e `git diff --check` aprovados.
+
+---
+
 ## 2026-10-16 — Reforça o salvamento e a validação das configurações
 
 - **Salvamento:** o botão indica “Salvando...” e fica desativado durante a gravação para impedir cliques duplicados. Os controles da aba também ficam temporariamente desativados, evitando que mudanças feitas durante a espera sejam perdidas quando a aba é redesenhada.
