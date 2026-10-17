@@ -51,15 +51,16 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
 - [ ] Testar manualmente arrastando um PDF de verdade (com texto) e um digitalizado pelo atalho real.
 - [ ] (Opcional, etapa futura) Anexar imagens depende de OCR/visão e de consentimento explícito; ainda não iniciado.
 
-## Prioridade 3.6 — contraste dos temas (rodada de cores, aguarda decisão)
+## Prioridade 3.6 — contraste dos temas (corrigido)
 
-- [x] O teste de contraste agora varre **os 10 temas e os 4 fundos de cada um** (antes só checava `--texto` e `--texto-2` sobre o `--bg`). Texto principal, texto secundário e link passam em todos os temas, em todos os fundos.
-- [x] A viabilidade da correção foi medida antes de implementar (como pedido em `SUGESTOES-MELHORIAS-Eye-of-Thundera.md`, Prioridade 3). Restam **32 pares** abaixo do mínimo, contados a cada execução pelo aviso `contraste:` do `verificar.py`:
-  - **Texto apagado** (`--texto-3` — horário da conversa, notas e botões de ação, de 11,5 a 13 px): 7 dos 10 temas ficam entre 3,28 e 4,49:1. Precisa clarear de 2% a 14% (ex.: Clássico Dark `#70708a` → `#8989a8`).
-  - **Texto branco do botão** (`--azul` no Enviar e no botão primário; `--azul-2` no hover): falha em **9 dos 10 temas** — só o Thundera passa. Pior caso: Grafite Dourado com **1,53:1** (fundo `#f1cd7d` quase branco com letra branca). Em **8 dos 10** temas resolve **só trocando a cor do texto** (branco → escuro), sem tocar em nenhuma cor do tema; Clássico Dark e Thundera precisam escurecer o acento por volta de 15%.
-  - **`--azul` como borda/anel de foco** em Thundera (2,83:1) e Forest (2,91:1): abaixo dos 3,0 pedidos para elementos não textuais (WCAG 1.4.11).
-- [ ] **Aguarda confirmação do usuário:** corrigir muda a aparência escolhida (cor do texto nos botões de 8 temas, texto apagado mais claro em 7). A cor dos acentos ficaria praticamente igual; a maior diferença é o texto do botão ficar escuro nos temas claros.
-- [ ] Depois de aplicar: o aviso `contraste:` do `verificar.py` deve sumir (voltar a 0 avisos).
+- [x] O teste de contraste varre **os 10 temas e os 4 fundos de cada um**, o **texto do botão em repouso e no hover**, o **link** (`--azul-2`), o `--azul` como borda (mínimo 3,0:1) e a **bolinha do interruptor**.
+- [x] A viabilidade foi medida antes de implementar (como pedido em `SUGESTOES-MELHORIAS-Eye-of-Thundera.md`, Prioridade 3): um script (`_tmp/planejar_cores.py`) leu as dez paletas, calculou o contraste (WCAG) e buscou o **menor ajuste** que resolve cada par, tema por tema. Os **32 pares** abaixo do mínimo foram todos corrigidos:
+  - **Texto apagado** (`--texto-3`): clareado em 9 dos 10 temas (o Thundera já passava), de 1% a 20% na mistura com o branco — agora **4,60:1 ou mais** (antes entre 3,28 e 4,49:1 em 7 temas).
+  - **Texto do botão** (Enviar e botão primário): duas chaves novas por tema — `--btn-texto` (branco no Clássico Dark e no Thundera, escuro nos 8 temas de acento claro) e `--btn-hover` (o fundo no hover; nos 8 claros continua o `--azul-2`, nos 2 escuros virou um tom mais fundo). Pior caso agora **4,63:1** — era 1,53:1 no Grafite Dourado e 2,69:1 no Ocean.
+  - **`--azul` como borda/anel de foco**: acima de 3,0:1 em todos (Thundera 3,06:1 e Forest 3,07:1; estavam em 2,83 e 2,91).
+  - **Bolinha do interruptor** (achado do teste novo): era branca fixa e desaparecia sobre o acento claro (2,2 a 3,0:1). Agora usa `--btn-texto` e o trilho desligado usa `--texto-3` — visível nos dois estados, pior caso 3,21:1.
+- [x] O aviso `contraste:` do `verificar.py` sumiu: o teste deixou de ser aviso e **falha** listando o par e o valor medido; a suíte está em **162 verificações, 0 falhas, 0 avisos**.
+- [ ] Conferir a aparência nova pelo atalho real (principalmente os temas de acento claro: Grafite Dourado, Pôr do Sol, Ocean, Rosa Chá) e dizer se gostou. Voltar atrás é mexer só em `--btn-texto` e `--btn-hover` do tema — nenhuma outra cor depende disso.
 
 ## Prioridade 8 — lembretes ("me lembra amanhã às 9h de pagar a conta")
 

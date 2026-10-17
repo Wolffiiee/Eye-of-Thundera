@@ -1297,10 +1297,10 @@ else:
 _paletas_parseadas = re.findall(r'\{ nome: "([^"]+)", cores: \{ ([^}]+) \} \}', _temas_bloco_ui)
 _fundos_da_paleta = ("--bg", "--painel", "--superficie", "--superficie-2")
 _paletas_legiveis = len(_paletas_parseadas) == 10
-_roteiro_cores = []            # pares ainda abaixo do mínimo: avisam, não travam
+_pares_cores = []              # pares abaixo do mínimo: cada um é uma falha
 for _nome_paleta, _texto_cores in _paletas_parseadas:
     _cores_paleta = dict(re.findall(r'"(--[\w-]+)": "(#[0-9a-fA-F]{6})"', _texto_cores))
-    if len(_cores_paleta) != 10:
+    if len(_cores_paleta) != 12:
         _paletas_legiveis = False
         continue
     def _lum(hex_cor):
@@ -1311,44 +1311,53 @@ for _nome_paleta, _texto_cores in _paletas_parseadas:
         _la, _lb = _lum(_cor_a), _lum(_cor_b)
         return (max(_la, _lb) + .05) / (min(_la, _lb) + .05)
 
+    def _checar(_valor, _fundo, _minimo, _rotulo):
+        _c = _contraste(_valor, _fundo)
+        if _c < _minimo:
+            _pares_cores.append((_c, "%s: %s = %.2f:1 (mínimo %.1f)"
+                                 % (_nome_paleta, _rotulo, _c, _minimo)))
+
     # Texto de verdade em cima de CADA fundo do tema — antes só checava o --bg,
     # e um tema pode ficar ilegível sobre o --superficie-2 sem ninguém notar.
-    for _chave_texto in ("--texto", "--texto-2"):
+    for _chave_texto in ("--texto", "--texto-2", "--texto-3"):
         for _fundo in _fundos_da_paleta:
-            if _contraste(_cores_paleta[_chave_texto], _cores_paleta[_fundo]) < 4.5:
-                _paletas_legiveis = False
+            _checar(_cores_paleta[_chave_texto], _cores_paleta[_fundo], 4.5,
+                    "%s sobre %s" % (_chave_texto, _fundo))
     # O link (--azul-2) aparece sempre sobre o --bg, onde a resposta é escrita.
-    if _contraste(_cores_paleta["--azul-2"], _cores_paleta["--bg"]) < 4.5:
-        _paletas_legiveis = False
-
-    # --- pendências conhecidas do contraste (ver PROXIMOS-PASSOS.md) -------
-    # texto apagado (horário da conversa, notas): é texto pequeno -> 4,5
-    for _fundo in _fundos_da_paleta:
-        _c = _contraste(_cores_paleta["--texto-3"], _cores_paleta[_fundo])
-        if _c < 4.5:
-            _roteiro_cores.append((_c, "%s: --texto-3 em %s" % (_nome_paleta, _fundo)))
-    # o botão principal e o Enviar pintam o fundo de --azul/--azul-2 com
-    # texto branco; no hover o fundo vira --azul-2, que em vários temas é claro
-    for _acento in ("--azul", "--azul-2"):
-        _c = _contraste("#ffffff", _cores_paleta[_acento])
-        if _c < 4.5:
-            _roteiro_cores.append((_c, "%s: branco sobre %s (botão)" % (_nome_paleta, _acento)))
-    # borda e anel de foco não são texto: aí 3,0 já basta (WCAG 1.4.11)
+    _checar(_cores_paleta["--azul-2"], _cores_paleta["--bg"], 4.5,
+            "--azul-2 (link) sobre --bg")
+    # O botão principal e o Enviar pintam o fundo de --azul (texto em
+    # --btn-texto) e o hover muda para --btn-hover: os dois precisam passar.
+    for _fundo_botao in ("--azul", "--btn-hover"):
+        _checar(_cores_paleta["--btn-texto"], _cores_paleta[_fundo_botao], 4.5,
+                "--btn-texto sobre %s (botão)" % _fundo_botao)
+    # Borda, anel de foco e o botão do interruptor não são texto: aí 3,0 já
+    # basta (WCAG 1.4.11).
     for _fundo in ("--bg", "--superficie-2"):
-        _c = _contraste(_cores_paleta["--azul"], _cores_paleta[_fundo])
-        if _c < 3.0:
-            _roteiro_cores.append((_c, "%s: --azul como borda em %s" % (_nome_paleta, _fundo)))
+        _checar(_cores_paleta["--azul"], _cores_paleta[_fundo], 3.0,
+                "--azul como borda em %s" % _fundo)
+    _checar(_cores_paleta["--btn-texto"], _cores_paleta["--texto-3"], 3.0,
+            "botão do interruptor (--btn-texto sobre --texto-3)")
 
 if _paletas_legiveis:
     ok("personalização: dez paletas completas e texto legível sobre todos os fundos (4,5:1)")
 else:
     falha("personalização: paleta incompleta ou contraste de texto abaixo de 4,5:1")
-if _roteiro_cores:
-    _roteiro_cores.sort()
-    _temas_gap = len({d.split(":")[0] for _c, d in _roteiro_cores})
-    aviso("contraste: %d pares em %d temas ainda abaixo do mínimo (pior: %s = %.2f:1); "
-          "só texto apagado, botão e borda — pendência em PROXIMOS-PASSOS.md"
-          % (len(_roteiro_cores), _temas_gap, _roteiro_cores[0][1], _roteiro_cores[0][0]))
+# as duas chaves novas do tema só valem se o CSS realmente usar as duas
+_ligacao_botao_ok = (
+    "color: var(--btn-texto)" in _ui_css
+    and "background: var(--btn-hover)" in _ui_css
+    and "background: var(--btn-texto)" in _ui_css
+)
+if _paletas_legiveis and _ligacao_botao_ok:
+    ok("personalização: botão e interruptor usam --btn-texto e --btn-hover do tema")
+else:
+    falha("personalização: CSS do botão/interruptor não usa --btn-texto/--btn-hover")
+if _pares_cores:
+    _pares_cores.sort()
+    falha("contraste: %d pares abaixo do mínimo (pior: %s)" % (len(_pares_cores), _pares_cores[0][1]))
+else:
+    ok("contraste: botão, acento e borda dentro do mínimo em todos os dez temas")
 
 # --- personalização: aba, tema inicial e gravação isolada -------------------
 try:
