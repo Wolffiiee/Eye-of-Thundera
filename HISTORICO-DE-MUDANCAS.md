@@ -5,6 +5,15 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Corrige o envio pela Pesquisa séria
+
+- **Defeito:** o botão dedicado “Pesquisa séria” e Ctrl+Shift+S chamavam `enviar(undefined, true)`, mas `enviar` aceitava só um argumento e ignorava o `true`. O pedido só entrava em pesquisa profunda quando o alternador separado já estava ligado.
+- **Correção:** `enviar(texto, profundo = estado.profundo)` agora passa a escolha efetiva à ponte Python; os envios normais continuam respeitando o alternador, enquanto o botão e o atalho forçam pesquisa profunda.
+- **Prevenção:** adicionado teste de regressão para assinatura, encaminhamento do argumento, botão e atalho.
+- **Verificação:** `node --check web/app.js`, compilação Python, `git diff --check` e `verificar.py`: 127 verificações, 0 falhas, 0 avisos.
+
+---
+
 ## 2026-10-16 — Corrige tema que voltava ao padrão ao reabrir
 
 - **Causa:** `Ponte.iniciar()` devolvia apenas `modo_pesquisa` e `corretor` em `cfg`. Como `web/app.js` aplica o tema usando `estado.cfg.temaIdx`, a ausência do campo fazia a interface cair no índice 0 (Clássico Dark), apesar de o tema escolhido estar salvo corretamente.

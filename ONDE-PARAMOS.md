@@ -1,6 +1,6 @@
 # Onde paramos
 
-Atualizado em 16/10/2026, após corrigir a persistência e aplicação dos temas da interface.
+Atualizado em 16/10/2026, após corrigir a persistência do tema e a ação de pesquisa profunda.
 
 ## Resumo do estado atual
 
@@ -16,11 +16,15 @@ A revisão seguinte encontrou que a aba Personalização existia no JavaScript, 
 
 A verificação automática agora executa node --check web/app.js quando Node.js está disponível. O contador final também foi corrigido: antes imprimia TESTES: 0 mesmo depois de registrar dezenas de verificações; agora imprime VERIFICACOES e conta as mensagens OK, FALHA e AVISO.
 
+### Revisão de ações e botões — correção encontrada
+
+A revisão estática confirmou que todos os nomes usados nas chamadas da interface existem na ponte Python e que não há IDs duplicados no HTML. Ela também encontrou uma falha funcional que os testes antigos não detectavam: `enviar(texto)` ignorava o segundo argumento, então o botão dedicado “Pesquisa séria” e Ctrl+Shift+S não forçavam pesquisa profunda; só funcionavam se o alternador separado já estivesse ligado. A função agora aceita `profundo = estado.profundo` e passa esse valor à ponte. Foi adicionado um teste de regressão para o botão, o atalho e o envio normal.
+
 ### Verificação executada
 
 - JavaScript: sintaxe aprovada com Node.js.
 - Python: app_web.py, pesquisa_ia.py, memoria.py e roteador.py passaram na compilação de sintaxe.
-- verificar.py: VERIFICACOES: 126 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO. Há testes isolados para os cinco temas e para salvar resposta via diálogo pywebview, sem tocar no config.json real.
+- verificar.py: VERIFICACOES: 127 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO. Inclui teste de regressão para o botão/atalho de pesquisa profunda, testes isolados dos cinco temas e teste de salvar resposta via diálogo pywebview, sem tocar no config.json real.
 - Teste de abertura: o comando usado pelo atalho foi iniciado novamente, a janela com título Eye of Thundera ficou visível no Windows e não foi criado erro.log.
 - Ainda falta confirmar manualmente que os cliques respondem. A suíte automatizada e a abertura da janela não substituem esse teste manual completo.
 

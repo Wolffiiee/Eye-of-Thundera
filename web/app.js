@@ -808,7 +808,7 @@ function ampliarFoto(indice, info, todas) {
   abrirVisorFotos(indice, todas);
 }
 
-async function enviar(texto) {
+async function enviar(texto, profundo = estado.profundo) {
   texto = (texto !== undefined ? texto : $("#entrada").value).trim();
   if (!texto || estado.ocupado) return;
   // guardada para o botao "outras perguntas" (que pergunta a IA a partir
@@ -817,7 +817,9 @@ async function enviar(texto) {
   segurarEventos(true);
   let r = {};
   try {
-    r = (await chamar("enviar", texto, estado.profundo)) || {};
+    // O botão/atalho de pesquisa profunda pode forçar `true`; envios
+    // comuns continuam respeitando o estado do botão de alternância.
+    r = (await chamar("enviar", texto, !!profundo)) || {};
   } finally {
     // A pergunta entra na tela ANTES de soltar os eventos da IA.
     $("#entrada").value = "";

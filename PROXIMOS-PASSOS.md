@@ -4,6 +4,7 @@ Atualizado em 16/10/2026. Este documento contém pendências reais; o histórico
 
 ## Prioridade 1 — validar a correção da interface
 
+- Corrigido na revisão de 16/10: o botão dedicado “Pesquisa séria” e o atalho Ctrl+Shift+S chamavam `enviar(undefined, true)`, mas a função ignorava o segundo argumento e enviava só o estado do alternador “Pesquisa séria”. Agora o argumento chega à ponte Python; o verificador cobre o botão, o atalho e o envio normal.
 - Fechar a janela que estava aberta antes da correção.
 - Abrir Eye of Thundera pelo atalho da Área de Trabalho.
 - Conferir se Nova conversa, Configurações, Web e enviar respondem.

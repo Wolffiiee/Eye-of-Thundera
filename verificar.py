@@ -1140,6 +1140,17 @@ else:
     falha("Tarefa D: plumbagem deepresearch ausente")
 
 
+# --- Tarefa D: o botão e o atalho realmente forçam pesquisa profunda ---
+_js_deep = Path(PASTA / "web" / "app.js").read_text(encoding="utf-8")
+if ("async function enviar(texto, profundo = estado.profundo)" in _js_deep
+        and 'chamar("enviar", texto, !!profundo)' in _js_deep
+        and '$("#btn-serio").addEventListener("click", () => enviar(undefined, true));' in _js_deep
+        and 'enviar(undefined, true);' in _js_deep):
+    ok("Tarefa D: botão e atalho forçam pesquisa profunda; envio normal respeita o alternador")
+else:
+    falha("Tarefa D: botão/atalho não garantem o envio em pesquisa profunda")
+
+
 # --- Tarefa D + drag-drop UI evidence ----------------------------
 _d = (Path(PASTA / 'web' / 'app.js').read_text(encoding='utf-8') + '\n' +
      Path(PASTA / 'web' / 'index.html').read_text(encoding='utf-8'))
