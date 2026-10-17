@@ -1980,3 +1980,6 @@ foram instaladas junto; não precisam ser listadas.
 - Chave vazia nao apaga a chave salva; campos desconhecidos sao ignorados; no modo exemplo nada e gravado.
 - verificar.py: nova funcao testes_tela_nova_config (isolada em _tmp, nao toca nos arquivos do Wolf). Nenhum teste foi removido. Resultado: TUDO CERTO.
 
+
+## 17/10/2026 - faixas de redimensionar na tela
+O redimensionar pelas bordas nao funcionava (o WebView2 cobre a janela e engole o mouse). Agora 8 faixas em HTML chamam Ponte.janela_redimensionar (WM_NCLBUTTONDOWN com HT_*). Plano: PLANO-BORDAS-REDIMENSIONAR.md. Teste novo no verificar.py (156 verificacoes).

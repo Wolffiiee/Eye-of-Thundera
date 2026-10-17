@@ -1416,6 +1416,22 @@ class Ponte:
             p.registrar_erro("janela_arrastar", erro)
         return {}
 
+    _BORDAS_HT = {"esquerda": 10, "direita": 11, "topo": 12, "topo-esq": 13,
+                  "topo-dir": 14, "base": 15, "base-esq": 16, "base-dir": 17}
+
+    def janela_redimensionar(self, borda=""):
+        """Comeca o redimensionar pela borda/canto (faixas da tela)."""
+        try:
+            import ctypes
+            codigo = self._BORDAS_HT.get(str(borda))
+            hwnd = _hwnd_da_janela()
+            if codigo and hwnd and not _janela_maximizada(hwnd):
+                ctypes.windll.user32.ReleaseCapture()
+                ctypes.windll.user32.SendMessageW(hwnd, 0x00A1, codigo, 0)   # WM_NCLBUTTONDOWN
+        except Exception as erro:
+            p.registrar_erro("janela_redimensionar", erro)
+        return {}
+
     def colar_texto(self):
         """Le o texto da area de transferencia do Windows (para o menu de contexto)."""
         try:
@@ -1584,9 +1600,16 @@ class Ponte:
 # --- montando a janela ------------------------------------------------------
 
 # --- barra de titulo propria (PLANO-BARRA-PROPRIA.md) -----------------------
-# A barra branca do Windows e' retirada POR DENTRO (tira o bit WS_CAPTION, mantem
-# WS_THICKFRAME): a janela continua redimensionavel pelas bordas, com sombra e
-# encaixe (Win+setas). Quem desenha minimizar/maximizar/fechar e' a tela (HTML).
+# A barra branca do Windows e' retirada POR DENTRO: tira o bit WS_CAPTION e
+# MANTEM o WS_THICKFRAME, que e' quem da' redimensionar pelas bordas, encaixe
+# (Win+setas) e sombra. Quem desenha minimizar/maximizar/fechar e' a tela (HTML).
+#
+# O WS_THICKFRAME traz junto a area nao-cliente (a moldura). Sem barra de
+# titulo, essa moldura aparecia como uma FAIXA PRETA em volta da janela (7 px no
+# topo a 100% de escala). Por isso a janela tambem passa a responder
+# WM_NCCALCSIZE com 0: a area nao-cliente fica vazia e o conteudo cobre a janela
+# inteira. O redimensionar continua porque quem decide as bordas do mouse e' o
+# estilo da janela (WS_THICKFRAME), nao a area nao-cliente.
 
 def _hwnd_da_janela(titulo=None):
     """Janela do programa, achada pelo titulo (o mesmo de TITULO_JANELA)."""
@@ -1608,6 +1631,158 @@ def _estilo_sem_barra(estilo):
     return estilo & ~0x00C00000
 
 
+WM_NCCALCSIZE = 0x0083
+WM_NCHITTEST = 0x0084
+
+# Codigos do Windows para a pergunta "o mouse esta em qual parte da janela?"
+# (resposta da WM_NCHITTEST). Os da borda mandam redimensionar.
+HT_ESQUERDA = 10
+HT_DIREITA = 11
+HT_TOPO = 12
+HT_CANTO_TOPO_ESQ = 13
+HT_CANTO_TOPO_DIR = 14
+HT_BASE = 15
+HT_CANTO_BASE_ESQ = 16
+HT_CANTO_BASE_DIR = 17
+
+
+def _resposta_area_cliente(msg, wparam):
+    """Resposta da janela a uma mensagem. None = deixa o Windows decidir.
+
+    WM_NCCALCSIZE é a mensagem em que o Windows pergunta qual é a área
+    não-cliente (a moldura). Responder 0 quer dizer "nenhuma": o conteúdo passa
+    a ocupar a janela inteira e não sobra a faixa preta da moldura. Só vale
+    quando wparam é verdadeiro — no caso simples quem responde é o Windows.
+    """
+    if msg == WM_NCCALCSIZE and wparam:
+        return 0
+    return None
+
+
+def _borda_de_redimensionar(px, py, esquerda, topo, direita, base, grossura):
+    """O que o Windows deve fazer com o mouse no ponto (px, py), em tela.
+
+    Devolve um dos códigos de borda quando o ponto está a menos de "grossura"
+    pixels da moldura, ou None quando não está (aí o clique é um clique normal).
+    Como a área não-cliente fica vazia (ver _resposta_area_cliente), é esta
+    resposta que mantém o redimensionar pelas bordas funcionando.
+    """
+    if grossura <= 0:
+        return None
+    na_esquerda = px < esquerda + grossura
+    na_direita = px >= direita - grossura
+    no_topo = py < topo + grossura
+    na_base = py >= base - grossura
+    if no_topo and na_esquerda:
+        return HT_CANTO_TOPO_ESQ
+    if no_topo and na_direita:
+        return HT_CANTO_TOPO_DIR
+    if na_base and na_esquerda:
+        return HT_CANTO_BASE_ESQ
+    if na_base and na_direita:
+        return HT_CANTO_BASE_DIR
+    if na_esquerda:
+        return HT_ESQUERDA
+    if na_direita:
+        return HT_DIREITA
+    if no_topo:
+        return HT_TOPO
+    if na_base:
+        return HT_BASE
+    return None
+
+
+def _codigo_borda(hwnd, lparam):
+    """Codigo de redimensionar para o ponto da WM_NCHITTEST, ou None.
+
+    Não responde nada quando a janela está maximizada ou minimizada: nesses
+    casos não existe borda para arrastar (e a ponto da tela passaria por fora
+    da janela).
+    """
+    try:
+        import ctypes
+        usuario = ctypes.windll.user32
+        if usuario.IsZoomed(hwnd) or usuario.IsIconic(hwnd):
+            return None
+        grossura = _borda_maximizada()
+        if grossura <= 0:
+            return None
+
+        class RETANGULO(ctypes.Structure):
+            _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
+                        ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
+
+        r = RETANGULO()
+        if not usuario.GetWindowRect(hwnd, ctypes.byref(r)):
+            return None
+        # O lParam traz a posicao do mouse em tela, em dois numeros com sinal
+        # de 16 bits (pode ser negativa em monitor a esquerda).
+        x = ctypes.c_short(lparam & 0xFFFF).value
+        y = ctypes.c_short((lparam >> 16) & 0xFFFF).value
+        return _borda_de_redimensionar(x, y, r.left, r.top, r.right, r.bottom,
+                                       grossura)
+    except Exception:
+        return None
+
+
+# Os ganchos ficam guardados aqui: se o Python recolher o objeto da função, o
+# Windows chama memória livre e o programa cai.
+_ganchos_wndproc = {}
+_janelas_cobertas = set()
+
+
+def _cobrir_area_cliente(hwnd):
+    """A janela inteira passa a ser conteúdo (sem a moldura preta do Windows).
+
+    Põe um gancho na janela (subclasse do WNDPROC) que responde WM_NCCALCSIZE
+    com 0 e devolve as bordas na WM_NCHITTEST — ver PLANO-BARRA-PROPRIA.md.
+    Cuida de não instalar duas vezes na mesma janela. Devolve True se o gancho
+    está posto.
+    """
+    if not hwnd:
+        return False
+    if hwnd in _janelas_cobertas:
+        return True
+    try:
+        import ctypes
+        usuario = ctypes.windll.user32
+        usuario.GetWindowLongPtrW.restype = ctypes.c_ssize_t
+        usuario.GetWindowLongPtrW.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        usuario.SetWindowLongPtrW.restype = ctypes.c_ssize_t
+        usuario.SetWindowLongPtrW.argtypes = [ctypes.c_void_p, ctypes.c_int,
+                                              ctypes.c_ssize_t]
+        usuario.CallWindowProcW.restype = ctypes.c_ssize_t
+        usuario.CallWindowProcW.argtypes = [ctypes.c_void_p, ctypes.c_void_p,
+                                            ctypes.c_uint, ctypes.c_size_t,
+                                            ctypes.c_ssize_t]
+        anterior = usuario.GetWindowLongPtrW(hwnd, -4)          # GWL_WNDPROC
+        if not anterior:
+            return False
+        tipo_proc = ctypes.WINFUNCTYPE(ctypes.c_ssize_t, ctypes.c_void_p,
+                                       ctypes.c_uint, ctypes.c_size_t,
+                                       ctypes.c_ssize_t)
+
+        def gancho(h, msg, wparam, lparam):
+            resposta = _resposta_area_cliente(msg, wparam)
+            if resposta is not None:
+                return resposta
+            if msg == WM_NCHITTEST:
+                borda = _codigo_borda(h, lparam)
+                if borda is not None:
+                    return borda
+            return usuario.CallWindowProcW(ctypes.c_void_p(anterior), h, msg,
+                                           wparam, lparam)
+
+        ponte = tipo_proc(gancho)
+        usuario.SetWindowLongPtrW(hwnd, -4,
+                                  ctypes.cast(ponte, ctypes.c_void_p).value)
+        _ganchos_wndproc[hwnd] = ponte
+        _janelas_cobertas.add(hwnd)
+        return True
+    except Exception:
+        return False
+
+
 def _tirar_barra_nativa(titulo=None, tentativas=20, espera=0.1):
     """Tira a barra de titulo do Windows. Devolve True se conseguiu."""
     try:
@@ -1627,7 +1802,11 @@ def _tirar_barra_nativa(titulo=None, tentativas=20, espera=0.1):
             # Sem CAPTION, mantendo o redimensionamento (ver _estilo_sem_barra).
             novo = _estilo_sem_barra(estilo)
             usuario.SetWindowLongPtrW(hwnd, -16, novo)
-            # Also remove the top border by extending client area
+            # Sem area nao-cliente: o conteudo cobre a janela toda e a moldura
+            # preta do WS_THICKFRAME nao aparece (ver _cobrir_area_cliente).
+            _cobrir_area_cliente(hwnd)
+            # Vidro do Windows na janela inteira: e' o que mantem a sombra e os
+            # cantos arredondados. O conteudo da tela desenha por cima dele.
             try:
                 dwm = ctypes.windll.dwmapi
                 class MARGINS(ctypes.Structure):
@@ -1635,25 +1814,12 @@ def _tirar_barra_nativa(titulo=None, tentativas=20, espera=0.1):
                                 ("cxRightWidth", ctypes.c_int),
                                 ("cyTopHeight", ctypes.c_int),
                                 ("cyBottomHeight", ctypes.c_int)]
-                # Extend entire frame into client area (-1 = full extension)
                 margins = MARGINS(-1, -1, -1, -1)
                 dwm.DwmExtendFrameIntoClientArea(hwnd, ctypes.byref(margins))
             except Exception:
                 pass
             # SWP_NOSIZE|NOMOVE|NOZORDER|NOACTIVATE|FRAMECHANGED
             usuario.SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020)
-            # Estender a area do cliente para cobrir a borda superior (DwmExtendFrameIntoClientArea)
-            try:
-                dwm = ctypes.windll.dwmapi
-                class MARGINS(ctypes.Structure):
-                    _fields_ = [("cxLeftWidth", ctypes.c_int),
-                                ("cxRightWidth", ctypes.c_int),
-                                ("cyTopHeight", ctypes.c_int),
-                                ("cyBottomHeight", ctypes.c_int)]
-                margins = MARGINS(0, 0, 8, 0)
-                dwm.DwmExtendFrameIntoClientArea(hwnd, ctypes.byref(margins))
-            except Exception:
-                pass
             return True
         time.sleep(espera)
     return False

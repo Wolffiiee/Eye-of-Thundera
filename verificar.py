@@ -1817,6 +1817,24 @@ except Exception as _erro_janela:
     falha("janela: teste da barra de título falhou: %r" % (_erro_janela,))
 
 
+# --- janela: faixas de redimensionar na tela (PLANO-BORDAS-REDIMENSIONAR.md) ---
+try:
+    _html_b = (PASTA / "web" / "index.html").read_text(encoding="utf-8")
+    _js_b = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    _css_b = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+    _nomes = ["esquerda", "direita", "topo", "topo-esq", "topo-dir", "base", "base-esq", "base-dir"]
+    import app_web as _aw6
+    _mapa_ok = (sorted(_aw6.Ponte._BORDAS_HT) == sorted(_nomes)
+                and sorted(_aw6.Ponte._BORDAS_HT.values()) == list(range(10, 18)))
+    _faixas_ok = all('data-borda="%s"' % b in _html_b for b in _nomes)
+    if _mapa_ok and _faixas_ok and "janela_redimensionar" in _js_b and "#bordas" in _css_b:
+        ok("janela: 8 faixas de redimensionar na tela chamam a ponte (bordas e cantos)")
+    else:
+        falha("janela: faixas de redimensionar incompletas (html/css/js/ponte)")
+except Exception as _erro_b:
+    falha("janela: teste das faixas de redimensionar falhou: %r" % (_erro_b,))
+
+
 # --- diálogo de Configurações: foco preso e devolvido (teclado) -----------
 # O Tab não pode escapar para a tela de trás enquanto a janela de
 # Configurações está aberta; e o foco deve entrar nela ao abrir e

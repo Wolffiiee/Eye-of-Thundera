@@ -2361,6 +2361,13 @@ function ligarBarraTitulo() {
       chamar("janela_arrastar");
     }
   });
+  document.querySelectorAll("#bordas .grip").forEach((g) => {
+    g.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      chamar("janela_redimensionar", g.dataset.borda);
+    });
+  });
   window.addEventListener("resize", async () => marcar(await chamar("janela_estado")));
 }
 
