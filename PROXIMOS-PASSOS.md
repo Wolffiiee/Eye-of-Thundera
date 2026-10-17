@@ -1,6 +1,6 @@
 # Próximos passos
 
-Atualizado em 16/10/2026. Este documento contém pendências reais; o histórico detalhado fica em HISTORICO-DE-MUDANCAS.md.
+Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico detalhado fica em HISTORICO-DE-MUDANCAS.md.
 
 ## Prioridade 1 — validar a correção da interface
 
@@ -19,7 +19,7 @@ Atualizado em 16/10/2026. Este documento contém pendências reais; o histórico
 - [x] Preservar chaves digitadas no rascunho ao trocar de aba; limpar o rascunho temporário depois de salvar com sucesso.
 - [x] Alterar o tema sem salvar opções de conversa que ainda estejam em rascunho.
 - [x] Durante o salvamento, bloquear temporariamente os controles da aba para evitar perder edições; garantir que eles sejam reabilitados mesmo se ocorrer uma falha.
-- [ ] Validar visualmente Configurações em janela menor e escala do Windows acima de 100%; as regras responsivas e os testes estáticos já foram adicionados.
+- [ ] Validar visualmente Configurações na escala do Windows acima de 100%; a janela de 900 px foi conferida em modo demonstração.
 - [x] Melhorar a hierarquia dos cartões, destacar discretamente o Gemini principal, esclarecer descrições e colocar o seletor de tema em um cartão próprio sem alterar o tema Ocean.
 - Conferir se as chaves aparecem mascaradas e se o texto de ajuda é claro.
 - Testar edição e exportação de memória somente com cuidado para não alterar dados reais sem autorização.
@@ -28,12 +28,15 @@ Atualizado em 16/10/2026. Este documento contém pendências reais; o histórico
 
 - [x] Agrupar Pesquisa séria, Privada e Resumo do dia em “Mais”, mantendo indicação dos modos ativos e atalhos existentes.
 - [x] Mover o envio único com pesquisa profunda para “Mais”; o atalho Ctrl+Shift+S continua ativo e foi documentado na Ajuda.
-- [ ] Reabrir o app e confirmar visualmente a nova disposição do menu, além de conferir a troca de abas após digitar uma chave (sem precisar salvar nem exibir a chave aqui).
+- [ ] Reabrir o app pelo atalho e confirmar a persistência da troca de tema; as capturas de demonstração não alteram configuração real.
+- [ ] Confirmar visualmente a nova disposição do menu e a troca de abas após digitar texto sintético no campo de chave (sem salvar nem exibir chave real).
 - [x] Agrupar “Usar o Gemini (principal)” no cartão da chave correspondente. Conferir visualmente na aba Chaves.
+- [x] Trocar a lista de temas por cartões com miniaturas e cinco amostras de cores; navegação por setas, Enter e Espaço.
+- [x] Conferir visualmente os cartões e a mudança de paleta em modo de demonstração; a captura marca corretamente o tema mostrado.
 - A correção de estilo dos cartões de sugestão da página inicial já foi aplicada; confirmar que a grade se adapta bem em janela estreita.
 - Padronizar acentuação, pontuação, nomes de controles e descrições em português brasileiro.
 - Garantir foco visível, rótulos acessíveis, estados de carregamento e mensagens de erro que não desapareçam antes de poderem ser lidas.
-- Verificar a janela de Configurações em resolução menor e com escala de tela do Windows acima de 100%.
+- Verificar Configurações com escala de tela do Windows acima de 100%; a janela de 900 px já foi conferida em modo demonstração.
 
 ## Prioridade 4 — manter os documentos coerentes
 

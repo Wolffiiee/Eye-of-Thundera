@@ -64,6 +64,16 @@ def roteiro(janela):
     for aba in ("memoria", "conversa", "chaves", "ajuda", "personalizacao"):
         js(janela, "var b=document.querySelector('.aba[data-aba=\"%s\"]'); if(b) b.click();" % aba, 1.0)
         foto("03-config-%s.png" % aba)
+    js(janela, "var b=document.querySelector('.aba[data-aba=personalizacao]'); if(b) b.click(); aplicarTema(3); document.querySelectorAll('.cartao-amostra').forEach(function(x,i){x.classList.toggle('ativo',i===3);x.setAttribute('aria-checked',i===3?'true':'false');x.tabIndex=i===3?0:-1;});", 1.0)
+    foto("05-tema-ocean-aplicado.png")
+    hwnd = user32.FindWindowW(None, app_web.TITULO_JANELA)
+    if hwnd:
+        r = RECT()
+        user32.GetWindowRect(hwnd, ctypes.byref(r))
+        user32.SetWindowPos(hwnd, None, r.l, r.t, 900, 800, 0x0004)
+        time.sleep(0.8)
+        foto("06-personalizacao-janela-900px.png")
+    js(janela, "aplicarTema(0); document.querySelectorAll('.cartao-amostra').forEach(function(x,i){x.classList.toggle('ativo',i===0);x.setAttribute('aria-checked',i===0?'true':'false');x.tabIndex=i===0?0:-1;});", 0.5)
     js(janela, "document.querySelector('#btn-fechar-config').click()", 0.8)
     foto("04-voltou-ao-chat.png")
     janela.destroy()

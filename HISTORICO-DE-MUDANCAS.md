@@ -5,6 +5,14 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-17 — Cartões de temas com amostras de cores
+
+- **Personalização:** a lista de temas virou uma grade de cinco cartões. Cada um mostra uma miniatura da interface pintada com sua paleta, cinco bolinhas de cor, o nome e uma marca no tema selecionado. As cores vêm de `TEMAS_UI`, sem duplicar a fonte das paletas.
+- **Acessibilidade:** os cartões formam um grupo de opções de rádio; somente o tema ativo recebe Tab, as setas navegam e selecionam, e Enter/Espaço ativam o cartão focado. O salvamento continua imediato e isolado das demais opções; se falhar, a interface restaura o tema anterior.
+- **Verificação visual:** roteiro de capturas em modo de demonstração executado e a aba conferida em 1180 px e 900 px. Os cartões quebram em nova linha sem rolagem horizontal; a imagem de Ocean também marca Ocean como selecionado. Nenhuma configuração real foi alterada.
+- **Regressão:** `verificar.py` atualiza a checagem visual da aba e confirma grupo acessível, grade e fluxo de gravação existente; CSS antigo do seletor foi removido.
+- **Verificação:** `verificar.py` passou com 137 verificações, 0 falhas e 0 avisos. Ainda falta testar a troca persistida pelo atalho real e a apresentação em escala do Windows acima de 100%.
+
 ## 2026-10-16 — Melhora a hierarquia visual das configurações no app desktop
 
 - **Cartões:** aumentamos levemente o espaçamento e melhoramos a leitura das descrições, usando as cores do tema ativo em vez de tons fixos.

@@ -1181,7 +1181,8 @@ if ('opc.destaque ? " cartao-destaque" : ""' in _js_deep
         and 'const cartao = el("div", "cartao cartao-tema")' in _js_deep
         and 'setAttribute("aria-label", "Tema da interface")' in _js_deep
         and '.cartao-destaque { border-color: var(--azul);' in _ui_css
-        and '.select-tema { width: 100%;' in _ui_css
+        and '.grade-temas { display: grid;' in _ui_css
+        and 'setAttribute("role", "radiogroup")' in _js_deep
         and '.linha-opcao:hover {' in _ui_css):
     ok("configurações: hierarquia visual, tema em cartão e controles mais legíveis")
 else:
@@ -1241,6 +1242,28 @@ if "assuntos" in _g and "gavetas" in _g:
     ok("UI: assuntos e gavetas presentes na tela")
 else:
     falha("UI: assuntos/gavetas ausentes")
+
+# --- personalização: cartões de tema com amostra (PLANO-PERSONALIZACAO.md) ---
+_amostra_js = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+_amostra_css = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+_amostra_ok = (
+    'role", "radiogroup"' in _amostra_js
+    and 'setAttribute("role", "radio")' in _amostra_js
+    and 'setAttribute("aria-checked", i === idx ? "true" : "false")' in _amostra_js
+    and 'b.tabIndex = i === idx ? 0 : -1' in _amostra_js
+    and 'b.type = "button"' in _amostra_js
+    and "TEMAS_UI.forEach((tema, i)" in _amostra_js
+    and all(k in _amostra_js for k in ("ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"))
+    and 'chamar("config_salvar", { tema: tema.nome, temaIdx: idx, chaves: {} })' in _amostra_js
+    and ".grade-temas" in _amostra_css
+    and ".cartao-amostra.ativo" in _amostra_css
+    and "--m-bg" in _amostra_css
+    and 'el("select", "select-tema")' not in _amostra_js
+)
+if _amostra_ok:
+    ok("personalização: temas em cartões com amostra de cores, teclado e mesmo salvamento")
+else:
+    falha("personalização: cartões de tema incompletos (ver PLANO-PERSONALIZACAO.md)")
 
 # --- personalização: aba, tema inicial e gravação isolada -------------------
 try:

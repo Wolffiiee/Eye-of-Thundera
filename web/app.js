@@ -1666,24 +1666,36 @@ function abaPersonalizacao(corpo) {
   );
   const cartao = el("div", "cartao cartao-tema");
   cartao.append(el("h4", "", "Tema da interface"), el("p", "desc", "Escolha a paleta que deixa a leitura mais confortável. Isso não altera suas conversas nem as outras configurações."));
-  const sel = el("select", "select-tema");
-  sel.setAttribute("aria-label", "Tema da interface");
-  TEMAS_UI.forEach((tema, i) => {
-    const opcao = el("option", "", tema.nome);
-    opcao.value = i;
-    sel.append(opcao);
-  });
-  sel.value = String(cfg.temaIdx ?? estado.cfg.temaIdx ?? 0);
-  sel.addEventListener("change", async (e) => {
-    const idx = Number(e.target.value);
-    const anterior = Number(estado.cfg.temaIdx ?? 0);
+  // Grade de cartoes: cada um mostra uma MINIATURA do app com as cores do tema
+  // (lidas de TEMAS_UI, a unica fonte) e o nome embaixo. Padrao radiogroup.
+  const grade = el("div", "grade-temas");
+  grade.setAttribute("role", "radiogroup");
+  grade.setAttribute("aria-label", "Tema da interface");
+  let ativo = Number(cfg.temaIdx ?? estado.cfg.temaIdx ?? 0);
+  if (!(ativo >= 0 && ativo < TEMAS_UI.length)) ativo = 0;
+  const botoes = [];
+
+  const marcar = (idx) => {
+    botoes.forEach((b, i) => {
+      b.classList.toggle("ativo", i === idx);
+      b.setAttribute("aria-checked", i === idx ? "true" : "false");
+      b.tabIndex = i === idx ? 0 : -1;
+    });
+  };
+
+  const escolher = async (idx) => {
+    if (idx === ativo) return;
+    const anterior = ativo;
     const tema = aplicarTema(idx);
-    // Trocar o tema salva somente o tema; não confirma opções de conversa
-    // que o usuário ainda pode estar editando em outra aba.
+    ativo = idx;
+    marcar(idx);
+    // Trocar o tema salva somente o tema; nao confirma opcoes de conversa
+    // que o usuario ainda pode estar editando em outra aba.
     const r = await chamar("config_salvar", { tema: tema.nome, temaIdx: idx, chaves: {} });
     if (r.erro) {
       aplicarTema(anterior);
-      sel.value = String(anterior);
+      ativo = anterior;
+      marcar(anterior);
       aviso("Não foi possível salvar o tema: " + r.erro, true);
       return;
     }
@@ -1692,8 +1704,49 @@ function abaPersonalizacao(corpo) {
     estado.cfgTela.tema = tema.nome;
     estado.cfgTela.temaIdx = idx;
     aviso("Tema alterado para " + tema.nome);
+  };
+
+  TEMAS_UI.forEach((tema, i) => {
+    const c = tema.cores;
+    const b = el("button", "cartao-amostra");
+    b.type = "button";
+    b.setAttribute("role", "radio");
+    b.setAttribute("aria-label", tema.nome);
+    b.style.cssText = ["--m-bg", "--m-painel", "--m-sup", "--m-sup2", "--m-texto", "--m-texto2", "--m-borda", "--m-azul", "--m-azul2"]
+      .map((v, k) => v + ":" + c[["--bg", "--painel", "--superficie", "--superficie-2", "--texto", "--texto-2", "--borda", "--azul", "--azul-2"][k]])
+      .join(";");
+    const mini = el("div", "amostra-tema");
+    const lateral = el("div", "amostra-lateral");
+    lateral.append(el("i", "amostra-item ativo"), el("i", "amostra-item"), el("i", "amostra-item"));
+    const chat = el("div", "amostra-chat");
+    chat.append(el("i", "amostra-balao eu"), el("i", "amostra-balao ia"), el("i", "amostra-balao ia curto"));
+    const caixa = el("div", "amostra-caixa");
+    caixa.append(el("i", "amostra-linha"), el("i", "amostra-envia"));
+    chat.append(caixa);
+    mini.append(lateral, chat);
+    const bolinhas = el("div", "bolinhas-tema");
+    ["--bg", "--superficie", "--texto", "--azul", "--azul-2"].forEach((v) => {
+      const bo = el("i", "bolinha");
+      bo.style.background = c[v];
+      bolinhas.append(bo);
+    });
+    const rodape = el("div", "nome-tema");
+    rodape.append(el("span", "", tema.nome), el("span", "marca-ativo", "✓"));
+    b.append(mini, bolinhas, rodape);
+    b.addEventListener("click", () => escolher(i));
+    b.addEventListener("keydown", (e) => {
+      const passos = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+      if (!(e.key in passos)) return;
+      e.preventDefault();
+      const prox = (i + passos[e.key] + TEMAS_UI.length) % TEMAS_UI.length;
+      botoes[prox].focus();
+      escolher(prox);
+    });
+    botoes.push(b);
+    grade.append(b);
   });
-  cartao.append(sel, el("p", "nota-tema", "A alteração é aplicada imediatamente e salva automaticamente."));
+  marcar(ativo);
+  cartao.append(grade, el("p", "nota-tema", "A alteração é aplicada imediatamente e salva automaticamente."));
   corpo.append(cartao);
 }
 

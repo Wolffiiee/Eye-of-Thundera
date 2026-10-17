@@ -1,10 +1,12 @@
 # Onde paramos
 
-Atualizado em 16/10/2026, após melhorar a hierarquia visual das configurações do app desktop.
+Atualizado em 17/10/2026, após implementar os cartões de amostras de cores na aba Personalização.
 
 ## Resumo do estado atual
 
 A rodada mais recente adicionou `_sanitizar_erro_log()` ao `pesquisa_ia.py`: antes de gravar, o logger mascara padrões conhecidos de chaves de provedores, tokens Bearer e campos comuns de autenticação. O teste novo usa somente valores sintéticos e não escreve em `erro.log` nem chama serviços externos. A cobertura é por padrões conhecidos, portanto não garante remover todo segredo de mensagens inesperadas.
+
+A aba Personalização agora mostra cinco cartões de tema com miniaturas da interface e cinco amostras de cor por paleta. Os cartões usam as cores centralizadas em `TEMAS_UI`; o tema ativo tem marca visual e estado acessível de rádio. Setas movem e selecionam entre cartões, Enter/Espaço ativam o cartão focado, e Tab entra/sai do grupo. A escolha mantém a gravação existente, que envia somente tema e índice, e reverte a prévia se o salvamento falhar. O roteiro de capturas em modo demonstração mostra o cartão Ocean ativo junto da paleta Ocean. A prévia foi conferida em 1180 px e 900 px; os cartões quebram em uma nova linha sem rolagem horizontal. `verificar.py` passou com 137 verificações, sem falhas nem avisos. Ainda falta conferir a janela real pelo atalho e a troca persistida.
 
 O Eye of Thundera usa a interface HTML/JavaScript em web/ e a janela Python em app_web.py. O atalho real da Área de Trabalho é Eye of Thundera.lnk e aponta para .venv/Scripts/pythonw.exe com o argumento app_web.py, usando D:/Projetos/PesquisaIA como pasta de trabalho.
 
@@ -23,6 +25,9 @@ A verificação automática agora executa node --check web/app.js quando Node.js
 A revisão estática confirmou que todos os nomes usados nas chamadas da interface existem na ponte Python e que não há IDs duplicados no HTML. Também corrigiu uma colisão de CSS: as sugestões dinâmicas de continuação estavam alterando o estilo dos cartões da página inicial; agora cada bloco tem regras próprias e a grade da página inicial vira uma coluna em janelas estreitas. A revisão encontrou ainda uma falha funcional que os testes antigos não detectavam: `enviar(texto)` ignorava o segundo argumento, então o botão dedicado “Pesquisa séria” e Ctrl+Shift+S não forçavam pesquisa profunda; só funcionavam se o alternador separado já estivesse ligado. A função agora aceita `profundo = estado.profundo` e passa esse valor à ponte. Foi adicionado um teste de regressão para o botão, o atalho e o envio normal.
 
 ### Verificação executada
+
+- Aba Personalização: cartões, miniaturas, paletas, estado ativo e navegação de teclado; capturas em modo demonstração conferidas visualmente em 1180 px e 900 px. Não foi gerado EXE porque o atalho de uso diário executa `app_web.py` diretamente.
+- `verificar.py`: 137 verificações, 0 falhas, 0 avisos; RESULTADO: TUDO CERTO. A sintaxe JavaScript está incluída nessa verificação.
 
 - JavaScript: sintaxe aprovada com Node.js.
 - Python: app_web.py, pesquisa_ia.py e verificar.py passaram na compilação de sintaxe.
@@ -61,4 +66,4 @@ Os dados do usuário ficam em %LOCALAPPDATA%/PesquisaIA, fora do repositório. N
 
 ## Estado do Git
 
-Antes de continuar, confira git status. Os arquivos de diagnóstico não rastreados check_lnk.py, check_lnk2.py, test_shortcut.py, show.png, verify_err.txt e verify_out.txt já existiam antes desta revisão; não foram apagados nem incluídos no commit automaticamente.
+As alterações desta rodada abrangem a interface e a verificação dos cartões de tema, o roteiro de capturas e estes documentos. `show.png` já aparecia como excluído antes desta rodada; foi preservado como está e deve ficar fora do commit. Confira `git status` antes de qualquer outra mudança.
