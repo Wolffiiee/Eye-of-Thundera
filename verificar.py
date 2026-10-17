@@ -1170,6 +1170,14 @@ if ('controle: {' in _js_deep
     ok("configurações: ativação do Gemini agrupada ao cartão da chave")
 else:
     falha("configurações: ativação do Gemini separada do cartão da chave")
+if ('if (botao.disabled) return;' in _js_deep
+        and 'botao.textContent = "Salvando...";' in _js_deep
+        and 'botao.disabled = false;' in _js_deep
+        and 'Array.isArray(atual.servicos)' in _js_deep
+        and '#config-aviso.erro' in _ui_css):
+    ok("configurações: bloqueia salvamento duplicado e trata falha de atualização")
+else:
+    falha("configurações: falta proteção contra clique duplo ou falha de atualização")
 
 
 # --- Tarefa D + drag-drop UI evidence ----------------------------
@@ -1260,6 +1268,71 @@ try:
         falha("personalização: um tema não foi salvo ou carregado corretamente")
 except Exception as _erro_tema:
     falha("personalização: teste isolado falhou: %r" % (_erro_tema,))
+
+
+# --- configurações: persistência e proteção das chaves em ambiente isolado ---
+try:
+    _cfg_aw = importlib.import_module("app_web")
+    _cfg_p = _cfg_aw.p
+    _cfg_pasta_original = _cfg_p.PASTA_CONFIG
+    _cfg_arquivo_original = _cfg_p.ARQUIVO_CONFIG
+    _cfg_ok = False
+    _cfg_pastas = PASTA / "_tmp"
+    _cfg_pastas.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="teste-config- ", dir=str(_cfg_pastas)) as _tmp_cfg:
+        _cfg_p.PASTA_CONFIG = Path(_tmp_cfg)
+        _cfg_p.ARQUIVO_CONFIG = Path(_tmp_cfg) / "config.json"
+        _cfg_p.salvar_config({
+            "api_key": "chave-principal-preservada",
+            "api_key_reserva": "chave-reserva-antiga",
+            "campo_privado_teste": "nao-alterar",
+        })
+        _cfg_ponte = _cfg_aw.Ponte()
+        _cfg_ret = _cfg_ponte.config_salvar({
+            "modo_pesquisa": "sempre",
+            "usar_contexto": False,
+            "aprender": False,
+            "voz_enviar": False,
+            "usar_plano_b": False,
+            "usar_gemini": False,
+            "web_corretor": False,
+            "temaIdx": 3,
+            "chaves": {
+                "api_key": " ",
+                "api_key_reserva": "chave-reserva-nova",
+                "campo_nao_permitido": "nao-gravar",
+            },
+        })
+        _cfg_gravado = json.loads(_cfg_p.ARQUIVO_CONFIG.read_text(encoding="utf-8"))
+        _cfg_lido = _cfg_aw._cfg_tela()
+        _cfg_ok = (
+            not _cfg_ret.get("erro")
+            and _cfg_gravado.get("api_key") == "chave-principal-preservada"
+            and _cfg_gravado.get("api_key_reserva") == "chave-reserva-nova"
+            and "campo_nao_permitido" not in _cfg_gravado
+            and _cfg_gravado.get("campo_privado_teste") == "nao-alterar"
+            and _cfg_lido.get("modo_pesquisa") == "sempre"
+            and _cfg_lido.get("usar_contexto") is False
+            and _cfg_lido.get("aprender") is False
+            and _cfg_lido.get("voz_enviar") is False
+            and _cfg_lido.get("usar_plano_b") is False
+            and _cfg_lido.get("usar_gemini") is False
+            and _cfg_lido.get("web_corretor") is False
+            and _cfg_lido.get("temaIdx") == 3
+        )
+    _cfg_p.PASTA_CONFIG = _cfg_pasta_original
+    _cfg_p.ARQUIVO_CONFIG = _cfg_arquivo_original
+    if _cfg_ok:
+        ok("configurações: opções persistem, chave vazia preserva segredo e campos desconhecidos são ignorados")
+    else:
+        falha("configurações: persistência, preservação da chave ou lista permitida falhou")
+except Exception as _erro_cfg:
+    try:
+        _cfg_p.PASTA_CONFIG = _cfg_pasta_original
+        _cfg_p.ARQUIVO_CONFIG = _cfg_arquivo_original
+    except Exception:
+        pass
+    falha("configurações: teste isolado falhou: %r" % (_erro_cfg,))
 
 
 # --- salvar resposta: diálogo da própria janela, sem criar uma raiz Tk ------

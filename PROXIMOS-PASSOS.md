@@ -15,7 +15,8 @@ Atualizado em 16/10/2026. Este documento contém pendências reais; o histórico
 ## Prioridade 2 — conferir os fluxos de configuração
 
 - Abrir cada aba: Memória, Conversa, Chaves, Ajuda e Personalização.
-- Verificar se os controles carregam, podem ser alterados e salvam corretamente; em Personalização, trocar de tema, fechar e reabrir para confirmar que a escolha permanece.
+- [x] Teste isolado confirma persistência dos controles, preservação da chave salva quando o campo fica vazio e rejeição de campos de chave não permitidos. O usuário confirmou que as mudanças visuais estão funcionais.
+- [ ] Continuar a validação manual das abas e conferir Configurações em janela menor/escala do Windows acima de 100%.
 - Conferir se as chaves aparecem mascaradas e se o texto de ajuda é claro.
 - Testar edição e exportação de memória somente com cuidado para não alterar dados reais sem autorização.
 

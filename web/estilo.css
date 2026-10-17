@@ -341,6 +341,7 @@ select { background: var(--bg); color: var(--texto); border: 1px solid var(--bor
 .janela-rodape { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 28px; border-top: 1px solid var(--borda); }
 #config-aviso { font-size: 13px; color: var(--texto-3); }
 #config-aviso.ok { color: var(--ok); }
+#config-aviso.erro { color: var(--erro); }
 .memoria-topo { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
 .fato { display: flex; align-items: center; gap: 10px; background: var(--superficie); border: 1px solid var(--borda); border-radius: 12px; padding: 10px 12px 10px 14px; margin-bottom: 8px; }
 .fato span { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 14px; }

@@ -5,6 +5,15 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Reforça o salvamento e a validação das configurações
+
+- **Salvamento:** o botão indica “Salvando...” e fica desativado durante a gravação para impedir cliques duplicados.
+- **Erros:** falhas de gravação ficam visíveis no rodapé; se a releitura posterior falhar, a interface evita redesenhar a aba com dados incompletos.
+- **Regressão:** teste isolado confirma persistência dos controles, preservação da chave principal quando o campo fica vazio, atualização da chave reserva, manutenção de campos existentes e rejeição de campos de chave não permitidos. Usa diretório temporário, sem tocar nas chaves reais.
+- **Verificação:** `verificar.py`: 131 verificações, 0 falhas, 0 avisos; `node --check`, compilação Python e `git diff --check` aprovados.
+
+---
+
 ## 2026-10-16 — Organiza os modos secundários e as configurações do Gemini
 
 - **Interface:** Pesquisa séria, Privada e Resumo do dia agora ficam sob “Mais”, reduzindo a quantidade de botões sempre visíveis na barra de escrita.

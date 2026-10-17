@@ -1686,21 +1686,42 @@ function abaPersonalizacao(corpo) {
 }
 
 async function salvarConfig() {
+  const botao = $("#btn-salvar-config");
+  if (botao.disabled) return;
+  const textoOriginal = botao.textContent;
+  botao.disabled = true;
+  botao.textContent = "Salvando...";
   const chaves = {};
   $$("#corpo-config input[data-campo]").forEach((i) => {
     if (i.value.trim()) chaves[i.dataset.campo] = i.value.trim();
   });
   const r = await chamar("config_salvar", { ...estado.rascunho, chaves });
-  if (r.erro) return;
+  if (r.erro) {
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
+    $("#config-aviso").textContent = "Não foi possível salvar. Confira o aviso e tente novamente.";
+    $("#config-aviso").className = "erro";
+    return;
+  }
   estado.cfg = r.cfg;
   aplicarCfg();
   const av = $("#config-aviso");
   av.textContent = "Salvo.";
   av.className = "ok";
-  estado.cfgTela = await chamar("config_ler");
+  const atual = await chamar("config_ler");
+  if (atual.erro || !Array.isArray(atual.servicos)) {
+    $("#config-aviso").textContent = "Alterações salvas, mas não consegui atualizar a tela. Feche e abra Configurações novamente.";
+    $("#config-aviso").className = "erro";
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
+    return;
+  }
+  estado.cfgTela = atual;
   mostrarAba(estado.aba);
   $("#config-aviso").textContent = "Salvo.";
   $("#config-aviso").className = "ok";
+  botao.disabled = false;
+  botao.textContent = textoOriginal;
 }
 
 /* ---------------- microfone ----------------
