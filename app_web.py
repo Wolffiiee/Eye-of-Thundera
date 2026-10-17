@@ -1525,8 +1525,8 @@ def _tirar_barra_nativa(titulo=None, tentativas=20, espera=0.1):
         hwnd = _hwnd_da_janela(titulo)
         if hwnd:
             estilo = usuario.GetWindowLongPtrW(hwnd, -16)           # GWL_STYLE
-            # Remove CAPTION but keep THICKFRAME for resizing
-            novo = (estilo & ~0x00C00000) | 0x00040000              # sem CAPTION, com THICKFRAME
+            # Remove CAPTION and THICKFRAME, add thin BORDER
+            novo = (estilo & ~0x00C00000 & ~0x00040000) | 0x00800000  # sem CAPTION, sem THICKFRAME, com BORDER
             usuario.SetWindowLongPtrW(hwnd, -16, novo)
             # Also remove the top border by extending client area
             try:
