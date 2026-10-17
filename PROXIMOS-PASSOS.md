@@ -60,7 +60,16 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
   - **`--azul` como borda/anel de foco**: acima de 3,0:1 em todos (Thundera 3,06:1 e Forest 3,07:1; estavam em 2,83 e 2,91).
   - **Bolinha do interruptor** (achado do teste novo): era branca fixa e desaparecia sobre o acento claro (2,2 a 3,0:1). Agora usa `--btn-texto` e o trilho desligado usa `--texto-3` — visível nos dois estados, pior caso 3,21:1.
 - [x] O aviso `contraste:` do `verificar.py` sumiu: o teste deixou de ser aviso e **falha** listando o par e o valor medido; a suíte está em **162 verificações, 0 falhas, 0 avisos**.
-- [ ] Conferir a aparência nova pelo atalho real (principalmente os temas de acento claro: Grafite Dourado, Pôr do Sol, Ocean, Rosa Chá) e dizer se gostou. Voltar atrás é mexer só em `--btn-texto` e `--btn-hover` do tema — nenhuma outra cor depende disso.
+- [x] Conferido e aprovado pelo usuário (17/10): os temas de acento claro com o texto do botão escuro ficaram bons. Voltar atrás é mexer só em `--btn-texto` e `--btn-hover` do tema — nenhuma outra cor depende disso.
+
+## Prioridade 1 (das sugestões) — OCR local de PDF digitalizado (feito)
+
+- [x] Viabilidade medida antes de implementar: `pytesseract` precisaria do Tesseract instalado no sistema (não é só `pip`); o OCR do Windows já vem com o sistema e leu o PDF sintético em 0,05 s por página, com as 4 frases reconhecidas.
+- [x] `pdf_leitor.py` com `_texto_por_ocr()`: renderiza até 20 páginas (`pypdfium2`, ~0,1 s por página) e lê com o OCR do Windows (`winsdk`, pt-BR, com queda para os idiomas do sistema). O texto entra na caixa para revisão, como o PDF com texto.
+- [x] Sem as duas bibliotecas, o aviso antigo continua valendo ("pode ser digitalizado"); `requirements.txt` e os dois `.spec` trazem as duas.
+- [x] O OCR roda em **thread própria** com limite de 60 s: na thread principal, depois do pywebview, o `await` do OCR nunca volta (o `verificar.py` travou nisso até o problema ser achado).
+- [x] Testes novos no `verificar.py` (OCR de 1 e 2 páginas, aviso do limite de 20 páginas, aviso quando as bibliotecas faltam) e conferência na tela com dados isolados em `_tmp`.
+- [ ] Testar com um PDF digitalizado de verdade (uma página de livro escaneada) e conferir a qualidade da leitura; OCR é aproximado — o texto vai para a caixa justamente para revisão.
 
 ## Prioridade 8 — lembretes ("me lembra amanhã às 9h de pagar a conta")
 
@@ -69,7 +78,7 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
 - [x] Cartões na tela com `role="alert"`, perguntados ao abrir e **de 30 em 30 segundos**, com "Feito" e "Adiar 10 min"; cada lembrete aparece uma vez por sessão. Ficam no **alto à direita**, abaixo da barra de título, para não cobrir os botões de microfone e enviar (o defeito foi visto em captura de tela e corrigido antes do commit).
 - [x] Tudo local (`%LOCALAPPDATA%/PesquisaIA/lembretes.json`), sem IA e **funcionando sem chave**. O módulo entrou nos dois `.spec` do PyInstaller, para o `.exe` distribuível incluí-lo.
 - [x] Cinco testes novos no `verificar.py` (interpretador com datas fixas, armazenamento, a ponte, o envio sem chave pelo caminho de verdade e a ligação na tela/pacote), todos com arquivos em `_tmp` — nenhum dado real é lido ou alterado.
-- [ ] **Testar manualmente** pelo atalho: criar um lembrete para daqui a 1 minuto e conferir o cartão, "Feito" e "Adiar 10 min"; conferir também o cartão que aparece ao abrir o programa com um lembrete já vencido.
+- [x] Testado e aprovado pelo usuário (17/10): o cartão aparece no alto à direita, "Feito" e "Adiar 10 min" funcionam, e os botões de microfone e enviar continuam visíveis.
 
 ## Prioridade 4 — manter os documentos coerentes
 

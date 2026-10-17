@@ -1683,6 +1683,67 @@ except Exception as _erro_pdf:
     falha("PDF: teste isolado falhou: %r" % (_erro_pdf,))
 
 
+# --- OCR local de PDF digitalizado (imagem com texto, sem camada de texto) ---
+# So arquivo sintetico em _tmp: nenhum documento pessoal e' lido.
+try:
+    import importlib as _imp
+
+    _pl = _imp.import_module("pdf_leitor")
+    from PIL import Image as _Img, ImageDraw as _Draw, ImageFont as _Font
+
+    _pasta_ocr = PASTA / "_tmp" / "ocr"
+    _pasta_ocr.mkdir(parents=True, exist_ok=True)
+    _fonte_ocr = _Font.truetype(r"C:\Windows\Fonts\arial.ttf", 32)
+
+    def _pdf_digitalizado(frases, nome="digitalizado.pdf", por_pagina=1):
+        """Imagens com texto salvas como PDF: nao tem camada de texto."""
+        paginas = []
+        for i in range(0, len(frases), por_pagina):
+            bloco = frases[i:i + por_pagina]
+            imagem = _Img.new("RGB", (1100, 60 + 90 * len(bloco)), "white")
+            d = _Draw.Draw(imagem)
+            for j, linha in enumerate(bloco):
+                d.text((50, 60 + j * 90), linha, font=_fonte_ocr, fill="black")
+            paginas.append(imagem)
+        caminho = _pasta_ocr / nome
+        paginas[0].save(caminho, "PDF", resolution=150, save_all=True,
+                       append_images=paginas[1:])
+        return caminho.read_bytes()
+
+    _frases_ocr = ["Nota fiscal de teste", "Pagar a conta de luz ate o dia 22",
+                   "Valor total: R$ 248,90"]
+    _t_ocr, _e_ocr = _pl.texto_de_pdf(_pdf_digitalizado(_frases_ocr))
+    _acertos = sum(1 for f in _frases_ocr if f in _t_ocr)
+    # duas paginas digitalizadas: as duas sao lidas
+    _duas = _pdf_digitalizado(_frases_ocr + ["Segunda pagina do documento"],
+                              nome="duas_paginas.pdf")
+    _t_ocr2, _e_ocr2 = _pl.texto_de_pdf(_duas)
+    # mais paginas que o limite: o texto avisa onde o OCR parou
+    _muitas = _pdf_digitalizado(["pagina %d" % i for i in range(1, 26)],
+                                nome="muitas_paginas.pdf")
+    _t_ocr3, _e_ocr3 = _pl.texto_de_pdf(_muitas)
+    if (_e_ocr == "" and _acertos == len(_frases_ocr)
+            and _e_ocr2 == "" and "Segunda pagina do documento" in _t_ocr2
+            and _e_ocr3 == "" and "primeiras 20 paginas" in _t_ocr3):
+        ok("PDF: OCR local le digitalizado (1 e 2 paginas) e avisa o limite de paginas")
+    else:
+        falha("PDF: OCR falhou (%r/%r/%r)" % (_t_ocr, _t_ocr2, _t_ocr3))
+
+    # sem as bibliotecas de OCR, o aviso antigo continua valendo
+    _sem_pdfium, _sem_ocr = _pl.TEM_PDFIUM, _pl.TEM_OCR
+    _pl.TEM_PDFIUM = False
+    try:
+        _t_sem, _e_sem = _pl.texto_de_pdf(_pdf_digitalizado(_frases_ocr))
+    finally:
+        _pl.TEM_PDFIUM, _pl.TEM_OCR = _sem_pdfium, _sem_ocr
+    if _t_sem == "" and _e_sem:
+        ok("PDF: sem OCR instalado, avisa que o PDF pode ser digitalizado")
+    else:
+        falha("PDF: aviso de OCR indisponivel falhou (%r/%r)" % (_t_sem, _e_sem))
+except Exception as _erro_ocr:
+    falha("PDF: teste de OCR falhou: %r" % (_erro_ocr,))
+
+
 # --- responsividade e acessibilidade da interface -------------------------
 try:
     _css_ui = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")

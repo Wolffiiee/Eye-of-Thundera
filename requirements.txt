@@ -12,3 +12,8 @@ pywebview==6.2.1
 # Leitura de PDF arrastado para a conversa (extracao 100% local).
 # Se faltar, o resto do programa funciona igual: so nao le PDF.
 pypdf==6.1.1
+# OCR local de PDF digitalizado (uma foto da pagina): renderiza a pagina e le
+# com o OCR do proprio Windows, tudo em memoria e sem internet. Tambem
+# opcional: sem elas, o programa so avisa que o PDF pode ser digitalizado.
+pypdfium2==5.14.0
+winsdk==1.0.0b10
