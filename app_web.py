@@ -120,11 +120,11 @@ def _telas():
     """
     try:
         import ctypes
+        from ctypes import wintypes
         # `ctypes.wintypes` NAO vem junto com `import ctypes`: sem este
         # `from`, a linha abaixo levanta AttributeError - que o `except`
         # engolia e devolvia "nao tem monitor" para QUALQUER posicao
         # (16/10/2026: o programa nunca mais abriria no monitor certo).
-        from ctypes import wintypes
 
         class _RECT(ctypes.Structure):
             _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
@@ -1360,6 +1360,33 @@ class Ponte:
         except Exception as erro:
             p.registrar_erro("janela_arrastar", erro)
         return {}
+
+    def colar_texto(self):
+        """Le o texto da area de transferencia do Windows (para o menu de contexto)."""
+        try:
+            import ctypes
+            CF_UNICODETEXT = 13
+            user32 = ctypes.windll.user32
+            kernel32 = ctypes.windll.kernel32
+            if not user32.OpenClipboard(None):
+                return {"texto": "", "erro": "Nao foi possivel abrir a area de transferencia."}
+            try:
+                handle = user32.GetClipboardData(CF_UNICODETEXT)
+                if not handle:
+                    return {"texto": "", "erro": "Nenhum texto na area de transferencia."}
+                ptr = kernel32.GlobalLock(handle)
+                if not ptr:
+                    return {"texto": "", "erro": "Nao foi possivel ler a area de transferencia."}
+                try:
+                    texto = ctypes.wstring_at(ptr)
+                finally:
+                    kernel32.GlobalUnlock(handle)
+                return {"texto": texto or ""}
+            finally:
+                user32.CloseClipboard()
+        except Exception as erro:
+            p.registrar_erro("colar_texto", erro)
+            return {"texto": "", "erro": str(erro)}
 
     def definir_modo(self, modo):
         if DEMO:

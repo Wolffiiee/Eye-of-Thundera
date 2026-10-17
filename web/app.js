@@ -423,21 +423,36 @@ function substituirSelecao(novo) {
 }
 
 async function colar(inicio, fim) {
-  if (!navigator.clipboard || !navigator.clipboard.readText) {
-    aviso("Para colar, use Ctrl+V.", true);
-    return false;
+  let texto = "";
+  // Tenta a API do navegador primeiro.
+  if (navigator.clipboard && navigator.clipboard.readText) {
+    try {
+      texto = await navigator.clipboard.readText();
+    } catch (_e) { texto = ""; }
   }
-  try {
-    const texto = await navigator.clipboard.readText();
-    const campo = $("#entrada");
-    campo.focus();
-    campo.setRangeText(texto, inicio, fim, "end");
-    ajustarAltura(); atualizarEnviar();
-    return true;
-  } catch (_e) {
+  // Fallback: pede ao Python (Windows clipboard via ctypes).
+  if (!texto) {
+    try {
+      const r = await chamar("colar_texto");
+      if (r && r.texto) texto = r.texto;
+      else if (r && r.erro) {
+        aviso(r.erro + " Use Ctrl+V.", true);
+        return false;
+      }
+    } catch (_e) {
+      aviso("Não consegui acessar a área de transferência. Use Ctrl+V.", true);
+      return false;
+    }
+  }
+  if (!texto) {
     aviso("Não consegui acessar a área de transferência. Use Ctrl+V.", true);
     return false;
   }
+  const campo = $("#entrada");
+  campo.focus();
+  campo.setRangeText(texto, inicio, fim, "end");
+  ajustarAltura(); atualizarEnviar();
+  return true;
 }
 
 /* O Chromium (e o WebView2) NÃO movem o cursor quando se clica com o

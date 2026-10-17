@@ -1,0 +1,147 @@
+[OK]     pesquisa_ia.py sem erro de sintaxe
+[OK]     web/app.js sem erro de sintaxe (Node.js)
+[OK]     biblioteca instalada: google-genai
+[OK]     biblioteca instalada: ddgs
+[OK]     biblioteca instalada: pyspellchecker
+[OK]     biblioteca instalada: pillow
+[OK]     biblioteca instalada: httpx
+[OK]     biblioteca instalada: sounddevice
+[OK]     biblioteca instalada: pywebview
+[AVISO]  pyflakes: D:\Projetos\PesquisaIA\app_web.py:1368:13: 'ctypes.wintypes' imported but unused
+[OK]     análise do código sem nomes inexistentes
+[OK]     nenhum messagebox. (janela branca) no código
+[OK]     nenhum simpledialog (janela branca) no código
+[OK]     nenhum tk_optionMenu (janela branca) no código
+[OK]     nenhum unbind_all de clique no código
+[OK]     só existe o bind_all de clique do dispatcher
+[OK]     a janela de teste (PREVIA) nasce no segundo monitor
+[OK]     o programa normal nao fica preso no segundo monitor
+[OK]     a janela abre na posicao escolhida, e nao num ponto fixo
+[OK]     o programa de verdade nao nasce fixo no 2o monitor
+[OK]     o programa lembra em que monitor foi fechado
+[OK]     a posicao da janela e' guardada em arquivo
+[OK]     a posicao fica num arquivo separado (janela.json)
+[OK]     a tela nova escurece a barra pelo titulo (e nao pelo caminho do tk)
+[OK]     escurecer a barra não quebra quando a janela não está aí
+[OK]     outras perguntas: lê o JSON mesmo com texto em volta
+[OK]     outras perguntas: resposta fora do formato avisa na tela
+[OK]     outras perguntas: lista vazia avisa, não mostra nada
+[OK]     outras perguntas: mostra no máximo 3
+[OK]     outras perguntas: sem chave avisa sem chamar a IA
+[OK]     outras perguntas: no modo exemplo não gasta cota
+[OK]     backup dos dados: copia exatamente os arquivos da pasta
+[OK]     backup dos dados: o conteúdo da memória vai inteiro no .zip
+[OK]     backup dos dados: sem arquivos, avisa e não cria zip vazio
+[OK]     backup dos dados: a pasta de verdade do Wolf não foi trocada
+[OK]     memória com data: cada fato novo ganha a data de hoje
+[OK]     memória com data: o item novo aparece com data na hora
+[OK]     memória com data: o que foi apagado some da lista de datas
+[OK]     memória com data: o memoria.json continua só com os fatos
+[OK]     memória com data: as datas vão num arquivo ao lado
+[OK]     memória com data: a pasta de verdade do Wolf não foi escrita
+[OK]     ponte: o teste sabe detectar a janela envenenada (controle)
+[OK]     ponte: a janela não fica exposta para o pywebview entrar nela
+[OK]     ponte: montar a ponte não se perde dentro da janela (39 atributos)
+[OK]     ponte: a janela continua guardada (com nome escondido)
+[OK]     ponte: a tela espera a ponte ficar pronta antes de perguntar
+[OK]     ponte: se a chamada falhar, a tela destrava em vez de ficar esperando para sempre
+[OK]     menu do botão direito: a ponte tem sugerir_correcao
+[OK]     menu do botão direito: corrige palavra errada e respeita palavra certa, número e lixo
+[OK]     menu do botão direito: 'gobiln' vira 'goblin'
+[OK]     menu do botão direito: o programa antigo usa a função do motor
+[OK]     menu do botão direito: a tela escuta o botão direito
+[OK]     menu do botão direito: a tela cancela o menu do navegador
+[OK]     menu do botão direito: o menu é ligado na abertura
+[OK]     menu do botão direito: o menu é desenhado com botões
+[OK]     menu do botão direito: escolher a sugestão troca a palavra certa
+[OK]     menu do botão direito: o cursor vai para onde foi clicado
+[OK]     menu do botão direito: o menu tem lugar na tela
+[OK]     menu do botão direito: começa escondido na tela
+[OK]     menu do botão direito: Recortar só apaga após confirmar a cópia
+[OK]     menu do botão direito: atalhos visíveis, teclado e retorno de foco
+[OK]     seleção de texto: clique direito posiciona o cursor e colar avisa quando falha
+[OK]     galeria: 'imagens de lobos' vai para a busca, sem gastar chave de API
+[OK]     galeria: a tela destrava depois de mostrar as fotos
+[OK]     galeria: o evento com as fotos chega na tela
+[OK]     galeria: as miniaturas viajam prontas para a tela (6499 caracteres cada)
+[OK]     galeria: a pergunta fica na conversa
+[OK]     galeria: a foto grande vem quando o Wolf clica
+[OK]     galeria: clique fora da lista não derruba o programa
+[OK]     galeria: pergunta normal não vira busca de imagens
+[OK]     galeria: a tela entende o evento de fotos
+[OK]     galeria: a tela desenha a grade
+[OK]     galeria: a tela abre a foto grande
+[OK]     galeria: a tela pede a foto grande
+[OK]     galeria: as fotos entram na bolha da resposta
+[OK]     galeria: a grade e a foto aberta tem desenho (sempre escuro)
+[OK]     visor de fotos: a tela tem um visor de fotos
+[OK]     visor de fotos: as setas do teclado passam de uma para outra
+[OK]     visor de fotos: a seta da esquerda volta
+[OK]     visor de fotos: dá para arrastar a foto com o mouse
+[OK]     visor de fotos: soltar o arrasto troca de foto
+[OK]     visor de fotos: com muita foto o arrastar some (senão trava)
+[OK]     visor de fotos: a tela mostra em qual foto se está
+[OK]     visor de fotos: o clique sabe TODAS as fotos, não só a clicada
+[OK]     visor de fotos: o teclado para de ser ouvido ao fechar
+[OK]     visor de fotos: a barra de baixo tem desenho
+[OK]     visor de fotos: os botões de ir e voltar tem desenho
+[OK]     visor de fotos: o 'N de M' tem desenho
+[OK]     visor de fotos: a dica de como passar tem desenho
+[OK]     idioma: o prompt de conversa diz que é do Brasil
+[OK]     idioma: o prompt de pesquisa diz que é do Brasil
+[OK]     idioma: o prompt de aprender diz que é do Brasil
+[OK]     idioma: a regra mostra 'de certeza' → 'com certeza'
+[OK]     idioma: a regra mostra 'a nível de' → 'no sentido de'
+[OK]     idioma: a regra mostra 'ecrã' → 'tela'
+[OK]     idioma: a regra mostra 'equipa' → 'equipe'
+[OK]     idioma: a regra mostra 'ficheiro' → 'arquivo'
+[OK]     idioma: a regra mostra 'estou a fazer' → 'estou fazendo'
+[OK]     idioma: a regra avisa que Portugal gerundiza e o Brasil não
+[OK]     idioma: a regra do português brasileiro é usada pelos prompts
+[OK]     foto: existe um jeito de tirar o aviso 'Abrindo a foto...'
+[OK]     foto: o aviso some no momento em que a foto chega
+[OK]     foto: o aviso reaparece quando se troca de foto
+[OK]     programa: o .exe e' gerado sem janela de console (CMD)
+[OK]     programa: sem janela de console, os erros vão para o erro.log
+[OK]     janela: fecha no segundo monitor e abre no segundo
+[OK]     janela: fecha no principal e abre no principal
+[OK]     janela: acha o principal mesmo se o Windows inverter a ordem
+[OK]     janela: nunca movida, abre no meio da tela principal (370,130)
+[OK]     janela: num notebook de uma tela so, abre em cima dela
+[OK]     janela: se o monitor guardado sumiu, abre no meio da outra
+[OK]     janela: arquivo de posição estragado não derruba o programa
+[OK]     janela: a posição fica em arquivo separado do config.json
+[OK]     programa: o .exe não abre janela preta (CMD) atrás
+[OK]     sites consultados: tira o link repetido e o que não é link
+[OK]     sites consultados: nunca aceita link perigoso (javascript:)
+[OK]     sites consultados: todo site tem um título para aparecer na tela
+[OK]     sites consultados: sem resultados, a lista fica vazia
+[OK]     o tamanho da letra tem função, botões e é aplicado ao abrir a tela
+[OK]     o tamanho da letra usa a variável do CSS (a tela inteira acompanha)
+[OK]     o tamanho da letra fica guardado (a tela abre do jeito que ficou)
+[OK]     mudar a letra não chama o Python (não arrisca as conversas)
+[OK]     Tarefa D: pesquisa profunda (botao + flag) presente no codigo
+[OK]     Tarefa D: botão e atalho forçam pesquisa profunda; envio normal respeita o alternador
+[OK]     UX: modos secundários agrupados, ativos indicados e menu abre para cima
+[OK]     configurações: ativação do Gemini agrupada ao cartão da chave
+[OK]     configurações: hierarquia visual, tema em cartão e controles mais legíveis
+[OK]     configurações: bloqueia edições durante salvamento e libera controles após falha
+[OK]     configurações: chaves digitadas sobrevivem à troca de aba e limpam após salvar
+[OK]     configurações: trocar o tema não confirma opções de conversa em rascunho
+[OK]     Tarefa D: pesquisa profunda + drag-drop UI presentes
+[OK]     gavetas por assunto: agrupa fatos em dict
+[OK]     assunto_de: retorna rotulo nao vazio
+[OK]     UI: assuntos e gavetas presentes na tela
+[OK]     personalização: temas em cartões com amostra de cores, teclado e mesmo salvamento
+[OK]     personalização: dez paletas completas e texto com contraste legível
+[OK]     personalização: aba visível e tema aplicado na abertura
+[OK]     personalização: dez paletas sincronizadas entre interface e backend
+[OK]     personalização: os 10 temas são salvos e carregados sem tocar nos dados reais
+[OK]     personalização: índices fora da faixa não substituem a paleta salva
+[OK]     configurações: persistência e proteção das chaves; falha simulada preserva o arquivo anterior
+[OK]     logs: sanitização de credenciais verificada com valores sintéticos
+[OK]     Salvar resposta: usa o diálogo pywebview e grava o texto em teste isolado
+[OK]     interface: layout compacto, rolagem, foco visível e diálogo acessível
+
+VERIFICACOES: 144 | FALHA: 0 | AVISO: 1
+RESULTADO: TUDO CERTO
