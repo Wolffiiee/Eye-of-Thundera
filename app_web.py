@@ -1525,8 +1525,22 @@ def _tirar_barra_nativa(titulo=None, tentativas=20, espera=0.1):
         hwnd = _hwnd_da_janela(titulo)
         if hwnd:
             estilo = usuario.GetWindowLongPtrW(hwnd, -16)           # GWL_STYLE
+            # Remove CAPTION but keep THICKFRAME for resizing
             novo = (estilo & ~0x00C00000) | 0x00040000              # sem CAPTION, com THICKFRAME
             usuario.SetWindowLongPtrW(hwnd, -16, novo)
+            # Also remove the top border by extending client area
+            try:
+                dwm = ctypes.windll.dwmapi
+                class MARGINS(ctypes.Structure):
+                    _fields_ = [("cxLeftWidth", ctypes.c_int),
+                                ("cxRightWidth", ctypes.c_int),
+                                ("cyTopHeight", ctypes.c_int),
+                                ("cyBottomHeight", ctypes.c_int)]
+                # Extend entire frame into client area (-1 = full extension)
+                margins = MARGINS(-1, -1, -1, -1)
+                dwm.DwmExtendFrameIntoClientArea(hwnd, ctypes.byref(margins))
+            except Exception:
+                pass
             # SWP_NOSIZE|NOMOVE|NOZORDER|NOACTIVATE|FRAMECHANGED
             usuario.SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020)
             # Estender a area do cliente para cobrir a borda superior (DwmExtendFrameIntoClientArea)
