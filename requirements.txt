@@ -9,3 +9,6 @@ sounddevice==0.5.6
 # Tela nova (HTML). So o app_web.py usa; o programa de sempre (tkinter)
 # continua funcionando sem ela.
 pywebview==6.2.1
+# Leitura de PDF arrastado para a conversa (extracao 100% local).
+# Se faltar, o resto do programa funciona igual: so nao le PDF.
+pypdf==6.1.1

@@ -107,8 +107,18 @@ function aviso(texto, erro) {
   a.textContent = texto;
   a.className = erro ? "erro" : "";
   clearTimeout(temporizadorAviso);
-  temporizadorAviso = setTimeout(() => a.classList.add("oculto"), 4200);
+  // Erros ficam mais tempo na tela: o Wolf precisa de tempo para ler
+  // (antes tudo sumia em 4,2s, mesmo uma falha importante).
+  temporizadorAviso = setTimeout(() => a.classList.add("oculto"), erro ? 8000 : 4200);
 }
+// Clicar no aviso esconde na hora (sem esperar o tempo acabar).
+(function () {
+  const a = $("#aviso");
+  if (a) a.addEventListener("click", () => {
+    clearTimeout(temporizadorAviso);
+    a.classList.add("oculto");
+  });
+})();
 
 /* ---------------- texto das mensagens ---------------- */
 const URL_RE = /https?:\/\/[^\s<>"')\]]+[^\s<>"')\].,;:!?]/g;
@@ -1081,6 +1091,28 @@ document.addEventListener("keydown", (e) => {
     if (!$("#modal").classList.contains("oculto")) fecharConfig();
     return;
   }
+  // Armadilha de foco do diálogo: enquanto as Configurações estão abertas,
+  // o Tab fica preso dentro da janela (não escapa para a tela de trás).
+  if (e.key === "Tab" && !$("#modal").classList.contains("oculto")) {
+    const janela = $("#modal .janela");
+    if (janela) {
+      const focaveis = [...janela.querySelectorAll(
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )].filter((el) => el.offsetParent !== null);
+      if (focaveis.length) {
+        const primeiro = focaveis[0];
+        const ultimo = focaveis[focaveis.length - 1];
+        const atual = document.activeElement;
+        const dentro = janela.contains(atual);
+        if (e.shiftKey && (atual === primeiro || !dentro)) {
+          e.preventDefault(); ultimo.focus();
+        } else if (!e.shiftKey && (atual === ultimo || !dentro)) {
+          e.preventDefault(); primeiro.focus();
+        }
+      }
+    }
+    return;
+  }
   // Ctrl+M: microfone sem tirar a mao do teclado (como no programa antigo).
   // Nao enquanto a pessoa esta digitando um texto com Ctrl grudado, nem
   // se ja ha uma conversa rodando.
@@ -1779,6 +1811,9 @@ function abaAjuda(corpo) {
     el("p", "", "Escreva do seu jeito: papo normal ele responde na hora. Quando a pergunta precisa de informação atual (preço, notícia, clima...), ele pesquisa na web sozinho."),
     el("p", "", "Para forçar: comece com “pesquise …”. Para impedir: comece com “sem pesquisar, …”. O botão “Web” abaixo da caixa muda o modo para toda a conversa."),
     el("p", "", "Para ele lembrar de algo, diga “lembra que …”. Os itens ficam na aba Memória, onde você pode buscar, clicar no texto para editar, apagar ou organizar."),
+    el("h4", "", "Arquivos e PDF"),
+    el("p", "", "Arraste um arquivo para a janela: .txt, .md, .csv e .json entram direto. Um PDF também funciona: o texto é lido aqui no seu computador (nada é enviado antes de você apertar Enter) e aparece na caixa para você conferir."),
+    el("p", "", "PDF digitalizado (uma foto da página) não tem texto para ler — nesse caso o programa avisa, e você pode copiar e colar o trecho."),
     el("h4", "", "Falar"),
     el("p", "", "O botão do microfone grava; o clique seguinte para e o que você falou aparece na caixa para conferir. Se a opção “enviar sozinho” estiver ligada, ele manda sem você precisar apertar Enter.")
   );
@@ -1831,6 +1866,12 @@ async function abrirConfig(aba) {
   };
   $("#modal").classList.remove("oculto");
   mostrarAba(aba || estado.aba);
+  // Traz o foco para dentro do diálogo assim que ele abre, para que o
+  // Tab comece nos controles da Configuração (e não na tela de trás).
+  try {
+    const alvo = $("#modal .janela button:not([disabled]), #modal .janela [tabindex]:not([tabindex='-1'])");
+    if (alvo) alvo.focus({ preventScroll: true });
+  } catch (_e) { /* sem foco disponível */ }
 }
 function fecharConfig() {
   $("#modal").classList.add("oculto");
@@ -2056,11 +2097,60 @@ function lerArquivoTexto(arquivo) {
     try { r.readAsText(arquivo); } catch (e) { resolve(""); }
   });
 }
+// Le o arquivo como base64 (sem o cabecalho "data:...;base64,"). Usado
+// para mandar o PDF ao Python, que extrai o texto localmente.
+function lerArquivoBase64(arquivo) {
+  return new Promise((resolve) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const s = String(r.result || "");
+      const i = s.indexOf(",");
+      resolve(i >= 0 ? s.slice(i + 1) : "");
+    };
+    r.onerror = () => resolve("");
+    try { r.readAsDataURL(arquivo); } catch (e) { resolve(""); }
+  });
+}
+// Manda o PDF em pedacos (512 KB) para nao travar a ponte com um texto
+// gigante de uma vez. O Python junta tudo e devolve o texto.
+async function extrairPdf(arquivo) {
+  const LIMITE = 25 * 1024 * 1024;
+  if (arquivo.size > LIMITE) {
+    return { erro: "Esse PDF é grande demais (limite de 25 MB)." };
+  }
+  const base64 = await lerArquivoBase64(arquivo);
+  if (!base64) return { erro: "Não consegui ler o arquivo." };
+  const id = "pdf-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+  let r = await chamar("pdf_iniciar", id);
+  if (r.erro) return r;
+  const PASSO = 512 * 1024;
+  for (let i = 0; i < base64.length; i += PASSO) {
+    r = await chamar("pdf_parte", id, base64.slice(i, i + PASSO));
+    if (r.erro) return r;
+  }
+  return await chamar("pdf_extrair", id);
+}
 async function tratarArquivoSolto(arquivo) {
   if (!arquivo) return;
   const ext = String(arquivo.name.split('.').pop() || "").toLowerCase();
+  if (ext === "pdf") {
+    aviso("Lendo o PDF...");
+    const r = await extrairPdf(arquivo);
+    if (r && r.erro) { aviso(r.erro, true); return; }
+    const texto = String((r && r.texto) || "").trim();
+    if (!texto) {
+      aviso("Não achei texto nesse PDF (talvez seja digitalizado).", true);
+      return;
+    }
+    const entrada = $("#entrada");
+    const bloco = "Conteúdo do arquivo " + arquivo.name + ":\n\n" + texto;
+    entrada.value = (entrada.value ? entrada.value.trim() + "\n\n" : "") + bloco;
+    ajustarAltura(); atualizarEnviar();
+    aviso("PDF carregado: " + arquivo.name + ". Confira e aperte Enter para enviar.");
+    return;
+  }
   if (["txt","md","csv","json"].indexOf(ext) === -1) {
-    aviso("Formato " + ext + " ainda não suportado. Solte .txt/.md/.csv/.json.", true);
+    aviso("Formato " + ext + " ainda não suportado. Solte .txt/.md/.csv/.json/.pdf.", true);
     return;
   }
   const texto = (await lerArquivoTexto(arquivo)).slice(0, 30000);

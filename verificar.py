@@ -130,7 +130,8 @@ try:
     r = subprocess.run(
         [sys.executable, "-m", "pyflakes", str(ARQUIVO), str(Path(__file__)),
          str(PASTA / "app_web.py"), str(PASTA / "memoria.py"),
-         str(PASTA / "roteador.py"), str(PASTA / "voz.py")],
+         str(PASTA / "roteador.py"), str(PASTA / "voz.py"),
+         str(PASTA / "pdf_leitor.py")],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
     if "No module named pyflakes" in (r.stderr or ""):
@@ -1541,6 +1542,104 @@ except Exception as _erro_save:
     falha("Salvar resposta: teste isolado falhou: %r" % (_erro_save,))
 
 
+# --- leitura de PDF: extracao local, sem biblioteca no teste --------------
+# Monta PDFs sinteticos (um simples e um comprimido com FlateDecode) e
+# confere que o leitor tira o texto certo. Usa so arquivo temporario em
+# `_tmp`: nenhum documento pessoal e' lido.
+try:
+    import base64 as _b64
+    import zlib as _zlib
+
+    _aw_pdf = importlib.import_module("app_web")
+    _pl = importlib.import_module("pdf_leitor")
+
+    def _pdf_sintetico(texto, comprimir=False):
+        bruto = ("BT /F1 18 Tf 72 700 Td (" + texto + ") Tj ET").encode("latin-1")
+        if comprimir:
+            fluxo = _zlib.compress(bruto)
+            filtro = b" /Filter /FlateDecode"
+        else:
+            fluxo = bruto
+            filtro = b""
+        objs = [
+            b"<< /Type /Catalog /Pages 2 0 R >>",
+            b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+            b"/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+            b"<< /Length " + str(len(fluxo)).encode() + filtro + b" >>\nstream\n"
+            + fluxo + b"\nendstream",
+            b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        ]
+        import io as _io
+        saida = _io.BytesIO()
+        saida.write(b"%PDF-1.4\n")
+        offsets = []
+        for i, obj in enumerate(objs, 1):
+            offsets.append(saida.tell())
+            saida.write(str(i).encode() + b" 0 obj\n" + obj + b"\nendobj\n")
+        xref = saida.tell()
+        saida.write(b"xref\n0 " + str(len(objs) + 1).encode() + b"\n")
+        saida.write(b"0000000000 65535 f \n")
+        for off in offsets:
+            saida.write(("%010d 00000 n \n" % off).encode())
+        saida.write(b"trailer\n<< /Size " + str(len(objs) + 1).encode()
+                    + b" /Root 1 0 R >>\nstartxref\n"
+                    + str(xref).encode() + b"\n%%EOF")
+        return saida.getvalue()
+
+    # 1) extracao direta (simples e comprimido)
+    _t1, _e1 = _pl.texto_de_pdf(_pdf_sintetico("Wolf e Thundera"))
+    _t2, _e2 = _pl.texto_de_pdf(_pdf_sintetico("Texto comprimido", comprimir=True))
+    # 2) casos que devem dar erro claro, sem estourar
+    _t3, _e3 = _pl.texto_de_pdf(b"")
+    _t4, _e4 = _pl.texto_de_pdf(b"nao sou um pdf")
+    _t5, _e5 = _pl.texto_de_pdf(b"%PDF-1.4\ntodo estragado")
+    if (_e1 == "" and "Wolf e Thundera" in _t1
+            and _e2 == "" and "Texto comprimido" in _t2
+            and _e3 and _e4 and _e5):
+        ok("PDF: extrai texto local (simples e comprimido) e avisa nos casos ruins")
+    else:
+        falha("PDF: extracao falhou (%r/%r/%r/%r/%r)"
+              % (_t1, _e1, _t2, _e2, _e3))
+
+    # 3) a ponte recebe em pedacos e devolve o texto
+    _ponte_pdf = _aw_pdf.Ponte()
+    _dados = _pdf_sintetico("Intervalo de Thundera")
+    _b64pdf = _b64.b64encode(_dados).decode("ascii")
+    _id_pdf = "teste-pdf-123"
+    _r_ini = _ponte_pdf.pdf_iniciar(_id_pdf)
+    _partes_ok = not _r_ini.get("erro")
+    for _i in range(0, len(_b64pdf), 100000):
+        _rr = _ponte_pdf.pdf_parte(_id_pdf, _b64pdf[_i:_i + 100000])
+        if _rr.get("erro"):
+            _partes_ok = False
+            break
+    _r_fim = _ponte_pdf.pdf_extrair(_id_pdf)
+    if _partes_ok and not _r_fim.get("erro") and "Intervalo de Thundera" in _r_fim.get("texto", ""):
+        ok("PDF: a ponte junta os pedacos base64 e devolve o texto")
+    else:
+        falha("PDF: ponte falhou (%r / %r)" % (_r_ini, _r_fim))
+
+    # 4) pedaco sem iniciar -> erro claro (nao trava a tela)
+    _ponte_pdf2 = _aw_pdf.Ponte()
+    _r_sem = _ponte_pdf2.pdf_extrair("nao-existe")
+    if _r_sem.get("erro"):
+        ok("PDF: envio expirado avisa em vez de travar")
+    else:
+        falha("PDF: envio sem iniciar devolveu sucesso indevido")
+
+    # 5) a tela sabe tratar .pdf e usa os metodos da ponte
+    _js_pdf = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    if ("extrairPdf" in _js_pdf and "pdf_iniciar" in _js_pdf
+            and "pdf_parte" in _js_pdf and "pdf_extrair" in _js_pdf
+            and 'ext === "pdf"' in _js_pdf):
+        ok("PDF: a tela manda o PDF em pedacos e mostra o texto para revisao")
+    else:
+        falha("PDF: a tela nao trata o arquivo .pdf")
+except Exception as _erro_pdf:
+    falha("PDF: teste isolado falhou: %r" % (_erro_pdf,))
+
+
 # --- responsividade e acessibilidade da interface -------------------------
 try:
     _css_ui = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
@@ -1562,6 +1661,85 @@ try:
         falha("interface: faltam regras responsivas ou atributos de acessibilidade")
 except Exception as _erro_ui:
     falha("interface: teste de responsividade/acessibilidade falhou: %r" % (_erro_ui,))
+
+
+# --- diálogo de Configurações: foco preso e devolvido (teclado) -----------
+# O Tab não pode escapar para a tela de trás enquanto a janela de
+# Configurações está aberta; e o foco deve entrar nela ao abrir e
+# voltar ao botão que a abriu ao fechar.
+try:
+    _js_foco = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    _foco_trampa = (
+        # armadilha de foco: Tab preso dentro do diálogo aberto
+        'e.key === "Tab" && !$("#modal").classList.contains("oculto")' in _js_foco
+        and "janela.contains(atual)" in _js_foco
+        # o foco entra na janela assim que ela abre
+        and "alvo.focus({ preventScroll: true })" in _js_foco
+        # e volta ao controle que a abriu ao fechar
+        and "_configTrigger.focus" in _js_foco
+        # Escape fecha o diálogo
+        and 'if (!$("#modal").classList.contains("oculto")) fecharConfig();' in _js_foco
+    )
+    if _foco_trampa:
+        ok("diálogo: Tab preso dentro, foco entra ao abrir e volta ao fechar (Escape fecha)")
+    else:
+        falha("diálogo: faltam armadilha de Tab, foco ao abrir/devolver ou Escape")
+except Exception as _erro_foco:
+    falha("diálogo: teste de foco do diálogo falhou: %r" % (_erro_foco,))
+
+
+# --- recuperação de falha: nenhuma operação deixa a tela travada ---------
+# Toda thread que trabalha em segundo plano (resposta da IA, galeria de
+# imagens, transcrição de voz) precisa liberar `ocupado` no `finally` e
+# avisar a tela — senão o botão Enviar ficaria desabilitado para sempre.
+try:
+    _appw_rec = (PASTA / "app_web.py").read_text(encoding="utf-8")
+
+    def _tem_finally_ocupado(inicio, fim):
+        """Confere que o trecho entre `inicio` e `fim` libera `ocupado`."""
+        _i = _appw_rec.find(inicio)
+        if _i < 0:
+            return False
+        _j = _appw_rec.find(fim, _i + len(inicio))
+        _fim = _j if _j > 0 else len(_appw_rec)
+        _bloco = _appw_rec[_i:_fim]
+        return "finally:" in _bloco and "self.ocupado = False" in _bloco
+
+    _rec_ok = (
+        _tem_finally_ocupado("def _responder(", "def _responder_exemplo")
+        and _tem_finally_ocupado("def _responder_exemplo", "def _aprender")
+        and _tem_finally_ocupado("def _responder_imagens", "def imagem_ampliada")
+        and _tem_finally_ocupado("def tarefa():", "threading.Thread(target=tarefa")
+        # a tela também destrava se a chamada da ponte falhar
+        and 'if (estado.ocupado) esperar(false);' in _js_foco
+        # e o envio solta os eventos mesmo quando dá erro
+        and "finally {" in _js_foco and "esperar(!r.erro" in _js_foco
+    )
+    if _rec_ok:
+        ok("falhas: resposta, galeria e voz liberam a tela no finally; ponte também")
+    else:
+        falha("falhas: alguma operação pode deixar a tela travada (finally/ocupado ausente)")
+except Exception as _erro_rec:
+    falha("falhas: teste de recuperação falhou: %r" % (_erro_rec,))
+
+
+# --- avisos de erro: ficam mais tempo e dá para fechar --------------------
+try:
+    _css_aviso = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+    _aviso_ok = (
+        # erro fica mais tempo que aviso normal
+        "erro ? 8000 : 4200" in _js_foco
+        # clicar esconde na hora
+        and 'a.addEventListener("click"' in _js_foco
+        # o aviso parece clicável
+        and "cursor: pointer" in _css_aviso
+    )
+    if _aviso_ok:
+        ok("avisos: erros ficam mais tempo na tela e podem ser fechados com clique")
+    else:
+        falha("avisos: erro ainda some rápido demais ou não pode ser fechado")
+except Exception as _erro_aviso:
+    falha("avisos: teste de duração/clique falhou: %r" % (_erro_aviso,))
 
 
 # --- resumo -----------------------------------------------------------------

@@ -505,6 +505,10 @@ class Ponte:
         # esta aberta na tela.
         self._ultimas_fotos = []
 
+        # Pedacos de PDF recebidos da tela (base64), por id. Vazio na
+        # maior parte do tempo; some quando `pdf_extrair` junta tudo.
+        self._pdf_recebendo = {}
+
     # --- 1. o que a tela precisa para comecar ---
 
     def iniciar(self):
@@ -876,6 +880,57 @@ class Ponte:
         except Exception:
             pass
         return {}
+
+    # --- leitura de PDF (arrastar para a conversa) ---
+    #
+    # O arquivo NAO chega por caminho: a tela le os bytes e manda em
+    # pedacos base64 (para nao travar a ponte com um texto gigante de
+    # uma vez). `pdf_extrair` junta tudo, tira o texto com o modulo
+    # `pdf_leitor` (local, sem internet) e devolve para a tela revisar.
+
+    def pdf_iniciar(self, id):
+        """Comeca a receber um PDF. Devolve o id para os pedacos."""
+        if not hasattr(self, "_pdf_recebendo"):
+            self._pdf_recebendo = {}
+        # Nao deixa pedaco antigo preso na memoria (se a tela recarregar).
+        if len(self._pdf_recebendo) > 3:
+            self._pdf_recebendo.clear()
+        self._pdf_recebendo[str(id)] = []
+        return {}
+
+    def pdf_parte(self, id, parte):
+        """Guarda um pedaco base64 do PDF."""
+        recebendo = getattr(self, "_pdf_recebendo", None)
+        if not recebendo or str(id) not in recebendo:
+            return {"erro": "O envio do PDF expirou. Solte o arquivo de novo."}
+        pedaco = str(parte or "")
+        # Limite duro: ~25 MB de arquivo => ~34 MB de base64. Se passar
+        # disso, corta o envio (evita encher a memoria).
+        if sum(len(x) for x in recebendo[str(id)]) + len(pedaco) > 34_000_000:
+            recebendo.pop(str(id), None)
+            return {"erro": "Esse PDF e' grande demais (limite de 25 MB)."}
+        recebendo[str(id)].append(pedaco)
+        return {}
+
+    def pdf_extrair(self, id):
+        """Junta os pedacos e devolve o texto do PDF (ou um erro claro)."""
+        recebendo = getattr(self, "_pdf_recebendo", None)
+        pedacos = recebendo.pop(str(id), None) if recebendo else None
+        if pedacos is None:
+            return {"erro": "O envio do PDF expirou. Solte o arquivo de novo."}
+        try:
+            dados = base64.b64decode("".join(pedacos))
+        except Exception as erro:
+            p.registrar_erro("pdf_extrair (base64)", erro)
+            return {"erro": "Nao consegui ler esse arquivo (parece corrompido)."}
+        try:
+            import pdf_leitor
+        except ImportError:
+            return {"erro": "Falta o modulo de leitura de PDF neste programa."}
+        texto, erro = pdf_leitor.texto_de_pdf(dados)
+        if erro:
+            return {"erro": erro}
+        return {"texto": texto}
 
     # --- 3. a IA de verdade (este passo) ---
 

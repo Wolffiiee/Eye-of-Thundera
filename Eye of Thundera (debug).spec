@@ -15,6 +15,11 @@ tmp_ret = collect_all('sounddevice')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 tmp_ret = collect_all('_sounddevice_data')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+# Leitura de PDF (arrastar um PDF para a conversa). O modulo local e' a
+# ponte da tela; a pypdf faz a extracao do texto, tudo local.
+hiddenimports += ['pdf_leitor']
+tmp_ret = collect_all('pypdf')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(

@@ -5,6 +5,16 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-17 — Leitura de PDF, foco no diálogo e avisos de erro
+
+- **PDF arrastado:** agora dá para arrastar um `.pdf` para a conversa. O texto é extraído **no computador** (biblioteca `pypdf`, no módulo novo `pdf_leitor.py`) e entra na caixa de digitar para o usuário conferir antes de enviar — nada sai para a internet antes do Enter. O arquivo vai da tela para o Python em pedaços base64 (512 KB) para não travar a ponte. PDF com senha, arquivo corrompido, grande demais (limite de 25 MB) e PDF digitalizado (sem texto) recebem mensagem clara, sem travar a janela. `pypdf==6.1.1` entrou no `requirements.txt`, nos dois `.spec` do PyInstaller e no `verificar.py`.
+- **Ajuda:** nova seção “Arquivos e PDF” explica os formatos aceitos e o aviso de PDF digitalizado.
+- **Foco no diálogo:** com as Configurações abertas, o Tab fica preso dentro da janela; ao abrir, o foco entra no diálogo; ao fechar (ou apertar Esc), o foco volta ao botão que abriu.
+- **Recuperação de falhas:** regressão nova confirma que a resposta da IA, a galeria de imagens e a transcrição de voz liberam `ocupado` no `finally` (nenhum controle fica preso).
+- **Avisos de erro:** erros ficam 8 s na tela (avisos normais, 4,2 s) e podem ser fechados com um clique.
+- **Acessibilidade:** botões e links de “sites consultados” e o campo de pergunta ganharam rótulos acessíveis e navegação por teclado.
+- **Verificação:** `verificar.py`: 151 verificações, 0 falhas e 0 avisos. Os testes de PDF usam arquivos sintéticos em `_tmp`; nenhum documento pessoal é lido e nenhum dado real é alterado.
+
 ## 2026-10-17 — Acrescenta paletas e melhora a seleção de texto
 
 - **Plano:** criado `PLANO-RODADA-2026-10-17.md` antes das alterações, conforme pedido do usuário.

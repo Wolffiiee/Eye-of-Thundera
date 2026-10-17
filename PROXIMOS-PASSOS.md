@@ -38,8 +38,18 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
 - [x] Simular falha e sucesso do fallback em modo demonstração, sem modificar a área de transferência real.
 - A correção de estilo dos cartões de sugestão da página inicial já foi aplicada; confirmar que a grade se adapta bem em janela estreita.
 - Padronizar acentuação, pontuação, nomes de controles e descrições em português brasileiro.
-- Garantir foco visível, rótulos acessíveis, estados de carregamento e mensagens de erro que não desapareçam antes de poderem ser lidas.
+- [x] Garantir foco visível, rótulos acessíveis e mensagens de erro que não desapareçam antes de poderem ser lidas (erros agora duram 8 s e podem ser fechados com um clique).
+- [x] Prender o foco dentro do diálogo de Configurações (Tab), trazer o foco ao abrir e devolvê-lo ao botão de origem ao fechar; Esc fecha.
+- [x] Rótulos acessíveis e navegação por teclado em “sites consultados” e no campo de pergunta.
 - Verificar Configurações com escala de tela do Windows acima de 100%; a janela de 900 px já foi conferida em modo demonstração.
+
+## Prioridade 3.5 — arquivos anexados (leitura de PDF)
+
+- [x] Leitura local de PDF arrastado para a conversa (`pdf_leitor.py`, biblioteca `pypdf`), com o texto entrando na caixa para revisão antes do envio.
+- [x] Casos ruins tratados com mensagem clara: PDF com senha, corrompido, grande demais (>25 MB) e digitalizado (sem texto).
+- [x] `pypdf` declarado no `requirements.txt`, nos dois `.spec` do PyInstaller e no `verificar.py`; testes com PDFs sintéticos em `_tmp`.
+- [ ] Testar manualmente arrastando um PDF de verdade (com texto) e um digitalizado pelo atalho real.
+- [ ] (Opcional, etapa futura) Anexar imagens depende de OCR/visão e de consentimento explícito; ainda não iniciado.
 
 ## Prioridade 4 — manter os documentos coerentes
 
