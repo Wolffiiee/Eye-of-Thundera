@@ -1374,6 +1374,29 @@ except Exception as _erro_save:
     falha("Salvar resposta: teste isolado falhou: %r" % (_erro_save,))
 
 
+# --- responsividade e acessibilidade da interface -------------------------
+try:
+    _css_ui = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+    _html_ui = (PASTA / "web" / "index.html").read_text(encoding="utf-8")
+    _ui_responsiva = (
+        "@media (max-width: 620px)" in _css_ui
+        and "@media (max-height: 560px)" in _css_ui
+        and "@media (prefers-reduced-motion: reduce)" in _css_ui
+        and ".janela-corpo { min-height: 0;" in _css_ui
+        and ".abas { overflow-x: auto;" in _css_ui
+        and ":focus-visible" in _css_ui
+        and 'aria-modal="true"' in _html_ui
+        and 'aria-labelledby="titulo-config"' in _html_ui
+        and '<h2 id="titulo-config">Configurações</h2>' in _html_ui
+    )
+    if _ui_responsiva:
+        ok("interface: layout compacto, rolagem, foco visível e diálogo acessível")
+    else:
+        falha("interface: faltam regras responsivas ou atributos de acessibilidade")
+except Exception as _erro_ui:
+    falha("interface: teste de responsividade/acessibilidade falhou: %r" % (_erro_ui,))
+
+
 # --- resumo -----------------------------------------------------------------
 print()
 print('VERIFICACOES: %d | FALHA: %d | AVISO: %d' % (verificacoes, len(falhas), len(avisos)))

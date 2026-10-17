@@ -24,13 +24,14 @@ A revisão estática confirmou que todos os nomes usados nas chamadas da interfa
 
 - JavaScript: sintaxe aprovada com Node.js.
 - Python: app_web.py, pesquisa_ia.py, memoria.py e roteador.py passaram na compilação de sintaxe.
-- verificar.py: VERIFICACOES: 131 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO. Inclui regressão da pesquisa profunda, menu de modos, proteção contra duplo salvamento, persistência isolada das opções, preservação de chaves e campos permitidos, cinco temas e salvar resposta via diálogo pywebview, sem tocar no config.json real.
+- verificar.py: VERIFICACOES: 132 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO. Inclui regressão da pesquisa profunda, menu de modos, proteção contra duplo salvamento, persistência isolada das opções, preservação de chaves e campos permitidos, cinco temas, salvar resposta via diálogo pywebview e regras responsivas/acessíveis, sem tocar no config.json real.
 - Teste de abertura: o comando usado pelo atalho foi iniciado novamente, a janela com título Eye of Thundera ficou visível no Windows e não foi criado erro.log.
 - O usuário confirmou que a validação manual da janela real está em ordem: Nova conversa, Configurações, abas, alternância Web e tema Ocean.
 - Nesta rodada, Pesquisa séria, Privada e Resumo do dia foram agrupados em “Mais”; os estados ativos aparecem no rótulo e o menu abre para cima. O controle de ativação do Gemini agora fica no cartão da chave.
 - O usuário confirmou que o menu “Mais” e o cartão Gemini ficaram bonitos e funcionais.
 - O salvamento das configurações agora mostra “Salvando...” e bloqueia cliques duplicados; erros de gravação ficam visíveis no rodapé e a interface evita redesenhar a aba com dados incompletos.
 - Teste isolado cobre persistência das opções, preservação da chave principal quando o campo fica vazio, atualização da chave reserva e rejeição de campos não permitidos.
+- Configurações: foco de teclado destacado, abas podem rolar horizontalmente e o corpo permanece rolável em janelas estreitas/baixas; a interface respeita `prefers-reduced-motion`. O diálogo tem nome acessível e declara modalidade.
 - `show.png` aparece como excluído no diretório de trabalho. Não foi alterado nem incluído no commit desta rodada.
 
 ## Arquivos centrais

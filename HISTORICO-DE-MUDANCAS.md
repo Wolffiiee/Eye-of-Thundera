@@ -1891,6 +1891,12 @@ foram instaladas junto; não precisam ser listadas.
 - NÃO testado: perguntas reais à IA (precisa de internet e da chave do
   Wolf) e o uso do .exe por um período mais longo.
 
+## 16/10/2026 - Responsividade e acessibilidade das Configurações
+- `web/estilo.css`: adicionados estilos de foco visível para navegação por teclado, layout compacto para janelas estreitas e baixas, rolagem horizontal das abas, rolagem segura do corpo e respeito à preferência de movimento reduzido do sistema.
+- `web/index.html`: diálogo de Configurações agora declara `aria-modal="true"` e usa o título visível como nome acessível.
+- `verificar.py`: teste estático cobre as regras responsivas, foco visível e atributos acessíveis.
+- Verificação: `verificar.py` passou com 132 verificações, 0 falhas e 0 avisos; `node --check web/app.js`, `py_compile` e `git diff --check` também passaram. Ainda falta validação visual manual em escala alta do Windows e janela pequena.
+
 ## 15/10/2026 - Tela nova: passo 5 (Configuracoes e Memoria de verdade) - feito pelo Claude
 - app_web.py: definir_modo, config_salvar, testar_chave, memoria_adicionar/apagar/apagar_tudo/organizar agora gravam de verdade (reaproveitam salvar_config, esquecer_memoria, _mesclar_memoria, organizar_memoria, testar_chave, testar_servico do pesquisa_ia.py).
 - Chave vazia nao apaga a chave salva; campos desconhecidos sao ignorados; no modo exemplo nada e gravado.

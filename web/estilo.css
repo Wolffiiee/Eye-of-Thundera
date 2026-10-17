@@ -32,6 +32,10 @@ button:disabled { cursor: default; opacity: .45; }
 svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8;
   stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .oculto { display: none !important; }
+/* Foco visível consistente: navegação por Tab sem depender do mouse. */
+:where(button, input, textarea, select, summary, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--azul-2); outline-offset: 3px;
+}
 ::selection { background: #3d6bff66; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: #2c2c3a; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
@@ -299,8 +303,13 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 /* ---------- janela de configuracoes ---------- */
 #modal { position: fixed; inset: 0; z-index: 40; background: rgba(5, 5, 9, .62); display: grid; place-items: center;
   backdrop-filter: blur(3px); }
-.janela { width: min(760px, calc(100vw - 40px)); height: min(680px, calc(100vh - 40px)); background: var(--painel);
-  border: 1px solid #30303f; border-radius: 18px; box-shadow: var(--sombra); display: flex; flex-direction: column; overflow: hidden; }
+.janela { width: min(760px, calc(100vw - 40px)); height: min(680px, calc(100vh - 40px)); min-height: 0;
+  background: var(--painel); border: 1px solid #30303f; border-radius: 18px; box-shadow: var(--sombra);
+  display: flex; flex-direction: column; overflow: hidden; }
+.janela-topo, .abas, .janela-rodape { flex: none; }
+.janela-corpo { min-height: 0; overscroll-behavior: contain; }
+.abas { overflow-x: auto; scrollbar-width: thin; }
+.aba { flex: none; white-space: nowrap; }
 .janela-topo { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 0 28px; }
 .janela-topo h2 { margin: 0; font-size: 19px; font-weight: 650; }
 .abas { display: flex; gap: 4px; padding: 14px 24px 0; border-bottom: 1px solid var(--borda); }
@@ -389,3 +398,35 @@ kbd { font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--te
 .gaveta-lista { padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
 .fato-compacto { font-size: 13px; }
 .gaveta-secao .btn { margin: 8px 10px 10px; font-size: 12px; }
+
+/* Em janelas baixas/estreitas (ou escala alta do Windows), o corpo rola
+   sem empurrar as abas e o botão Salvar para fora da janela. */
+@media (max-width: 620px) {
+  .janela { width: calc(100vw - 16px); height: calc(100vh - 16px); border-radius: 12px; }
+  .janela-topo { padding: 10px 12px 0 16px; }
+  .abas { padding: 10px 12px 0; gap: 2px; }
+  .aba { padding: 8px 10px; font-size: 13px; }
+  .janela-corpo { padding: 16px 14px 20px; }
+  .cartao { padding: 13px 12px; }
+  .janela-rodape { padding: 10px 14px; gap: 8px; }
+  #config-aviso { min-width: 0; overflow-wrap: anywhere; }
+  .linha-opcao { gap: 10px; }
+  #lateral { width: min(272px, 86vw); }
+  #lateral.recolhida { margin-left: max(-272px, -86vw); }
+  #coluna { padding-left: 14px; padding-right: 14px; }
+  #rodape { padding-left: 10px; padding-right: 10px; }
+  .barra-compositor { flex-wrap: wrap; }
+  .espaco { flex: 1 1 8px; }
+}
+@media (max-height: 560px) {
+  .janela { height: calc(100vh - 12px); }
+  .janela-topo { padding-top: 6px; }
+  .janela-topo h2 { font-size: 17px; }
+  .abas { padding-top: 4px; }
+  .janela-corpo { padding-top: 12px; padding-bottom: 14px; }
+  .janela-rodape { padding-top: 8px; padding-bottom: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
