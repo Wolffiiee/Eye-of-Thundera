@@ -56,6 +56,7 @@ import pesquisa_ia as p
 TEMAS_VALIDOS = (
     "Clássico Dark", "Purpurina", "Amethyst", "Ocean", "Forest",
     "Aurora", "Pôr do Sol", "Rosa Chá", "Grafite Dourado",
+    "Thundera",
 )
 
 WEB = RAIZ / "web"

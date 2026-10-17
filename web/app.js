@@ -32,6 +32,7 @@ const TEMAS_UI = [
   { nome: "Pôr do Sol", cores: { "--bg": "#1b1412", "--painel": "#291b16", "--superficie": "#38251d", "--superficie-2": "#4b3327", "--texto": "#fff0e6", "--texto-2": "#e2c5b1", "--texto-3": "#ba9680", "--borda": "#634737", "--azul": "#e7925d", "--azul-2": "#ffb67c" } },
   { nome: "Rosa Chá", cores: { "--bg": "#1d1420", "--painel": "#291a2d", "--superficie": "#38233b", "--superficie-2": "#4a3050", "--texto": "#fbf0fc", "--texto-2": "#dec5e3", "--texto-3": "#b69bbd", "--borda": "#604569", "--azul": "#d781bf", "--azul-2": "#efadd8" } },
   { nome: "Grafite Dourado", cores: { "--bg": "#15181c", "--painel": "#1d2228", "--superficie": "#272d34", "--superficie-2": "#333b44", "--texto": "#f1f3f5", "--texto-2": "#c6cdd5", "--texto-3": "#9ba6b1", "--borda": "#49545f", "--azul": "#d0a85c", "--azul-2": "#f1cd7d" } },
+  { nome: "Thundera", cores: { "--bg": "#0d0808", "--painel": "#1a0e0e", "--superficie": "#2a1414", "--superficie-2": "#3a1c1c", "--texto": "#f5e8e8", "--texto-2": "#d4b8b8", "--texto-3": "#a88888", "--borda": "#5a2a2a", "--azul": "#c0392b", "--azul-2": "#e74c3c" } },
 ];
 
 function aplicarTema(indice) {

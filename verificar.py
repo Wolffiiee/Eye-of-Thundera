@@ -1279,7 +1279,7 @@ _amostra_ok = (
     and 'b.tabIndex = i === idx ? 0 : -1' in _amostra_js
     and 'b.type = "button"' in _amostra_js
     and "TEMAS_UI.forEach((tema, i)" in _amostra_js
-    and len(_temas_nomes_ui) == 9
+    and len(_temas_nomes_ui) == 10
     and all(n in _temas_nomes_ui for n in ("Aurora", "Pôr do Sol", "Rosa Chá", "Grafite Dourado"))
     and all(k in _amostra_js for k in ("ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"))
     and 'chamar("config_salvar", { tema: tema.nome, temaIdx: idx, chaves: {} })' in _amostra_js
@@ -1294,7 +1294,7 @@ else:
     falha("personalização: cartões de tema incompletos (ver PLANO-PERSONALIZACAO.md)")
 
 _paletas_parseadas = re.findall(r'\{ nome: "([^"]+)", cores: \{ ([^}]+) \} \}', _temas_bloco_ui)
-_paletas_legiveis = len(_paletas_parseadas) == 9
+_paletas_legiveis = len(_paletas_parseadas) == 10
 for _nome_paleta, _texto_cores in _paletas_parseadas:
     _cores_paleta = dict(re.findall(r'"(--[\w-]+)": "(#[0-9a-fA-F]{6})"', _texto_cores))
     if len(_cores_paleta) != 10:
@@ -1311,7 +1311,7 @@ for _nome_paleta, _texto_cores in _paletas_parseadas:
         if _contraste < 4.5:
             _paletas_legiveis = False
 if _paletas_legiveis:
-    ok("personalização: nove paletas completas e texto com contraste legível")
+    ok("personalização: dez paletas completas e texto com contraste legível")
 else:
     falha("personalização: paleta incompleta ou contraste de texto abaixo de 4,5:1")
 
@@ -1341,9 +1341,10 @@ try:
     _temas_esperados = [
         "Clássico Dark", "Purpurina", "Amethyst", "Ocean", "Forest",
         "Aurora", "Pôr do Sol", "Rosa Chá", "Grafite Dourado",
+        "Thundera",
     ]
     if _temas_nomes_ui == _temas_esperados and list(_tema_aw.TEMAS_VALIDOS) == _temas_esperados:
-        ok("personalização: nove paletas sincronizadas entre interface e backend")
+        ok("personalização: dez paletas sincronizadas entre interface e backend")
     else:
         falha("personalização: nomes ou índices de paleta divergem entre tela e backend")
     _temas_gravaram = True
@@ -1370,16 +1371,16 @@ try:
                         or _cfg_inicio.get("tema") != _nome_tema):
                     _temas_gravaram = False
                     break
-            for _indice_ruim in (9, -1, True):
+            for _indice_ruim in (10, -1, True):
                 _ponte_tema.config_salvar({"tema": "não permitido", "temaIdx": _indice_ruim, "chaves": {}})
                 _cfg_ruim = json.loads(_tema_aw.p.ARQUIVO_CONFIG.read_text(encoding="utf-8"))
-                if _cfg_ruim.get("temaIdx") != 8 or _cfg_ruim.get("tema") != _temas_esperados[8]:
+                if _cfg_ruim.get("temaIdx") != 9 or _cfg_ruim.get("tema") != _temas_esperados[9]:
                     _tema_invalido = False
     finally:
         _tema_aw.p.PASTA_CONFIG = _tema_pasta_original
         _tema_aw.p.ARQUIVO_CONFIG = _tema_arquivo_original
     if _temas_gravaram:
-        ok("personalização: os 9 temas são salvos e carregados sem tocar nos dados reais")
+        ok("personalização: os 10 temas são salvos e carregados sem tocar nos dados reais")
     else:
         falha("personalização: um tema não foi salvo ou carregado corretamente")
     if _tema_invalido:
