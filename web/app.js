@@ -115,16 +115,40 @@ const URL_RE = /https?:\/\/[^\s<>"')\]]+[^\s<>"')\].,;:!?]/g;
 const MARCA_LISTA = /^\s*(?:[•\-–*]|\d+[.)])\s+/;
 
 function comLinks(pai, texto) {
-  let ultimo = 0;
-  for (const m of texto.matchAll(URL_RE)) {
-    if (m.index > ultimo) pai.append(texto.slice(ultimo, m.index));
-    const a = el("a", "", m[0]);
-    a.href = m[0];
-    a.dataset.url = m[0];
-    pai.append(a);
-    ultimo = m.index + m[0].length;
+  // Processa **negrito** e URLs, em ordem de aparicao.
+  const partes = [];
+  let resto = String(texto);
+  // Primeiro, separa os trechos **negrito**.
+  const boldRe = /\*\*([^*]+)\*\*/g;
+  let ultimoBold = 0;
+  const segmentos = [];
+  for (const m of resto.matchAll(boldRe)) {
+    if (m.index > ultimoBold) segmentos.push({ tipo: "texto", valor: resto.slice(ultimoBold, m.index) });
+    segmentos.push({ tipo: "negrito", valor: m[1] });
+    ultimoBold = m.index + m[0].length;
   }
-  if (ultimo < texto.length) pai.append(texto.slice(ultimo));
+  if (ultimoBold < resto.length) segmentos.push({ tipo: "texto", valor: resto.slice(ultimoBold) });
+
+  for (const seg of segmentos) {
+    if (seg.tipo === "negrito") {
+      const strong = document.createElement("strong");
+      // Dentro do negrito, ainda pode haver URL.
+      comLinks(strong, seg.valor);
+      pai.append(strong);
+    } else {
+      // Texto normal: aplica URLs.
+      let ultimo = 0;
+      for (const m of seg.valor.matchAll(URL_RE)) {
+        if (m.index > ultimo) pai.append(seg.valor.slice(ultimo, m.index));
+        const a = el("a", "", m[0]);
+        a.href = m[0];
+        a.dataset.url = m[0];
+        pai.append(a);
+        ultimo = m.index + m[0].length;
+      }
+      if (ultimo < seg.valor.length) pai.append(seg.valor.slice(ultimo));
+    }
+  }
 }
 
 function formatar(texto, alvo) {
