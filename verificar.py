@@ -659,6 +659,30 @@ try:
     else:
         falha("menu do botão direito: o #menu-contexto não existe (ou "
               "não começa escondido)")
+    _trecho_recortar = _js2.split('itemMenu("Recortar"', 1)[1].split('itemMenu("Copiar"', 1)[0]
+    if ("function escreverClipboard" in _js2
+            and 'document.execCommand("copy")' in _js2
+            and 'await escreverClipboard(trecho)' in _trecho_recortar
+            and 'if (copiou)' in _trecho_recortar
+            and 'o texto foi mantido.' in _trecho_recortar
+            and _trecho_recortar.index('await escreverClipboard(trecho)')
+                < _trecho_recortar.index('campo.setRangeText("",')):
+        ok("menu do botão direito: Recortar só apaga após confirmar a cópia")
+    else:
+        falha("menu do botão direito: Recortar pode apagar texto sem copiá-lo")
+    if ('setAttribute("role", "menuitem")' in _js2
+            and 'menu.addEventListener("keydown"' in _js2
+            and all(k in _js2 for k in ("ArrowDown", "ArrowUp", "Escape", "Home", "End"))
+            and 'foco.focus({ preventScroll: true })' in _js2):
+        ok("menu do botão direito: atalhos visíveis, teclado e retorno de foco")
+    else:
+        falha("menu do botão direito: acessibilidade por teclado incompleta")
+    if ("function indiceTextareaNoPonto" in _js2
+            and "faixa.getBoundingClientRect()" in _js2
+            and "Não consegui acessar a área de transferência. Use Ctrl+V." in _js2):
+        ok("seleção de texto: clique direito posiciona o cursor e colar avisa quando falha")
+    else:
+        falha("seleção de texto: posicionamento ou retorno do comando Colar incompleto")
 except Exception as erro:
     falha("os testes do menu do botão direito quebraram: %r" % (erro,))
 
@@ -1246,6 +1270,8 @@ else:
 # --- personalização: cartões de tema com amostra (PLANO-PERSONALIZACAO.md) ---
 _amostra_js = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
 _amostra_css = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+_temas_bloco_ui = _amostra_js.split("const TEMAS_UI = [", 1)[1].split("\n];", 1)[0]
+_temas_nomes_ui = re.findall(r'\{ nome: "([^"]+)", cores:', _temas_bloco_ui)
 _amostra_ok = (
     'role", "radiogroup"' in _amostra_js
     and 'setAttribute("role", "radio")' in _amostra_js
@@ -1253,6 +1279,8 @@ _amostra_ok = (
     and 'b.tabIndex = i === idx ? 0 : -1' in _amostra_js
     and 'b.type = "button"' in _amostra_js
     and "TEMAS_UI.forEach((tema, i)" in _amostra_js
+    and len(_temas_nomes_ui) == 9
+    and all(n in _temas_nomes_ui for n in ("Aurora", "Pôr do Sol", "Rosa Chá", "Grafite Dourado"))
     and all(k in _amostra_js for k in ("ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"))
     and 'chamar("config_salvar", { tema: tema.nome, temaIdx: idx, chaves: {} })' in _amostra_js
     and ".grade-temas" in _amostra_css
@@ -1264,6 +1292,28 @@ if _amostra_ok:
     ok("personalização: temas em cartões com amostra de cores, teclado e mesmo salvamento")
 else:
     falha("personalização: cartões de tema incompletos (ver PLANO-PERSONALIZACAO.md)")
+
+_paletas_parseadas = re.findall(r'\{ nome: "([^"]+)", cores: \{ ([^}]+) \} \}', _temas_bloco_ui)
+_paletas_legiveis = len(_paletas_parseadas) == 9
+for _nome_paleta, _texto_cores in _paletas_parseadas:
+    _cores_paleta = dict(re.findall(r'"(--[\w-]+)": "(#[0-9a-fA-F]{6})"', _texto_cores))
+    if len(_cores_paleta) != 10:
+        _paletas_legiveis = False
+        continue
+    def _lum(hex_cor):
+        _rgb = [int(hex_cor[_i:_i + 2], 16) / 255 for _i in (1, 3, 5)]
+        _rgb = [v / 12.92 if v <= .04045 else ((v + .055) / 1.055) ** 2.4 for v in _rgb]
+        return .2126 * _rgb[0] + .7152 * _rgb[1] + .0722 * _rgb[2]
+    _lum_fundo = _lum(_cores_paleta["--bg"])
+    for _chave_texto in ("--texto", "--texto-2"):
+        _lum_texto = _lum(_cores_paleta[_chave_texto])
+        _contraste = (max(_lum_texto, _lum_fundo) + .05) / (min(_lum_texto, _lum_fundo) + .05)
+        if _contraste < 4.5:
+            _paletas_legiveis = False
+if _paletas_legiveis:
+    ok("personalização: nove paletas completas e texto com contraste legível")
+else:
+    falha("personalização: paleta incompleta ou contraste de texto abaixo de 4,5:1")
 
 # --- personalização: aba, tema inicial e gravação isolada -------------------
 try:
@@ -1288,8 +1338,16 @@ try:
     _tema_aw = importlib.import_module("app_web")
     _tema_pasta_original = _tema_aw.p.PASTA_CONFIG
     _tema_arquivo_original = _tema_aw.p.ARQUIVO_CONFIG
-    _temas_esperados = ["Clássico Dark", "Purpurina", "Amethyst", "Ocean", "Forest"]
+    _temas_esperados = [
+        "Clássico Dark", "Purpurina", "Amethyst", "Ocean", "Forest",
+        "Aurora", "Pôr do Sol", "Rosa Chá", "Grafite Dourado",
+    ]
+    if _temas_nomes_ui == _temas_esperados and list(_tema_aw.TEMAS_VALIDOS) == _temas_esperados:
+        ok("personalização: nove paletas sincronizadas entre interface e backend")
+    else:
+        falha("personalização: nomes ou índices de paleta divergem entre tela e backend")
     _temas_gravaram = True
+    _tema_invalido = True
     try:
         with tempfile.TemporaryDirectory(prefix="teste-temas-", dir=str(_tema_pastas)) as _tmp_tema:
             _tema_aw.p.PASTA_CONFIG = Path(_tmp_tema)
@@ -1312,13 +1370,22 @@ try:
                         or _cfg_inicio.get("tema") != _nome_tema):
                     _temas_gravaram = False
                     break
+            for _indice_ruim in (9, -1, True):
+                _ponte_tema.config_salvar({"tema": "não permitido", "temaIdx": _indice_ruim, "chaves": {}})
+                _cfg_ruim = json.loads(_tema_aw.p.ARQUIVO_CONFIG.read_text(encoding="utf-8"))
+                if _cfg_ruim.get("temaIdx") != 8 or _cfg_ruim.get("tema") != _temas_esperados[8]:
+                    _tema_invalido = False
     finally:
         _tema_aw.p.PASTA_CONFIG = _tema_pasta_original
         _tema_aw.p.ARQUIVO_CONFIG = _tema_arquivo_original
     if _temas_gravaram:
-        ok("personalização: os 5 temas são salvos e carregados sem tocar nos dados reais")
+        ok("personalização: os 9 temas são salvos e carregados sem tocar nos dados reais")
     else:
         falha("personalização: um tema não foi salvo ou carregado corretamente")
+    if _tema_invalido:
+        ok("personalização: índices fora da faixa não substituem a paleta salva")
+    else:
+        falha("personalização: índice de tema inválido alterou a paleta")
 except Exception as _erro_tema:
     falha("personalização: teste isolado falhou: %r" % (_erro_tema,))
 

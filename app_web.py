@@ -53,6 +53,11 @@ except ImportError:
 # ja tem. Importar o modulo NAO abre janela nenhuma.
 import pesquisa_ia as p
 
+TEMAS_VALIDOS = (
+    "Clássico Dark", "Purpurina", "Amethyst", "Ocean", "Forest",
+    "Aurora", "Pôr do Sol", "Rosa Chá", "Grafite Dourado",
+)
+
 WEB = RAIZ / "web"
 INDEX = WEB / "index.html"
 ESTILO = WEB / "estilo.css"
@@ -358,7 +363,7 @@ def _cfg_tela():
             "final": (str(chave)[-4:] if chave else ""),
         })
     tema_idx = cfg.get("temaIdx", 0)
-    if not isinstance(tema_idx, int) or isinstance(tema_idx, bool) or not 0 <= tema_idx <= 4:
+    if not isinstance(tema_idx, int) or isinstance(tema_idx, bool) or not 0 <= tema_idx < len(TEMAS_VALIDOS):
         tema_idx = 0
     return {
         "modo_pesquisa": cfg.get("modo_pesquisa", "auto"),
@@ -1289,7 +1294,7 @@ class Ponte:
     def _cfg_curta(self):
         cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
         tema_idx = cfg.get("temaIdx", 0)
-        if not isinstance(tema_idx, int) or isinstance(tema_idx, bool) or not 0 <= tema_idx <= 4:
+        if not isinstance(tema_idx, int) or isinstance(tema_idx, bool) or not 0 <= tema_idx < len(TEMAS_VALIDOS):
             tema_idx = 0
         return {"modo_pesquisa": cfg.get("modo_pesquisa", "auto"),
                 "corretor": bool(cfg.get("corretor", True)),
@@ -1320,17 +1325,10 @@ class Ponte:
                 cfg[campo] = bool(dados[campo])
         if "web_corretor" in dados:
             cfg["corretor"] = bool(dados["web_corretor"])
-        temas_validos = {
-            0: "Clássico Dark",
-            1: "Purpurina",
-            2: "Amethyst",
-            3: "Ocean",
-            4: "Forest",
-        }
         tema_idx = dados.get("temaIdx")
-        if isinstance(tema_idx, int) and not isinstance(tema_idx, bool) and tema_idx in temas_validos:
+        if isinstance(tema_idx, int) and not isinstance(tema_idx, bool) and 0 <= tema_idx < len(TEMAS_VALIDOS):
             cfg["temaIdx"] = tema_idx
-            cfg["tema"] = temas_validos[tema_idx]
+            cfg["tema"] = TEMAS_VALIDOS[tema_idx]
         permitidos = {"api_key", "api_key_reserva"} | {
             s["campo_chave"] for s in p.SERVICOS_RESERVA}
         for campo, valor in (dados.get("chaves") or {}).items():

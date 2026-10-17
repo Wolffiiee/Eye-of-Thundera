@@ -65,9 +65,9 @@
             <button class="sugestao">Me ajuda a escrever uma mensagem educada</button>
           </div>
         </div>
-        <div id="mensagens"></div>
-        <div id="digitando" class="oculto"><span class="avatar"><svg><use href="#i-lupa"/></svg></span>
-          <span class="pontos"><i></i><i></i><i></i></span><span id="etapa"></span></div>
+        <div id="mensagens" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversa"></div>
+        <div id="digitando" class="oculto" role="status" aria-live="polite" aria-label="Assistente pensando"><span class="avatar"><svg><use href="#i-lupa"/></svg></span>
+          <span class="pontos"><i></i><i></i><i></i></span><span id="etapa" aria-live="polite" aria-atomic="true"></span></div>
       </div>
     </section>
     <footer id="rodape">
@@ -113,7 +113,7 @@
     <div class="janela-rodape"><span id="config-aviso"></span><button id="btn-salvar-config" class="btn primario">Salvar</button></div>
   </div>
 </div>
-<div id="aviso" class="oculto"></div>
+<div id="aviso" class="oculto" role="status" aria-live="polite" aria-atomic="true"></div>
 <script src="app.js"></script>
 </body>
 </html>

@@ -33,6 +33,9 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
 - [x] Agrupar “Usar o Gemini (principal)” no cartão da chave correspondente. Conferir visualmente na aba Chaves.
 - [x] Trocar a lista de temas por cartões com miniaturas e cinco amostras de cores; navegação por setas, Enter e Espaço.
 - [x] Conferir visualmente os cartões e a mudança de paleta em modo de demonstração; a captura marca corretamente o tema mostrado.
+- [x] Acrescentar Aurora, Pôr do Sol, Rosa Chá e Grafite Dourado; validar sincronização com backend, persistência isolada, índices inválidos e contraste.
+- [x] Corrigir cópia/recorte para usar fallback e preservar o texto em falha; incluir atalhos no menu e navegação por teclado.
+- [x] Simular falha e sucesso do fallback em modo demonstração, sem modificar a área de transferência real.
 - A correção de estilo dos cartões de sugestão da página inicial já foi aplicada; confirmar que a grade se adapta bem em janela estreita.
 - Padronizar acentuação, pontuação, nomes de controles e descrições em português brasileiro.
 - Garantir foco visível, rótulos acessíveis, estados de carregamento e mensagens de erro que não desapareçam antes de poderem ser lidas.

@@ -5,6 +5,15 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-17 — Acrescenta paletas e melhora a seleção de texto
+
+- **Plano:** criado `PLANO-RODADA-2026-10-17.md` antes das alterações, conforme pedido do usuário.
+- **Temas:** adicionados Aurora, Pôr do Sol, Rosa Chá e Grafite Dourado. `app_web.py` agora valida a lista `TEMAS_VALIDOS` sem limites numéricos duplicados; a suíte compara a lista com `TEMAS_UI`, valida contraste e testa persistência isolada dos nove temas, inclusive rejeição de índices inválidos.
+- **Seleção e menu:** corrigido Recortar para só remover texto após confirmar a cópia. Copiar e recortar agora compartilham fallback para WebView; mensagens indicam sucesso/falha. O menu exibe Ctrl+X/C/V/A, permite navegação com setas, Home/End e Escape e restaura o foco. O clique direito posiciona o cursor medindo o texto em vez de usar pixels como índice. A cópia da seleção nas respostas também informa o resultado.
+- **Verificação:** a captura em modo demonstração mostrou as quatro novas paletas, o menu e os nove cartões em 900 px. Simulação sintética confirmou que falha de cópia mantém o texto e que o fallback de sucesso é aceito, sem tocar na área de transferência real.
+- **Resultado:** `verificar.py`: 143 verificações, 0 falhas e 0 avisos. Ainda falta conferir a persistência escolhendo tema pelo atalho real e a escala do Windows acima de 100%; nenhum dado pessoal foi alterado.
+- **Capturas:** `_troca/prints/rodada-2026-10-17-cores-selecao-v3/` (pasta de demonstração; o roteiro agora gera uma pasta exclusiva por execução).
+
 ## 2026-10-17 — Cartões de temas com amostras de cores
 
 - **Personalização:** a lista de temas virou uma grade de cinco cartões. Cada um mostra uma miniatura da interface pintada com sua paleta, cinco bolinhas de cor, o nome e uma marca no tema selecionado. As cores vêm de `TEMAS_UI`, sem duplicar a fonte das paletas.

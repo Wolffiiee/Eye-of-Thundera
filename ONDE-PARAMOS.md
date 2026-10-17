@@ -1,16 +1,22 @@
 # Onde paramos
 
-Atualizado em 17/10/2026, após implementar os cartões de amostras de cores na aba Personalização.
+Atualizado em 17/10/2026, após acrescentar paletas e corrigir o menu de seleção de texto.
 
 ## Resumo do estado atual
 
-A rodada mais recente adicionou `_sanitizar_erro_log()` ao `pesquisa_ia.py`: antes de gravar, o logger mascara padrões conhecidos de chaves de provedores, tokens Bearer e campos comuns de autenticação. O teste novo usa somente valores sintéticos e não escreve em `erro.log` nem chama serviços externos. A cobertura é por padrões conhecidos, portanto não garante remover todo segredo de mensagens inesperadas.
+A rodada atual começou com o plano registrado em `PLANO-RODADA-2026-10-17.md`, antes de alterar o código. O logger de erros continua mascarando padrões conhecidos de credenciais; a cobertura não garante remover todo segredo de mensagens inesperadas.
 
-A aba Personalização agora mostra cinco cartões de tema com miniaturas da interface e cinco amostras de cor por paleta. Os cartões usam as cores centralizadas em `TEMAS_UI`; o tema ativo tem marca visual e estado acessível de rádio. Setas movem e selecionam entre cartões, Enter/Espaço ativam o cartão focado, e Tab entra/sai do grupo. A escolha mantém a gravação existente, que envia somente tema e índice, e reverte a prévia se o salvamento falhar. O roteiro de capturas em modo demonstração mostra o cartão Ocean ativo junto da paleta Ocean. A prévia foi conferida em 1180 px e 900 px; os cartões quebram em uma nova linha sem rolagem horizontal. `verificar.py` passou com 137 verificações, sem falhas nem avisos. Ainda falta conferir a janela real pelo atalho e a troca persistida.
+A aba Personalização agora oferece nove temas: Clássico Dark, Purpurina, Amethyst, Ocean, Forest, Aurora, Pôr do Sol, Rosa Chá e Grafite Dourado. As paletas ficam centralizadas em `TEMAS_UI`; o backend valida os nomes e índices pela lista equivalente `TEMAS_VALIDOS`. Testes isolados confirmam gravação e leitura dos nove temas, rejeição de índices inválidos e contraste de texto de pelo menos 4,5:1 sobre o fundo.
+
+O menu de seleção mostra os atalhos Ctrl+X/C/V/A, aceita setas, Home/End e Escape e devolve o foco à caixa de texto ao fechar. Copiar usa a API do navegador e tenta um fallback compatível com WebView; Recortar só apaga o trecho depois de confirmar a cópia. Uma simulação em modo de demonstração forçou falha e sucesso do fallback sem escrever na área de transferência real: o texto permaneceu após a falha. O clique direito agora calcula a posição do cursor pelo texto e pela geometria da caixa, sem tratar pixels como índices de caracteres. A cópia de uma seleção na resposta também informa sucesso ou falha e preserva espaços selecionados.
+
+As capturas em modo de demonstração foram conferidas em 1180 px e 900 px; os nove cartões são acessíveis por rolagem vertical e não criam rolagem horizontal. `verificar.py` passou com 143 verificações, sem falhas nem avisos. A configuração pessoal não foi alterada; ainda falta confirmar a persistência visualmente pelo atalho real e conferir a escala do Windows acima de 100%.
 
 O Eye of Thundera usa a interface HTML/JavaScript em web/ e a janela Python em app_web.py. O atalho real da Área de Trabalho é Eye of Thundera.lnk e aponta para .venv/Scripts/pythonw.exe com o argumento app_web.py, usando D:/Projetos/PesquisaIA como pasta de trabalho.
 
 ### Problema encontrado e corrigido nesta rodada
+
+O menu anterior iniciava a cópia de forma assíncrona e apagava o texto imediatamente, mesmo quando a área de transferência recusava a cópia. O novo fluxo só recorta após sucesso, comunica falhas, preserva o intervalo escolhido enquanto o menu está em foco e oferece fallback para WebView. O menu também recebeu atalhos visíveis e navegação por teclado. A antiga reserva de posição para correções usava `offsetX` (pixels) como se fosse um índice de caractere; foi substituída por medição do texto em uma caixa espelhada.
 
 Um commit recente inseriu uma chave de fechamento extra em web/app.js, imediatamente depois da função abaChaves. O Node.js reportava SyntaxError: Unexpected token '}' na linha 1278. Como o navegador não consegue interpretar o arquivo JavaScript, nenhuma função de inicialização ou registro de cliques era executada: a janela abria, mas os botões não respondiam.
 
@@ -26,8 +32,9 @@ A revisão estática confirmou que todos os nomes usados nas chamadas da interfa
 
 ### Verificação executada
 
-- Aba Personalização: cartões, miniaturas, paletas, estado ativo e navegação de teclado; capturas em modo demonstração conferidas visualmente em 1180 px e 900 px. Não foi gerado EXE porque o atalho de uso diário executa `app_web.py` diretamente.
-- `verificar.py`: 137 verificações, 0 falhas, 0 avisos; RESULTADO: TUDO CERTO. A sintaxe JavaScript está incluída nessa verificação.
+- Aba Personalização e menu de seleção: capturas em modo demonstração conferidas visualmente em 1180 px e 900 px. Falha/sucesso da cópia simulados com valores sintéticos e sem alterar a área de transferência real.
+- `verificar.py`: 143 verificações, 0 falhas, 0 avisos; RESULTADO: TUDO CERTO. A sintaxe JavaScript está incluída nessa verificação.
+- Não foi gerado EXE porque o atalho de uso diário executa `app_web.py` diretamente.
 
 - JavaScript: sintaxe aprovada com Node.js.
 - Python: app_web.py, pesquisa_ia.py e verificar.py passaram na compilação de sintaxe.
@@ -61,9 +68,10 @@ Os dados do usuário ficam em %LOCALAPPDATA%/PesquisaIA, fora do repositório. N
 1. Fechar e reabrir o Eye of Thundera pelo atalho da Área de Trabalho para carregar a versão atualizada da interface.
 2. Confirmar visualmente que a barra principal tem Web, Mais, microfone e Enviar; dentro de Mais, conferir “Modo profundo”, “Enviar com pesquisa profunda”, “Privada” e “Resumo do dia”.
 3. Em Configurações > Chaves, digitar um texto de teste que não seja uma chave real, trocar para outra aba e voltar: o rascunho deve permanecer. Apagar esse texto de teste sem salvar. Não exibir nem compartilhar chaves reais.
-4. Confirmar as abas, o tema Ocean e a responsividade em janela menor. Não é necessário enviar pergunta à IA nem gastar cota nesta validação.
-5. Se algum clique falhar, consultar %LOCALAPPDATA%/PesquisaIA/erro.log e registrar o erro sem incluir credenciais.
+4. Se quiser confirmar a persistência no uso real, escolher uma das novas paletas pelo atalho e reabrir a aplicação; os dados de configuração real não foram alterados durante esta rodada.
+5. Conferir a interface em escala do Windows acima de 100%; nenhuma pergunta à IA é necessária.
+6. Se algum clique falhar, consultar %LOCALAPPDATA%/PesquisaIA/erro.log e registrar o erro sem incluir credenciais.
 
 ## Estado do Git
 
-As alterações desta rodada abrangem a interface e a verificação dos cartões de tema, o roteiro de capturas e estes documentos. `show.png` já aparecia como excluído antes desta rodada; foi preservado como está e deve ficar fora do commit. Confira `git status` antes de qualquer outra mudança.
+As alterações desta rodada abrangem a interface, o backend de temas, verificações, roteiro de capturas e documentos. `show.png` já aparecia como excluído antes desta rodada; foi preservado como está e deve ficar fora do commit. Confira `git status` antes de qualquer outra mudança.

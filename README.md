@@ -2,7 +2,7 @@
 
 Assistente pessoal de pesquisa, com interface escura em HTML/JavaScript e integração Python via pywebview.
 
-**Estado conferido em 17/10/2026:** o atalho da Área de Trabalho abre o código-fonte em app_web.py. A aba Personalização agora apresenta cartões com amostras para os cinco temas, e a escolha mantém o salvamento imediato. A suíte passou com 137 verificações, sem falhas nem avisos. As capturas em modo demonstração foram conferidas em 1180 px e 900 px; ainda falta validar pelo atalho a persistência da troca e a visualização com escala do Windows acima de 100%. O botão de salvar resposta usa o diálogo da janela pywebview; Pesquisa séria força pesquisa profunda; e as opções secundárias ficam agrupadas em “Mais”. O salvamento das configurações bloqueia edições concorrentes e recupera os controles após falhas. O arquivo de configuração é substituído atomicamente. O logger mascara padrões conhecidos de credenciais, mas isso não substitui evitar segredos em mensagens de exceção.
+**Estado conferido em 17/10/2026:** o atalho da Área de Trabalho abre o código-fonte em app_web.py. A aba Personalização oferece nove paletas com cartões e amostras. O menu de seleção agora mostra atalhos de teclado, permite navegação por teclado e só remove texto após confirmar a cópia. A suíte passou com 143 verificações, sem falhas nem avisos; as capturas e simulações usaram apenas dados sintéticos em modo de demonstração. Ainda falta validar a persistência de uma escolha pelo atalho real e a aparência com escala do Windows acima de 100%. O botão de salvar resposta usa o diálogo da janela pywebview; Pesquisa séria força pesquisa profunda; e as opções secundárias ficam agrupadas em “Mais”. O salvamento das configurações bloqueia edições concorrentes e recupera os controles após falhas. O arquivo de configuração é substituído atomicamente. O logger mascara padrões conhecidos de credenciais, mas isso não substitui evitar segredos em mensagens de exceção.
 
 ## Comece por aqui
 
@@ -69,6 +69,6 @@ O resultado esperado termina em TUDO CERTO, com FALHA: 0. O relatório mostra VE
 
 ## Observações da interface
 
-A tela principal já reúne conversas, busca no histórico, modos de pesquisa, conversa privada, resumo do dia, microfone e envio. As configurações são divididas em Memória, Conversa, Chaves, Ajuda e Personalização. A aba Personalização permite escolher entre cinco temas, aplicados na hora e mantidos na próxima abertura.
+A tela principal já reúne conversas, busca no histórico, modos de pesquisa, conversa privada, resumo do dia, microfone e envio. As configurações são divididas em Memória, Conversa, Chaves, Ajuda e Personalização. A aba Personalização permite escolher entre nove temas, aplicados na hora e mantidos na próxima abertura.
 
 Melhorias de UX recomendadas para a próxima rodada: reduzir a sensação de excesso de botões na barra de escrita, agrupar cada provedor junto do seu controle de ativação, padronizar textos e estados de carregamento e verificar a navegação por teclado. Evite uma reformulação visual grande antes de validar os fluxos existentes.

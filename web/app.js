@@ -28,6 +28,10 @@ const TEMAS_UI = [
   { nome: "Amethyst", cores: { "--bg": "#141222", "--painel": "#211a32", "--superficie": "#2a1f3e", "--superficie-2": "#392950", "--texto": "#eee3ff", "--texto-2": "#c7b4e0", "--texto-3": "#9a83b8", "--borda": "#59416f", "--azul": "#b464e4", "--azul-2": "#cf8cff" } },
   { nome: "Ocean", cores: { "--bg": "#0f2027", "--painel": "#152b35", "--superficie": "#1b3542", "--superficie-2": "#254654", "--texto": "#e0f4ff", "--texto-2": "#a8d0e6", "--texto-3": "#79a8c0", "--borda": "#345968", "--azul": "#36a9d6", "--azul-2": "#63c7ed" } },
   { nome: "Forest", cores: { "--bg": "#0d1b15", "--painel": "#14291f", "--superficie": "#1a3a2e", "--superficie-2": "#24503d", "--texto": "#e0f5e7", "--texto-2": "#a8d5ba", "--texto-3": "#7fb394", "--borda": "#3d6a50", "--azul": "#6d9e4f", "--azul-2": "#8fbd70" } },
+  { nome: "Aurora", cores: { "--bg": "#111827", "--painel": "#172235", "--superficie": "#202e44", "--superficie-2": "#2b3c55", "--texto": "#edf4ff", "--texto-2": "#bdcee6", "--texto-3": "#91a6c3", "--borda": "#40546d", "--azul": "#54b7a6", "--azul-2": "#83d5c6" } },
+  { nome: "Pôr do Sol", cores: { "--bg": "#1b1412", "--painel": "#291b16", "--superficie": "#38251d", "--superficie-2": "#4b3327", "--texto": "#fff0e6", "--texto-2": "#e2c5b1", "--texto-3": "#ba9680", "--borda": "#634737", "--azul": "#e7925d", "--azul-2": "#ffb67c" } },
+  { nome: "Rosa Chá", cores: { "--bg": "#1d1420", "--painel": "#291a2d", "--superficie": "#38233b", "--superficie-2": "#4a3050", "--texto": "#fbf0fc", "--texto-2": "#dec5e3", "--texto-3": "#b69bbd", "--borda": "#604569", "--azul": "#d781bf", "--azul-2": "#efadd8" } },
+  { nome: "Grafite Dourado", cores: { "--bg": "#15181c", "--painel": "#1d2228", "--superficie": "#272d34", "--superficie-2": "#333b44", "--texto": "#f1f3f5", "--texto-2": "#c6cdd5", "--texto-3": "#9ba6b1", "--borda": "#49545f", "--azul": "#d0a85c", "--azul-2": "#f1cd7d" } },
 ];
 
 function aplicarTema(indice) {
@@ -145,17 +149,38 @@ function formatar(texto, alvo) {
   }
 }
 
-async function copiarTexto(texto) {
+async function escreverClipboard(texto) {
+  const valor = String(texto ?? "");
+  if (!valor) return false;
   try {
-    await navigator.clipboard.writeText(texto);
-  } catch (_e) {
-    const t = el("textarea");
-    t.value = texto;
-    document.body.append(t);
-    t.select();
-    document.execCommand("copy");
-    t.remove();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(valor);
+      return true;
+    }
+  } catch (_e) { /* tenta a cópia compatível com WebView */ }
+  const foco = document.activeElement;
+  const temporario = el("textarea");
+  temporario.value = valor;
+  temporario.setAttribute("readonly", "");
+  temporario.setAttribute("aria-hidden", "true");
+  temporario.tabIndex = -1;
+  temporario.style.cssText = "position:fixed;left:-10000px;top:0;opacity:0;pointer-events:none";
+  document.body.append(temporario);
+  temporario.focus();
+  temporario.select();
+  let copiou = false;
+  try { copiou = document.execCommand("copy"); } catch (_e) { copiou = false; }
+  temporario.remove();
+  if (foco && foco !== document.body && foco.isConnected && foco.focus) {
+    try { foco.focus({ preventScroll: true }); } catch (_e) { foco.focus(); }
   }
+  return copiou;
+}
+
+async function copiarTexto(texto) {
+  const copiou = await escreverClipboard(texto);
+  if (!copiou) aviso("Não consegui copiar. Selecione o texto e use Ctrl+C.", true);
+  return copiou;
 }
 
 function criarMensagem(m) {
@@ -174,7 +199,7 @@ function criarMensagem(m) {
     bCopiar.title = "Copiar a resposta";
     bCopiar.append(ico("i-copiar"), el("span", "", "Copiar"));
     bCopiar.addEventListener("click", async () => {
-      await copiarTexto(m.text);
+      if (!await copiarTexto(m.text)) return;
       bCopiar.lastChild.textContent = "Copiado";
       acoes.classList.add("visivel");
       setTimeout(() => { bCopiar.lastChild.textContent = "Copiar"; acoes.classList.remove("visivel"); }, 1400);
@@ -240,15 +265,29 @@ function palavraNoCursor(campo, pos) {
   return { palavra: t.slice(ini, fim), ini, fim };
 }
 
-function fecharMenuContexto() {
+let focoContextoRetorno = null;
+
+function fecharMenuContexto(restaurarFoco = false) {
   $("#menu-contexto").classList.add("oculto");
   $("#menu-contexto").replaceChildren();
+  const foco = focoContextoRetorno;
+  focoContextoRetorno = null;
+  if (restaurarFoco && foco && foco.isConnected && foco.focus) {
+    try { foco.focus({ preventScroll: true }); } catch (_e) { foco.focus(); }
+  }
 }
 
-function itemMenu(texto, aoClicar, ligado = true) {
-  const b = el("button", "", texto);
+function itemMenu(texto, aoClicar, ligado = true, atalho = "") {
+  const b = el("button", "item-contexto");
+  b.type = "button";
+  b.setAttribute("role", "menuitem");
+  b.append(el("span", "item-contexto-texto", texto));
+  if (atalho) b.append(el("kbd", "item-contexto-atalho", atalho));
   b.disabled = !ligado;
-  if (ligado) b.addEventListener("click", aoClicar);
+  if (ligado) b.addEventListener("click", async () => {
+    try { await aoClicar(); }
+    catch (_e) { aviso("Não consegui concluir essa ação.", true); }
+  });
   return b;
 }
 
@@ -256,14 +295,38 @@ function mostrarMenuContexto(x, y) {
   const menu = $("#menu-contexto");
   const campo = $("#entrada");
   menu.replaceChildren();
+  menu.setAttribute("role", "menu");
+  menu.setAttribute("aria-label", "Ações para editar o texto");
   const { palavra, ini, fim } = palavraNoCursor(campo, campo.selectionStart);
-  // o menu começa com os comandos que não dependem de nada
-  const temSelecao = campo.selectionStart !== campo.selectionEnd;
+  // Guardamos o intervalo antes do foco ir para o menu, para que Recortar
+  // e Colar atuem no trecho que a pessoa escolheu ao abrir o menu.
+  const selecaoIni = Math.min(campo.selectionStart, campo.selectionEnd);
+  const selecaoFim = Math.max(campo.selectionStart, campo.selectionEnd);
+  const trecho = campo.value.slice(selecaoIni, selecaoFim);
+  const temSelecao = selecaoIni !== selecaoFim;
   menu.append(
-    itemMenu("Recortar", () => { copiarSelecao(); substituirSelecao(""); fecharMenuContexto(); }, temSelecao),
-    itemMenu("Copiar", () => { copiarSelecao(); fecharMenuContexto(); }, temSelecao),
-    itemMenu("Colar", () => { colar(); fecharMenuContexto(); }),
-    itemMenu("Selecionar tudo", () => { campo.focus(); campo.select(); fecharMenuContexto(); })
+    itemMenu("Recortar", async () => {
+      const copiou = await escreverClipboard(trecho);
+      if (copiou) {
+        campo.focus();
+        campo.setRangeText("", selecaoIni, selecaoFim, "start");
+        ajustarAltura(); atualizarEnviar();
+        aviso("Texto recortado.");
+      } else aviso("Não consegui copiar; o texto foi mantido.", true);
+      fecharMenuContexto(true);
+    }, temSelecao, "Ctrl+X"),
+    itemMenu("Copiar", async () => {
+      const copiou = await escreverClipboard(trecho);
+      aviso(copiou ? "Texto copiado." : "Não consegui copiar o texto.", !copiou);
+      fecharMenuContexto(true);
+    }, temSelecao, "Ctrl+C"),
+    itemMenu("Colar", async () => {
+      await colar(selecaoIni, selecaoFim);
+      fecharMenuContexto(true);
+    }, true, "Ctrl+V"),
+    itemMenu("Selecionar tudo", () => {
+      campo.focus(); campo.select(); fecharMenuContexto(true);
+    }, true, "Ctrl+A")
   );
   if (palavra.length >= 2) {
     // A busca das correções leva quase 4 segundos na PRIMEIRA vez (é o
@@ -290,7 +353,7 @@ function mostrarMenuContexto(x, y) {
       for (const s of ss) {
         menu.append(itemMenu(s, () => {
           substituirTrecho(ini, fim, s);
-          fecharMenuContexto();
+          fecharMenuContexto(true);
         }));
       }
       // reajusta a posicao depois que as sugestoes cresceram o menu
@@ -298,6 +361,9 @@ function mostrarMenuContexto(x, y) {
       const a2 = Math.min(y, window.innerHeight - menu.offsetHeight - 8);
       menu.style.left = Math.max(8, l2) + "px";
       menu.style.top = Math.max(8, a2) + "px";
+    }).catch(() => {
+      if (menu.classList.contains("oculto")) return;
+      vazio.textContent = "(não consegui buscar sugestões)";
     });
   }
   // mostra antes de medir, e CORRIGE A POSIÇÃO se estiver perto da borda
@@ -307,6 +373,9 @@ function mostrarMenuContexto(x, y) {
   const a = Math.min(y, window.innerHeight - menu.offsetHeight - 8);
   menu.style.left = Math.max(8, l) + "px";
   menu.style.top = Math.max(8, a) + "px";
+  focoContextoRetorno = campo;
+  const primeiro = menu.querySelector("button:not(:disabled)");
+  if (primeiro) primeiro.focus({ preventScroll: true });
 }
 
 /* Troca um trecho do texto. `ini`/`fim` são índices do texto, não da
@@ -327,23 +396,60 @@ function substituirSelecao(novo) {
   ajustarAltura(); atualizarEnviar();
 }
 
-function copiarSelecao() {
-  const campo = $("#entrada");
-  const s = campo.value.slice(campo.selectionStart, campo.selectionEnd);
-  if (s && navigator.clipboard) navigator.clipboard.writeText(s).catch(() => {});
-}
-
-function colar() {
-  if (!navigator.clipboard || !navigator.clipboard.readText) return;
-  navigator.clipboard.readText()
-    .then((t) => substituirSelecao(t))
-    .catch(() => aviso("Para colar, use Ctrl+V.", true));
+async function colar(inicio, fim) {
+  if (!navigator.clipboard || !navigator.clipboard.readText) {
+    aviso("Para colar, use Ctrl+V.", true);
+    return false;
+  }
+  try {
+    const texto = await navigator.clipboard.readText();
+    const campo = $("#entrada");
+    campo.focus();
+    campo.setRangeText(texto, inicio, fim, "end");
+    ajustarAltura(); atualizarEnviar();
+    return true;
+  } catch (_e) {
+    aviso("Não consegui acessar a área de transferência. Use Ctrl+V.", true);
+    return false;
+  }
 }
 
 /* O Chromium (e o WebView2) NÃO movem o cursor quando se clica com o
    botão direito. Sem isto, o menu de correção abriria sempre em cima da
    ÚLTIMA letra digitada, e não da palavra que o Wolf clicou — que é
    exatamente o defeito que o programa antigo não tinha. */
+function indiceTextareaNoPonto(campo, x, y) {
+  const texto = campo.value;
+  if (!texto || texto.length > 3000) return campo.selectionStart;
+  const ret = campo.getBoundingClientRect();
+  const estilo = getComputedStyle(campo);
+  const espelho = el("div");
+  ["font", "lineHeight", "letterSpacing", "wordSpacing", "textAlign", "textIndent",
+    "direction", "padding", "border", "tabSize"].forEach((p) => { espelho.style[p] = estilo[p]; });
+  espelho.style.cssText += ";position:fixed;visibility:hidden;pointer-events:none;overflow:hidden;" +
+    "white-space:pre-wrap;overflow-wrap:break-word;word-wrap:break-word;box-sizing:border-box;" +
+    "margin:0;left:" + (ret.left - campo.scrollLeft) + "px;top:" + (ret.top - campo.scrollTop) +
+    "px;width:" + ret.width + "px;height:" + ret.height + "px";
+  const noTexto = document.createTextNode(texto);
+  espelho.append(noTexto);
+  document.body.append(espelho);
+  const faixa = document.createRange();
+  const alturaLinha = parseFloat(estilo.lineHeight) || parseFloat(estilo.fontSize) * 1.5;
+  let melhor = campo.selectionStart, menorDistancia = Infinity;
+  for (let i = 0; i <= texto.length; i++) {
+    faixa.setStart(noTexto, i);
+    faixa.collapse(true);
+    const r = faixa.getBoundingClientRect();
+    if (!r.height) continue;
+    const dy = Math.abs((r.top + r.height / 2) - y);
+    const dx = x < r.left ? r.left - x : x > r.left ? x - r.left : 0;
+    const distancia = dy * Math.max(2, alturaLinha) + dx;
+    if (distancia < menorDistancia) { menorDistancia = distancia; melhor = i; }
+  }
+  espelho.remove();
+  return melhor;
+}
+
 function cursorNoClique(campo, x, y) {
   try {
     if (document.caretRangeFromPoint) {
@@ -351,9 +457,7 @@ function cursorNoClique(campo, x, y) {
       if (r && campo.contains(r.startContainer)) return r.startOffset;
     }
   } catch (_e) { /* sem suporte: fica onde estava */ }
-  // reserva: tenta pelo `offsetX` do próprio evento
-  if (typeof campo.offsetX === "number") return campo.offsetX;
-  return campo.selectionStart;
+  return indiceTextareaNoPonto(campo, x, y);
 }
 
 function ligarMenuContexto() {
@@ -368,23 +472,33 @@ function ligarMenuContexto() {
     mostrarMenuContexto(e.clientX, e.clientY);
   });
   document.addEventListener("mousedown", (e) => {
-    if (!e.target.closest("#menu-contexto")) fecharMenuContexto();
+    if (!e.target.closest("#menu-contexto")) fecharMenuContexto(false);
   });
-  window.addEventListener("blur", fecharMenuContexto);
+  window.addEventListener("blur", () => fecharMenuContexto(false));
+  const menu = $("#menu-contexto");
+  menu.addEventListener("keydown", (e) => {
+    const itens = [...menu.querySelectorAll("button:not(:disabled)")];
+    if (e.key === "Escape") {
+      e.preventDefault(); fecharMenuContexto(true); return;
+    }
+    if (!itens.length || !["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
+    e.preventDefault();
+    let idx = itens.indexOf(document.activeElement);
+    if (e.key === "Home") idx = 0;
+    else if (e.key === "End") idx = itens.length - 1;
+    else idx = (idx + (e.key === "ArrowDown" ? 1 : -1) + itens.length) % itens.length;
+    itens[idx].focus();
+  });
   // copiar texto selecionado na RESPOSTA da IA (botao direito)
   document.addEventListener("contextmenu", (e) => {
-    const sel = (window.getSelection() || "").toString().trim();
-    if (sel && e.target && e.target.closest && e.target.closest(".corpo")) {
+    const sel = (window.getSelection() || "").toString();
+    if (sel.trim() && e.target && e.target.closest && e.target.closest(".corpo")) {
       e.preventDefault();
-      try { navigator.clipboard.writeText(sel); } catch (_e) {
-        const ta = document.createElement("textarea");
-        ta.value = sel; document.body.appendChild(ta);
-        ta.select(); document.execCommand("copy"); ta.remove();
-      }
-      aviso("Copiado.");
+      escreverClipboard(sel).then((copiou) => {
+        aviso(copiou ? "Texto copiado." : "Não consegui copiar o texto.", !copiou);
+      });
     }
   });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") fecharMenuContexto(); });
 }
 
 /* ---------------- resumo do dia ----------------
@@ -409,6 +523,7 @@ function resumoDoDia() {
    sobre o mesmo assunto; clicar em uma manda a pergunta. */
 function botaoSugerir() {
   const b = el("button", "sugerir-btn");
+  b.setAttribute("aria-label", "Sugerir perguntas para continuar a conversa");
   b.append(ico("i-brilho"), el("span", "", "outras perguntas"));
   const caixa = el("div", "sugestoes oculto");
   b.addEventListener("click", async (e) => {
@@ -429,12 +544,20 @@ function botaoSugerir() {
     caixa.replaceChildren();
     for (const p of r.perguntas || []) {
       const chip = el("button", "sugestao", p);
+      chip.setAttribute("role", "button");
+      chip.setAttribute("aria-label", "Pergunta sugerida: " + p);
       chip.addEventListener("click", () => {
         caixa.classList.add("oculto");
         $("#entrada").value = p;
         ajustarAltura();
         atualizarEnviar();
         enviar(p);
+      });
+      chip.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          chip.click();
+        }
       });
       caixa.append(chip);
     }
@@ -625,14 +748,19 @@ const FOTOS_COM_ARRASTO = 12;
 let fotoAberta = null;   // {indice, total, fotos, mostrar, fechar}
 
 function abrirVisorFotos(indice, fotos) {
+  estado._visorTrigger = document.activeElement;
   if (fotoAberta) fotoAberta.fechar();
   const total = fotos.length;
   const tampa = el("div", "foto-aberta");
+  tampa.setAttribute("role", "dialog");
+  tampa.setAttribute("aria-modal", "true");
+  tampa.setAttribute("aria-label", "Visualizador de fotos");
   const img = document.createElement("img");
   img.alt = "Foto ampliada";
   const carregando = el("div", "foto-carregando", "Abrindo a foto...");
   const fechar = el("button", "foto-fechar", "✕");
   fechar.title = "Fechar (Esc)";
+  fechar.setAttribute("aria-label", "Fechar visualizador de fotos");
   const pagina = el("a", "foto-pagina", "ver a página da foto");
   pagina.target = "_blank";
   pagina.rel = "noopener noreferrer";
@@ -641,8 +769,10 @@ function abrirVisorFotos(indice, fotos) {
   const barra = el("div", "foto-barra");
   const anterior = el("button", "foto-seta", "‹");
   anterior.title = "Foto anterior (seta para a esquerda)";
+  anterior.setAttribute("aria-label", "Foto anterior");
   const proximo = el("button", "foto-seta", "›");
   proximo.title = "Próxima foto (seta para a direita)";
+  proximo.setAttribute("aria-label", "Próxima foto");
   const conta = el("span", "foto-conta", "");
   const dica = el("span", "foto-dica", "");
   barra.append(anterior, conta, proximo, dica);
@@ -697,6 +827,10 @@ function abrirVisorFotos(indice, fotos) {
     if (foto) { foto.style.transform = ""; foto = null; }
     if (tampa.parentElement) tampa.remove();
     fotoAberta = null;
+    if (estado._visorTrigger && typeof estado._visorTrigger.focus === "function") {
+      try { estado._visorTrigger.focus(); } catch (_e) { /* elemento removido */ }
+    }
+    estado._visorTrigger = null;
   }
 
   anterior.addEventListener("click", () => mostrar(fotoAberta.indice - 1));
@@ -1643,6 +1777,7 @@ function mostrarAba(aba) {
 }
 
 async function abrirConfig(aba) {
+  estado._configTrigger = document.activeElement;
   const r = await chamar("config_ler");
   if (r.erro) return;
   estado.cfgTela = r;
@@ -1656,6 +1791,11 @@ async function abrirConfig(aba) {
 }
 function fecharConfig() {
   $("#modal").classList.add("oculto");
+  // Devolve o foco ao elemento que abriu as Configurações.
+  if (estado._configTrigger && typeof estado._configTrigger.focus === "function") {
+    try { estado._configTrigger.focus(); } catch (_e) { /* elemento removido */ }
+  }
+  estado._configTrigger = null;
 }
 
 function abaPersonalizacao(corpo) {
@@ -1955,7 +2095,14 @@ function ligarEventos() {
     buscar("");
     $("#campo-busca").focus();
   });
-  $$(".sugestao").forEach((b) => b.addEventListener("click", () => enviar(b.textContent)));
+  $$(".sugestao").forEach((b) => {
+    b.setAttribute("role", "button");
+    b.setAttribute("aria-label", "Sugestão: " + b.textContent);
+    b.addEventListener("click", () => enviar(b.textContent));
+    b.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); b.click(); }
+    });
+  });
   $("#btn-web").addEventListener("click", async () => {
     const ordem = ["auto", "sempre", "nunca"];
     const novo = ordem[(ordem.indexOf(estado.cfg.modo_pesquisa || "auto") + 1) % 3];
