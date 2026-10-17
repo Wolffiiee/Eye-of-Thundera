@@ -2185,9 +2185,18 @@ function ligarBarraTitulo() {
   barra.addEventListener("mousedown", (e) => {
     if (e.button !== 0 || e.target.closest(".botoes-janela")) return;
     if (e.detail === 2) { btnMax.click(); return; }
-    // Tenta arrasto nativo via Python (WM_NCLBUTTONDOWN).
-    // Se nao funcionar, o CSS pywebview-drag-region cuida do arrasto.
-    chamar("janela_arrastar");
+    // Arrasto nativo: chama o Python que usa ReleaseCapture + SendMessageW.
+    // Chama direto pela API do pywebview (mais rapido que chamar()).
+    try {
+      const api = window.pywebview && window.pywebview.api;
+      if (api && typeof api.janela_arrastar === "function") {
+        api.janela_arrastar();
+      } else {
+        chamar("janela_arrastar");
+      }
+    } catch (_e) {
+      chamar("janela_arrastar");
+    }
   });
   window.addEventListener("resize", async () => marcar(await chamar("janela_estado")));
 }

@@ -1532,13 +1532,12 @@ def _tirar_barra_nativa(titulo=None, tentativas=20, espera=0.1):
             # Estender a area do cliente para cobrir a borda superior (DwmExtendFrameIntoClientArea)
             try:
                 dwm = ctypes.windll.dwmapi
-                # MARGINS: cxLeftWidth, cxRightWidth, cyTopHeight, cyBottomHeight
                 class MARGINS(ctypes.Structure):
                     _fields_ = [("cxLeftWidth", ctypes.c_int),
                                 ("cxRightWidth", ctypes.c_int),
                                 ("cyTopHeight", ctypes.c_int),
                                 ("cyBottomHeight", ctypes.c_int)]
-                margins = MARGINS(0, 0, 1, 0)
+                margins = MARGINS(0, 0, 8, 0)
                 dwm.DwmExtendFrameIntoClientArea(hwnd, ctypes.byref(margins))
             except Exception:
                 pass
