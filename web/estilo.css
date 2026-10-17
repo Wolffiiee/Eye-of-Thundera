@@ -26,6 +26,7 @@ body {
   background: var(--bg); color: var(--texto);
   font: var(--tamanho, 15px)/1.6 var(--fonte);
   -webkit-font-smoothing: antialiased; overflow: hidden;
+  position: relative;
   display: flex; flex-direction: column;
   padding: var(--borda-max, 0px) var(--borda-max, 0px) 0;
 }
@@ -470,7 +471,7 @@ kbd { font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--te
 /* ---- barra de titulo PROPRIA (PLANO-BARRA-PROPRIA.md) ----
    Sem nome e sem icone. A faixa inteira arrasta a janela (ver ligarBarraTitulo
    em app.js); so os tres botoes sao clicaveis. Usa so variaveis de tema. */
-#barra-titulo { position: relative; z-index: 1000; flex: none; height: 32px; display: flex;
+#barra-titulo { position: absolute; top: 0; left: 0; right: 0; z-index: 1000; height: 32px; display: flex;
   transform: translateY(-8px);
   margin-top: 0; padding-top: 0;
   align-items: stretch; justify-content: flex-end; background: var(--bg); user-select: none; -webkit-user-select: none; }
