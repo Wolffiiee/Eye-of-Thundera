@@ -20,6 +20,7 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
+  position: relative;
   /* A letra da tela e' ajustavel (Ctrl +, Ctrl - e Ctrl 0, ou os botoes
      da aba Conversa). O --tamanho e' trocado em tempo de execucao, e as
      medidas em 'rem' acompanham sozinhas. */
