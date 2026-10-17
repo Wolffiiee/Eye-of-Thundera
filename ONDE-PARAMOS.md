@@ -1,6 +1,6 @@
 # Onde paramos
 
-Atualizado em 16/10/2026, após validar a suíte e reforçar a proteção do log.
+Atualizado em 16/10/2026, após corrigir o rascunho das chaves e simplificar a barra de escrita.
 
 ## Resumo do estado atual
 
@@ -25,11 +25,13 @@ A revisão estática confirmou que todos os nomes usados nas chamadas da interfa
 ### Verificação executada
 
 - JavaScript: sintaxe aprovada com Node.js.
-- Python: app_web.py, pesquisa_ia.py, memoria.py e roteador.py passaram na compilação de sintaxe.
-- verificar.py: VERIFICACOES: 133 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO. Inclui regressão da pesquisa profunda, menu de modos, proteção contra duplo salvamento, persistência isolada das opções, preservação de chaves e campos permitidos, cinco temas, sanitização de credenciais com valores sintéticos, salvar resposta via diálogo pywebview e regras responsivas/acessíveis, sem tocar no config.json real.
+- Python: app_web.py, pesquisa_ia.py e verificar.py passaram na compilação de sintaxe.
+- verificar.py: VERIFICACOES: 135 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO. Inclui regressão da pesquisa profunda, menu de modos, proteção contra duplo salvamento, persistência isolada das opções, preservação de chaves e campos permitidos, cinco temas, sanitização de credenciais com valores sintéticos, salvar resposta via diálogo pywebview e regras responsivas/acessíveis, sem tocar no config.json real.
 - Teste de abertura: o comando usado pelo atalho foi iniciado novamente, a janela com título Eye of Thundera ficou visível no Windows e não foi criado erro.log.
 - O usuário confirmou que a validação manual da janela real está em ordem: Nova conversa, Configurações, abas, alternância Web e tema Ocean.
-- Nesta rodada, Pesquisa séria, Privada e Resumo do dia foram agrupados em “Mais”; os estados ativos aparecem no rótulo e o menu abre para cima. O controle de ativação do Gemini agora fica no cartão da chave.
+- Pesquisa séria, Privada e Resumo do dia ficam em “Mais”; nesta rodada, o envio único com pesquisa profunda também foi movido para o menu, reduzindo um botão permanente. `Ctrl+Shift+S` continua enviando com pesquisa profunda e aparece na Ajuda.
+- O rascunho de novas chaves sobrevive à troca de abas e é limpo após salvar com sucesso. Trocar o tema salva apenas o tema, sem confirmar opções de conversa não salvas.
+- O estado atual do Git contém mudanças apenas nos arquivos do Eye of Thundera descritos nesta rodada, além das alterações preexistentes do plugin OpenCode e de `show.png`, que devem permanecer fora do commit.
 - O usuário confirmou que o menu “Mais” e o cartão Gemini ficaram bonitos e funcionais.
 - O salvamento das configurações mostra “Salvando...”, bloqueia cliques duplicados e desativa temporariamente os controles da aba para não perder alterações concorrentes. Um `finally` reabilita os controles após falha; mensagens de erro ficam visíveis no rodapé. A gravação de `config.json` usa arquivo temporário + `os.replace`, e o teste isolado confirma que uma falha simulada preserva a versão anterior.
 - Teste isolado cobre persistência das opções, preservação da chave principal quando o campo fica vazio, atualização da chave reserva e rejeição de campos não permitidos.
@@ -51,11 +53,11 @@ Os dados do usuário ficam em %LOCALAPPDATA%/PesquisaIA, fora do repositório. N
 
 ## Próximos passos imediatos
 
-1. Fechar qualquer janela de demonstração ou versão antiga e abrir novamente o atalho Eye of Thundera na Área de Trabalho.
-2. Testar Nova conversa, Configurações, alternância Web e envio de uma pergunta curta. Não enviar uma pergunta real sem confirmar que a chave está configurada e que o usuário deseja gastar cota.
-3. Se qualquer clique falhar, consultar %LOCALAPPDATA%/PesquisaIA/erro.log e registrar o erro sem incluir chaves.
-4. Conferir manualmente as cinco abas de Configurações e validar se as descrições correspondem aos controles reais; confirmar que a escolha de tema permanece após reabrir.
-5. Avaliar melhorias visuais em mudanças separadas, depois de validar os fluxos principais.
+1. Fechar e reabrir o Eye of Thundera pelo atalho da Área de Trabalho para carregar a versão atualizada da interface.
+2. Confirmar visualmente que a barra principal tem Web, Mais, microfone e Enviar; dentro de Mais, conferir “Modo profundo”, “Enviar com pesquisa profunda”, “Privada” e “Resumo do dia”.
+3. Em Configurações > Chaves, digitar um texto de teste que não seja uma chave real, trocar para outra aba e voltar: o rascunho deve permanecer. Apagar esse texto de teste sem salvar. Não exibir nem compartilhar chaves reais.
+4. Confirmar as abas, o tema Ocean e a responsividade em janela menor. Não é necessário enviar pergunta à IA nem gastar cota nesta validação.
+5. Se algum clique falhar, consultar %LOCALAPPDATA%/PesquisaIA/erro.log e registrar o erro sem incluir credenciais.
 
 ## Estado do Git
 

@@ -15,7 +15,9 @@ Atualizado em 16/10/2026. Este documento contém pendências reais; o histórico
 ## Prioridade 2 — conferir os fluxos de configuração
 
 - Abrir cada aba: Memória, Conversa, Chaves, Ajuda e Personalização.
-- [x] Teste isolado confirma persistência dos controles, preservação da chave salva quando o campo fica vazio e rejeição de campos de chave não permitidos. O usuário confirmou que as mudanças visuais estão funcionais.
+- [x] Teste isolado confirma persistência dos controles, preservação da chave salva quando o campo fica vazio e rejeição de campos de chave não permitidos.
+- [x] Preservar chaves digitadas no rascunho ao trocar de aba; limpar o rascunho temporário depois de salvar com sucesso.
+- [x] Alterar o tema sem salvar opções de conversa que ainda estejam em rascunho.
 - [x] Durante o salvamento, bloquear temporariamente os controles da aba para evitar perder edições; garantir que eles sejam reabilitados mesmo se ocorrer uma falha.
 - [ ] Validar visualmente Configurações em janela menor e escala do Windows acima de 100%; as regras responsivas e os testes estáticos já foram adicionados.
 - Conferir se as chaves aparecem mascaradas e se o texto de ajuda é claro.
@@ -23,7 +25,9 @@ Atualizado em 16/10/2026. Este documento contém pendências reais; o histórico
 
 ## Prioridade 3 — melhorar a experiência visual
 
-- [x] Agrupar Pesquisa séria, Privada e Resumo do dia em “Mais”, mantendo indicação dos modos ativos e atalhos existentes. Conferir visualmente após reabrir o app.
+- [x] Agrupar Pesquisa séria, Privada e Resumo do dia em “Mais”, mantendo indicação dos modos ativos e atalhos existentes.
+- [x] Mover o envio único com pesquisa profunda para “Mais”; o atalho Ctrl+Shift+S continua ativo e foi documentado na Ajuda.
+- [ ] Reabrir o app e confirmar visualmente a nova disposição do menu, além de conferir a troca de abas após digitar uma chave (sem precisar salvar nem exibir a chave aqui).
 - [x] Agrupar “Usar o Gemini (principal)” no cartão da chave correspondente. Conferir visualmente na aba Chaves.
 - A correção de estilo dos cartões de sugestão da página inicial já foi aplicada; confirmar que a grade se adapta bem em janela estreita.
 - Padronizar acentuação, pontuação, nomes de controles e descrições em português brasileiro.

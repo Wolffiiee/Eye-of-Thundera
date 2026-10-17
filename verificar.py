@@ -1141,11 +1141,17 @@ else:
 
 
 # --- Tarefa D: o botão e o atalho realmente forçam pesquisa profunda ---
+_ui_html = Path(PASTA / "web" / "index.html").read_text(encoding="utf-8")
 _js_deep = Path(PASTA / "web" / "app.js").read_text(encoding="utf-8")
 if ("async function enviar(texto, profundo = estado.profundo)" in _js_deep
         and 'chamar("enviar", texto, !!profundo)' in _js_deep
-        and '$("#btn-serio").addEventListener("click", () => enviar(undefined, true));' in _js_deep
-        and 'enviar(undefined, true);' in _js_deep):
+        and '$("#btn-serio").addEventListener("click", () => {' in _js_deep
+        and 'enviar(undefined, true);' in _js_deep
+        and 'id="btn-serio" class="pilula"' in _ui_html
+        and _ui_html.count('id="btn-serio"') == 1
+        and _ui_html.index('class="menu-modos-lista"') < _ui_html.index('id="btn-serio"')
+        and _ui_html.index('id="btn-serio"') < _ui_html.index('id="btn-privada"')
+        and _ui_html.index('id="btn-serio"') < _ui_html.index('id="btn-enviar"')):
     ok("Tarefa D: botão e atalho forçam pesquisa profunda; envio normal respeita o alternador")
 else:
     falha("Tarefa D: botão/atalho não garantem o envio em pesquisa profunda")
@@ -1180,6 +1186,18 @@ if ('if (botao.disabled) return;' in _js_deep
     ok("configurações: bloqueia edições durante salvamento e libera controles após falha")
 else:
     falha("configurações: falta bloqueio de edição ou recuperação após falha")
+if ('inp.addEventListener("input", () => {' in _js_deep
+        and 'estado.rascunho.chaves[campo] = inp.value' in _js_deep
+        and 'const chaves = { ...(estado.rascunho.chaves || {}) };' in _js_deep
+        and 'estado.rascunho.chaves = {};' in _js_deep):
+    ok("configurações: chaves digitadas sobrevivem à troca de aba e limpam após salvar")
+else:
+    falha("configurações: chaves digitadas podem se perder ao trocar de aba")
+if ('config_salvar", { tema: tema.nome, temaIdx: idx, chaves: {} }' in _js_deep
+        and '"config_salvar", {\n      ...estado.rascunho' not in _js_deep):
+    ok("configurações: trocar o tema não confirma opções de conversa em rascunho")
+else:
+    falha("configurações: trocar o tema também pode salvar opções em rascunho")
 
 
 # --- Tarefa D + drag-drop UI evidence ----------------------------

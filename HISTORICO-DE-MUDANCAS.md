@@ -5,6 +5,16 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-16 — Evita perder rascunhos nas configurações e limpa a barra de escrita
+
+- **Chaves:** o que for digitado em um campo de chave fica no rascunho enquanto o usuário troca de aba; ao salvar com sucesso, o rascunho temporário é limpo. Chaves já salvas continuam protegidas: campo vazio não as apaga.
+- **Tema:** trocar a paleta agora envia apenas `temaIdx` ao backend, sem confirmar opções da conversa que ainda estejam em rascunho.
+- **Barra de escrita:** o botão de envio com pesquisa profunda foi movido para “Mais”; o atalho `Ctrl+Shift+S` continua funcionando e foi listado na Ajuda. O envio normal e o alternador de modo profundo não mudaram.
+- **Regressão:** `verificar.py` ganhou dois testes para rascunhos das chaves e salvamento isolado do tema; o teste da pesquisa profunda também garante que o botão aparece uma única vez dentro do menu.
+- **Verificação:** 135 verificações, 0 falhas, 0 avisos; compilação Python, `node --check web/app.js`, `git diff --check` e IDs HTML únicos aprovados. Falta a confirmação visual desta nova disposição no aplicativo reaberto.
+
+---
+
 ## 2026-10-16 — Redige credenciais antes de gravar erros no log
 
 - **Risco encontrado:** `registrar_erro()` gravava mensagens de exceção diretamente em `erro.log`; algumas respostas HTTP podem incluir tokens ou campos de autenticação.

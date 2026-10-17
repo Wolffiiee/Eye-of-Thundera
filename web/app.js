@@ -1255,6 +1255,12 @@ function cartaoChave(titulo, desc, campo, info, opc) {
   inp.autocomplete = "off";
   inp.spellcheck = false;
   inp.dataset.campo = campo;
+  inp.value = (estado.rascunho.chaves && estado.rascunho.chaves[campo]) || "";
+  inp.addEventListener("input", () => {
+    if (!estado.rascunho.chaves) estado.rascunho.chaves = {};
+    if (inp.value.trim()) estado.rascunho.chaves[campo] = inp.value;
+    else delete estado.rascunho.chaves[campo];
+  });
   inp.placeholder = info.definida ? "Salva (termina em " + info.final + "). Cole outra para trocar." : "Cole a chave aqui";
   const ver = el("button", "btn", "Mostrar");
   ver.addEventListener("click", () => {
@@ -1609,6 +1615,7 @@ function abaAjuda(corpo) {
     ["Ctrl + N", "começa uma conversa nova"],
     ["Ctrl + F", "procura nas conversas"],
     ["Ctrl + D", "pede o resumo das notícias de hoje"],
+    ["Ctrl + Shift + S", "envia com pesquisa profunda"],
     ["Ctrl + e Ctrl −", "aumenta ou diminui a letra"],
     ["Ctrl + 0", "volta a letra ao tamanho normal"],
     ["Esc", "fecha esta janela"],
@@ -1641,7 +1648,7 @@ async function abrirConfig(aba) {
   estado.rascunho = {
     modo_pesquisa: r.modo_pesquisa, usar_contexto: r.usar_contexto, aprender: r.aprender,
     web_corretor: r.web_corretor, voz_enviar: r.voz_enviar, usar_plano_b: r.usar_plano_b,
-    usar_gemini: r.usar_gemini,
+    usar_gemini: r.usar_gemini, chaves: {},
   };
   $("#modal").classList.remove("oculto");
   mostrarAba(aba || estado.aba);
@@ -1667,9 +1674,9 @@ function abaPersonalizacao(corpo) {
     const idx = Number(e.target.value);
     const anterior = Number(estado.cfg.temaIdx ?? 0);
     const tema = aplicarTema(idx);
-    const r = await chamar("config_salvar", {
-      ...estado.rascunho, tema: tema.nome, temaIdx: idx, chaves: {}
-    });
+    // Trocar o tema salva somente o tema; não confirma opções de conversa
+    // que o usuário ainda pode estar editando em outra aba.
+    const r = await chamar("config_salvar", { tema: tema.nome, temaIdx: idx, chaves: {} });
     if (r.erro) {
       aplicarTema(anterior);
       sel.value = String(anterior);
@@ -1698,9 +1705,10 @@ async function salvarConfig() {
   const liberarControles = () => controles.forEach((controle, i) => {
     if (controle.isConnected) controle.disabled = bloqueiosOriginais[i];
   });
-  const chaves = {};
+  const chaves = { ...(estado.rascunho.chaves || {}) };
   $$("#corpo-config input[data-campo]").forEach((i) => {
     if (i.value.trim()) chaves[i.dataset.campo] = i.value.trim();
+    else delete chaves[i.dataset.campo];
   });
 
   try {
@@ -1723,6 +1731,7 @@ async function salvarConfig() {
     }
 
     estado.cfgTela = atual;
+    estado.rascunho.chaves = {};
     mostrarAba(estado.aba);
     $("#config-aviso").textContent = "Salvo.";
     $("#config-aviso").className = "ok";
@@ -1846,14 +1855,17 @@ function ligarEventos() {
     }
   });
   $("#btn-enviar").addEventListener("click", () => enviar());
-  $("#btn-serio").addEventListener("click", () => enviar(undefined, true));
+  $("#btn-serio").addEventListener("click", () => {
+    $("#menu-modos").open = false;
+    enviar(undefined, true);
+  });
   $("#btn-deep").addEventListener("click", () => {
     estado.profundo = !estado.profundo;
     const b = $("#btn-deep");
     b.classList.toggle("ligada", !!estado.profundo);
     b.title = estado.profundo
       ? "Pesquisa profunda LIGADA (clique para desligar)"
-      : "Pesquisa profunda: mais sites, resposta em tópicos com fontes (clique para ligar)";
+      : "Modo de pesquisa profunda: mais sites e resposta em tópicos com fontes (clique para ligar)";
     atualizarMenuModos();
     $("#menu-modos").open = false;
     aviso(estado.profundo ? "Pesquisa profunda LIGADA." : "Pesquisa profunda desligada.");
