@@ -423,26 +423,19 @@ function substituirSelecao(novo) {
 }
 
 async function colar(inicio, fim) {
+  // Cola usando o Python (Windows clipboard via ctypes), sem depender do
+  // navegador (que nao funciona em contexto nao-seguro/file://).
   let texto = "";
-  // Tenta a API do navegador primeiro.
-  if (navigator.clipboard && navigator.clipboard.readText) {
-    try {
-      texto = await navigator.clipboard.readText();
-    } catch (_e) { texto = ""; }
-  }
-  // Fallback: pede ao Python (Windows clipboard via ctypes).
-  if (!texto) {
-    try {
-      const r = await chamar("colar_texto");
-      if (r && r.texto) texto = r.texto;
-      else if (r && r.erro) {
-        aviso(r.erro + " Use Ctrl+V.", true);
-        return false;
-      }
-    } catch (_e) {
-      aviso("Não consegui acessar a área de transferência. Use Ctrl+V.", true);
+  try {
+    const r = await chamar("colar_texto");
+    if (r && r.texto) texto = r.texto;
+    else if (r && r.erro) {
+      aviso(r.erro + " Use Ctrl+V.", true);
       return false;
     }
+  } catch (_e) {
+    aviso("Não consegui acessar a área de transferência. Use Ctrl+V.", true);
+    return false;
   }
   if (!texto) {
     aviso("Não consegui acessar a área de transferência. Use Ctrl+V.", true);

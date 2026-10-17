@@ -1368,6 +1368,12 @@ class Ponte:
             CF_UNICODETEXT = 13
             user32 = ctypes.windll.user32
             kernel32 = ctypes.windll.kernel32
+            # 64-bit: definir restype para ponteiros de 64 bits
+            user32.GetClipboardData.restype = ctypes.c_void_p
+            user32.GetClipboardData.argtypes = [ctypes.c_uint]
+            kernel32.GlobalLock.restype = ctypes.c_void_p
+            kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
+            kernel32.GlobalUnlock.argtypes = [ctypes.c_void_p]
             if not user32.OpenClipboard(None):
                 return {"texto": "", "erro": "Nao foi possivel abrir a area de transferencia."}
             try:
