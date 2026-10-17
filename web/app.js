@@ -616,6 +616,7 @@ function linhaFontes(fontes) {
   const caixa = el("div", "fontes");
   const botao = el("button", "ver-fontes");
   botao.append(ico("i-globo"), el("span", "", `sites consultados: ${lista.length}`));
+  botao.setAttribute("aria-label", `Mostrar ${lista.length} sites consultados`);
   const ul = el("div", "lista-fontes oculto");
   for (const f of lista) {
     const a = el("a", "", f.titulo || f.url);
@@ -623,10 +624,18 @@ function linhaFontes(fontes) {
     a.target = "_blank";
     a.rel = "noopener noreferrer";
     a.title = f.url;
+    a.setAttribute("role", "link");
+    a.setAttribute("aria-label", "Abrir site: " + (f.titulo || f.url));
     a.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
       chamar("abrir_link", f.url);
+    });
+    a.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        a.click();
+      }
     });
     ul.append(a);
   }
