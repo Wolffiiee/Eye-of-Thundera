@@ -1172,12 +1172,14 @@ else:
     falha("configurações: ativação do Gemini separada do cartão da chave")
 if ('if (botao.disabled) return;' in _js_deep
         and 'botao.textContent = "Salvando...";' in _js_deep
-        and 'botao.disabled = false;' in _js_deep
+        and 'const controles = $$("#corpo-config input, #corpo-config select, #corpo-config button");' in _js_deep
+        and 'controles.forEach((controle) => { controle.disabled = true; });' in _js_deep
+        and 'finally {' in _js_deep and 'liberarControles();' in _js_deep
         and 'Array.isArray(atual.servicos)' in _js_deep
         and '#config-aviso.erro' in _ui_css):
-    ok("configurações: bloqueia salvamento duplicado e trata falha de atualização")
+    ok("configurações: bloqueia edições durante salvamento e libera controles após falha")
 else:
-    falha("configurações: falta proteção contra clique duplo ou falha de atualização")
+    falha("configurações: falta bloqueio de edição ou recuperação após falha")
 
 
 # --- Tarefa D + drag-drop UI evidence ----------------------------

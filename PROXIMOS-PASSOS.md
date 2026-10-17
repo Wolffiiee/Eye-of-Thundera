@@ -16,6 +16,7 @@ Atualizado em 16/10/2026. Este documento contém pendências reais; o histórico
 
 - Abrir cada aba: Memória, Conversa, Chaves, Ajuda e Personalização.
 - [x] Teste isolado confirma persistência dos controles, preservação da chave salva quando o campo fica vazio e rejeição de campos de chave não permitidos. O usuário confirmou que as mudanças visuais estão funcionais.
+- [x] Durante o salvamento, bloquear temporariamente os controles da aba para evitar perder edições; garantir que eles sejam reabilitados mesmo se ocorrer uma falha.
 - [ ] Validar visualmente Configurações em janela menor e escala do Windows acima de 100%; as regras responsivas e os testes estáticos já foram adicionados.
 - Conferir se as chaves aparecem mascaradas e se o texto de ajuda é claro.
 - Testar edição e exportação de memória somente com cuidado para não alterar dados reais sem autorização.

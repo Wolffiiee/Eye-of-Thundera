@@ -1689,39 +1689,53 @@ async function salvarConfig() {
   const botao = $("#btn-salvar-config");
   if (botao.disabled) return;
   const textoOriginal = botao.textContent;
+  const controles = $$("#corpo-config input, #corpo-config select, #corpo-config button");
+  const bloqueiosOriginais = controles.map((controle) => controle.disabled);
   botao.disabled = true;
   botao.textContent = "Salvando...";
+  controles.forEach((controle) => { controle.disabled = true; });
+
+  const liberarControles = () => controles.forEach((controle, i) => {
+    if (controle.isConnected) controle.disabled = bloqueiosOriginais[i];
+  });
   const chaves = {};
   $$("#corpo-config input[data-campo]").forEach((i) => {
     if (i.value.trim()) chaves[i.dataset.campo] = i.value.trim();
   });
-  const r = await chamar("config_salvar", { ...estado.rascunho, chaves });
-  if (r.erro) {
+
+  try {
+    const r = await chamar("config_salvar", { ...estado.rascunho, chaves });
+    if (r.erro) {
+      const av = $("#config-aviso");
+      av.textContent = "Não foi possível salvar: " + r.erro;
+      av.className = "erro";
+      return;
+    }
+
+    estado.cfg = r.cfg;
+    aplicarCfg();
+    const atual = await chamar("config_ler");
+    if (atual.erro || !Array.isArray(atual.servicos)) {
+      const av = $("#config-aviso");
+      av.textContent = "Alterações salvas, mas não consegui atualizar a tela. Feche e abra Configurações novamente.";
+      av.className = "erro";
+      return;
+    }
+
+    estado.cfgTela = atual;
+    mostrarAba(estado.aba);
+    $("#config-aviso").textContent = "Salvo.";
+    $("#config-aviso").className = "ok";
+  } catch (erro) {
+    const av = $("#config-aviso");
+    av.textContent = "Ocorreu um erro inesperado ao salvar. Tente novamente.";
+    av.className = "erro";
+    console.error("Falha ao salvar configurações:", erro);
+  } finally {
+    liberarControles();
     botao.disabled = false;
     botao.textContent = textoOriginal;
-    $("#config-aviso").textContent = "Não foi possível salvar. Confira o aviso e tente novamente.";
-    $("#config-aviso").className = "erro";
-    return;
   }
-  estado.cfg = r.cfg;
-  aplicarCfg();
-  const av = $("#config-aviso");
-  av.textContent = "Salvo.";
-  av.className = "ok";
-  const atual = await chamar("config_ler");
-  if (atual.erro || !Array.isArray(atual.servicos)) {
-    $("#config-aviso").textContent = "Alterações salvas, mas não consegui atualizar a tela. Feche e abra Configurações novamente.";
-    $("#config-aviso").className = "erro";
-    botao.disabled = false;
-    botao.textContent = textoOriginal;
-    return;
-  }
-  estado.cfgTela = atual;
-  mostrarAba(estado.aba);
-  $("#config-aviso").textContent = "Salvo.";
-  $("#config-aviso").className = "ok";
-  botao.disabled = false;
-  botao.textContent = textoOriginal;
 }
 
 /* ---------------- microfone ----------------

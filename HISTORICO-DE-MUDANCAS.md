@@ -7,10 +7,10 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ## 2026-10-16 — Reforça o salvamento e a validação das configurações
 
-- **Salvamento:** o botão indica “Salvando...” e fica desativado durante a gravação para impedir cliques duplicados.
-- **Erros:** falhas de gravação ficam visíveis no rodapé; se a releitura posterior falhar, a interface evita redesenhar a aba com dados incompletos.
-- **Regressão:** teste isolado confirma persistência dos controles, preservação da chave principal quando o campo fica vazio, atualização da chave reserva, manutenção de campos existentes e rejeição de campos de chave não permitidos. Usa diretório temporário, sem tocar nas chaves reais.
-- **Verificação:** `verificar.py`: 131 verificações, 0 falhas, 0 avisos; `node --check`, compilação Python e `git diff --check` aprovados.
+- **Salvamento:** o botão indica “Salvando...” e fica desativado durante a gravação para impedir cliques duplicados. Os controles da aba também ficam temporariamente desativados, evitando que mudanças feitas durante a espera sejam perdidas quando a aba é redesenhada.
+- **Recuperação:** um `finally` restaura os controles mesmo se a gravação ou a atualização da tela falhar; erros inesperados deixam uma mensagem no rodapé e são registrados no console sem incluir dados secretos.
+- **Regressão:** teste estático verifica o bloqueio e a recuperação dos controles. O teste isolado de persistência confirma preservação da chave principal quando o campo fica vazio, atualização da chave reserva, manutenção de campos existentes e rejeição de campos não permitidos; usa diretório temporário, sem tocar nas chaves reais.
+- **Verificação final:** `verificar.py`: 132 verificações, 0 falhas, 0 avisos; `node --check web/app.js`, compilação Python e `git diff --check` aprovados.
 
 ---
 
