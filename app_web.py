@@ -1356,8 +1356,6 @@ class Ponte:
             hwnd = _hwnd_da_janela()
             if hwnd and not _janela_maximizada(hwnd):
                 ctypes.windll.user32.ReleaseCapture()
-                # SendMessage (e nao Post): so volta quando o arrasto termina, e o
-                # Windows ja trata encaixe nas bordas e tremer-para-minimizar.
                 ctypes.windll.user32.SendMessageW(hwnd, 0x00A1, 2, 0)   # WM_NCLBUTTONDOWN, HTCAPTION
         except Exception as erro:
             p.registrar_erro("janela_arrastar", erro)
@@ -1511,7 +1509,7 @@ def _hwnd_da_janela(titulo=None):
         return None
 
 
-def _tirar_barra_nativa(titulo=None, tentativas=40, espera=0.25):
+def _tirar_barra_nativa(titulo=None, tentativas=20, espera=0.1):
     """Tira a barra de titulo do Windows. Devolve True se conseguiu."""
     try:
         import ctypes
@@ -1531,6 +1529,19 @@ def _tirar_barra_nativa(titulo=None, tentativas=40, espera=0.25):
             usuario.SetWindowLongPtrW(hwnd, -16, novo)
             # SWP_NOSIZE|NOMOVE|NOZORDER|NOACTIVATE|FRAMECHANGED
             usuario.SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020)
+            # Estender a area do cliente para cobrir a borda superior (DwmExtendFrameIntoClientArea)
+            try:
+                dwm = ctypes.windll.dwmapi
+                # MARGINS: cxLeftWidth, cxRightWidth, cyTopHeight, cyBottomHeight
+                class MARGINS(ctypes.Structure):
+                    _fields_ = [("cxLeftWidth", ctypes.c_int),
+                                ("cxRightWidth", ctypes.c_int),
+                                ("cyTopHeight", ctypes.c_int),
+                                ("cyBottomHeight", ctypes.c_int)]
+                margins = MARGINS(0, 0, 1, 0)
+                dwm.DwmExtendFrameIntoClientArea(hwnd, ctypes.byref(margins))
+            except Exception:
+                pass
             return True
         time.sleep(espera)
     return False
