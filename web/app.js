@@ -18,7 +18,7 @@ function el(tag, cls, texto) {
   return e;
 }
 
-const estado = { mensagens: [], conversas: [], atual: null, ocupado: false, gravando: false, privada: false, profundo: false, sugerindo: false, ultimaPergunta: "", ultimaResposta: "", cfg: {}, aba: "chaves", rascunho: {} };
+const estado = { mensagens: [], conversas: [], atual: null, ocupado: false, gravando: false, privada: false, profundo: false, sugerindo: false, ultimaPergunta: "", ultimaResposta: "", cfg: {}, aba: "memoria", rascunho: {} };
 const ROTULO_WEB = { auto: "Web: automática", sempre: "Web: sempre", nunca: "Web: desligada" };
 
 // Paletas centralizadas para a tela de Personalização e para a abertura do app.
