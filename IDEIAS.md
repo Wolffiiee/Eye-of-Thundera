@@ -91,7 +91,7 @@ conversa de semana passada ("aquela do bolo de cenoura").
 ## Ideias maiores (valem para depois)
 
 - ~~**Entrar com a voz**~~ — IMPLEMENTADO: microfone na barra de escrita; a transcrição entra na caixa para revisão antes do envio.
-- **Arrastar um arquivo para a conversa** — parcialmente implementado: a janela aceita `.txt`, `.md`, `.csv` e `.json` e carrega o texto para a caixa. PDF, imagens e extração de texto desses formatos ainda não estão implementados.
+- **Arrastar um arquivo para a conversa** — implementado para texto e PDF (16/10 e 17/10/2026): a janela aceita `.txt`, `.md`, `.csv` e `.json` e carrega o texto para a caixa. Um `.pdf` também é aceito: o texto é extraído **no computador** (`pdf_leitor.py` + `pypdf`) e entra na caixa para revisão antes do envio. PDF digitalizado (sem texto), com senha, corrompido ou grande demais recebe aviso claro. **Imagens ainda não** — dependem de OCR/visão e de consentimento explícito antes de enviar a um provedor.
 - ~~**Memória com data**~~ — FEITA em 16/10/2026: cada item da aba Memória mostra a data quando ela existe; as datas ficam em arquivo separado de `memoria.json`. Itens antigos sem data não recebem uma data inventada.
 - ~~**Gavetas por assunto na memória**~~ — IMPLEMENTADAS: os fatos podem ser agrupados e filtrados por assunto na aba Memória.
 - ~~**Exportar tudo**~~ - **FEITO em 16/10/2026**: botão "Fazer cópia agora" em Configurações > Conversa, que copia conversas, memória e chaves num `.zip` no OneDrive. É o mesmo que o `9 - Fazer backup dos meus dados.bat`, com a mesma função.
