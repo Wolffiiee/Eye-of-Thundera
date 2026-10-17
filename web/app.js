@@ -115,16 +115,17 @@ const URL_RE = /https?:\/\/[^\s<>"')\]]+[^\s<>"')\].,;:!?]/g;
 const MARCA_LISTA = /^\s*(?:[•\-–*]|\d+[.)])\s+/;
 
 function comLinks(pai, texto) {
-  // Processa **negrito** e URLs, em ordem de aparicao.
-  const partes = [];
+  // Processa **negrito**, <b>/<strong> e URLs, em ordem de aparicao.
   let resto = String(texto);
-  // Primeiro, separa os trechos **negrito**.
-  const boldRe = /\*\*([^*]+)\*\*/g;
+  // Primeiro, separa os trechos de negrito (markdown ** e HTML <b>/<strong>).
+  // Usamos uma regex combinada para capturar ambos.
+  const boldRe = /\*\*([^*]+)\*\*|<(?:b|strong)>([^<]+)<\/(?:b|strong)>/gi;
   let ultimoBold = 0;
   const segmentos = [];
   for (const m of resto.matchAll(boldRe)) {
     if (m.index > ultimoBold) segmentos.push({ tipo: "texto", valor: resto.slice(ultimoBold, m.index) });
-    segmentos.push({ tipo: "negrito", valor: m[1] });
+    const valorNegrito = m[1] !== undefined ? m[1] : m[2];
+    segmentos.push({ tipo: "negrito", valor: valorNegrito });
     ultimoBold = m.index + m[0].length;
   }
   if (ultimoBold < resto.length) segmentos.push({ tipo: "texto", valor: resto.slice(ultimoBold) });
