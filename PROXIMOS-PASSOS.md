@@ -80,6 +80,10 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
 - [x] Cinco testes novos no `verificar.py` (interpretador com datas fixas, armazenamento, a ponte, o envio sem chave pelo caminho de verdade e a ligação na tela/pacote), todos com arquivos em `_tmp` — nenhum dado real é lido ou alterado.
 - [x] Testado e aprovado pelo usuário (17/10): o cartão aparece no alto à direita, "Feito" e "Adiar 10 min" funcionam, e os botões de microfone e enviar continuam visíveis.
 
+## Prioridade 7 (das sugestoes) - documento longo (feito, falta teste real)
+- [ ] Arrastar um PDF de verdade com mais de 10 paginas, ver o cartao "documento aberto", perguntar algo e conferir se a resposta cita a pagina certa; testar "indice do documento", "resumir documento" e o botao Fechar.
+- Modo offline com Ollama (Prioridade 4 das sugestoes): cancelado pelo Wolf.
+
 ## Prioridade 4 — manter os documentos coerentes
 
 - Usar README.md como ponto de entrada.

@@ -513,3 +513,11 @@ body.maximizada #bordas { display: none; }
   .lembrete { animation: lembrete-entra .2s ease-out; }
   @keyframes lembrete-entra { from { opacity: 0; transform: translateY(8px); } }
 }
+
+/* documento aberto (PLANO-DOCUMENTOS-LONGOS.md) */
+#documento-aberto { display: flex; align-items: center; gap: 10px; margin: 0 auto 8px;
+  max-width: 760px; padding: 8px 12px; background: var(--superficie);
+  border: 1px solid var(--borda); border-left: 3px solid var(--azul);
+  border-radius: 10px; color: var(--texto); font-size: 13px; }
+#documento-aberto.oculto { display: none; }
+#documento-nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

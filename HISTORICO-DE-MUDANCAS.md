@@ -5,6 +5,15 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 18/10/2026 - Perguntar sobre documento longo (Prioridade 7) - plano em PLANO-DOCUMENTOS-LONGOS.md
+- Novo `documento.py`: PDF com mais de 10 paginas (ou 30.000 caracteres) abre como "documento" em vez de virar texto na caixa. O texto fica so na memoria, por pagina; cada pergunta manda para a IA apenas os trechos que combinam (busca local, sem acento) com "[pag. N]", e a IA cita "(pag. N)". Nada vai para a IA antes de perguntar.
+- Comandos locais (sem gastar token): "indice do documento" (titulos provaveis; sem titulos, a primeira linha de cada pagina) e "resumir documento" (trechos espalhados). Pergunta sem nada parecido no texto responde "Nao achei" sem chamar a IA.
+- Defeito corrigido nesta rodada: a busca cortava toda palavra em 6 letras, entao "clausula7" virava "clausu" e todas as clausulas empatavam (a pagina certa ficava de fora). Palavra com numero agora fica inteira; numero sozinho ("artigo 7") tambem vale.
+- Tela: cartao "documento aberto" com botao Fechar acima da caixa. `pdf_leitor.paginas_de_pdf` entrega o texto por pagina; o caminho de PDF curto e dos .txt/.md/.csv nao mudou.
+- Modo offline com Ollama (Prioridade 4 das sugestoes): CANCELADO pelo Wolf; o programa segue so com as APIs.
+- `verificar.py`: 170 verificacoes, 0 falhas, 0 avisos; `verificar_motor.py` TUDO CERTO.
+- Nao testado: arrastar um PDF longo de verdade pela tela e perguntar com a chave real.
+
 ## 2026-10-17 — PDF digitalizado agora é lido: OCR local do Windows (Prioridade 1 das sugestões)
 
 - **O que o usuário ganha:** arrastar um PDF **digitalizado** (uma foto da página, sem camada de texto) para a conversa não para mais no aviso "não encontrei texto" — o programa **lê as páginas** e coloca o texto na caixa para revisar antes de enviar, como já acontece com PDF com texto. Tudo **no próprio computador**: a página é renderizada na memória e lida pelo **OCR do próprio Windows**, em português. Nada vai para a internet.

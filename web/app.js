@@ -2183,7 +2183,22 @@ async function extrairPdf(arquivo) {
     r = await chamar("pdf_parte", id, base64.slice(i, i + PASSO));
     if (r.erro) return r;
   }
-  return await chamar("pdf_extrair", id);
+  return await chamar("pdf_extrair", id, arquivo.name);
+}
+// Documento aberto: PDF longo que nao vai inteiro para a caixa. As perguntas
+// seguintes usam so os trechos relevantes (ver documento.py).
+function mostrarDocumento(info) {
+  const caixa = $("#documento-aberto");
+  if (!caixa || !info || !info.nome) return;
+  const n = Number(info.paginas) || 0;
+  $("#documento-nome").textContent = "Documento aberto: " + info.nome + " - " + n
+    + (n === 1 ? " página" : " páginas") + (info.aviso ? " (" + info.aviso + ")" : "");
+  caixa.classList.remove("oculto");
+  aviso("Documento aberto. Pergunte sobre ele, ou peça o índice ou o resumo.");
+}
+function esconderDocumento() {
+  const caixa = $("#documento-aberto");
+  if (caixa) caixa.classList.add("oculto");
 }
 async function tratarArquivoSolto(arquivo) {
   if (!arquivo) return;
@@ -2192,6 +2207,7 @@ async function tratarArquivoSolto(arquivo) {
     aviso("Lendo o PDF...");
     const r = await extrairPdf(arquivo);
     if (r && r.erro) { aviso(r.erro, true); return; }
+    if (r && r.documento) { mostrarDocumento(r.documento); return; }
     const texto = String((r && r.texto) || "").trim();
     if (!texto) {
       aviso("Não achei texto nesse PDF (talvez seja digitalizado).", true);
@@ -2448,6 +2464,14 @@ function ligarLembretes() {
 }
 
 ligarBarraTitulo();
+{
+  const fechar = $("#documento-fechar");
+  if (fechar) fechar.addEventListener("click", async () => {
+    await chamar("documento_fechar");
+    esconderDocumento();
+    aviso("Documento fechado. A conversa voltou ao normal.");
+  });
+}
 ligarEventos();
 ligarMenuContexto();
 ligarLembretes();

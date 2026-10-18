@@ -22,6 +22,8 @@ tmp_ret = collect_all('pypdf')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 # Lembretes ("me lembra amanha as 9h de ..."): modulo local, tudo local.
 hiddenimports += ['lembretes']
+# Documento aberto (perguntar sobre PDF longo): modulo local.
+hiddenimports += ['documento']
 # OCR local de PDF digitalizado (uma foto da pagina): renderiza a pagina com
 # a DLL do PDFium (pypdfium2) e le com o OCR do proprio Windows (winsdk),
 # tudo em memoria. Sem eles o programa so avisa que o PDF pode ser digitalizado.

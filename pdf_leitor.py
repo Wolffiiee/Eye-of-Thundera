@@ -71,7 +71,7 @@ def _resumo_erro(erro):
     return type(erro).__name__
 
 
-def _texto_por_ocr(dados):
+def _texto_por_ocr(dados, por_pagina=False):
     """Le um PDF como imagem, com o OCR do proprio Windows.
 
     Devolve (texto, erro): texto vazio + erro claro quando o OCR nao esta
@@ -161,11 +161,69 @@ def _texto_por_ocr(dados):
 
     texto = "\n".join(partes).strip()
     if not texto:
-        return "", ("Nao encontrei texto nesse PDF -- ele pode ser "
+        return ([] if por_pagina else ""), ("Nao encontrei texto nesse PDF -- ele pode ser "
                     "digitalizado (uma foto da pagina).")
+    if por_pagina:
+        return list(partes), ""      # a nota do limite vem como ultimo item
     if len(texto) > LIMITE_CARACTERES:
         texto = texto[:LIMITE_CARACTERES] + "\n[... texto cortado ...]"
     return texto, ""
+
+
+def _abrir_leitor(dados):
+    """Valida os bytes e abre o PDF. Devolve (leitor, erro)."""
+    if not dados:
+        return None, "O arquivo esta vazio."
+    if dados[:5] != b"%PDF-":
+        return None, "Esse arquivo nao parece ser um PDF."
+    if len(dados) > LIMITE_BYTES:
+        return None, "Esse PDF e' grande demais (limite de 25 MB)."
+    if not TEM_PDF:
+        return None, ("Para ler PDF, rode o arquivo '1 - Instalar.bat' "
+                    "de novo (falta a biblioteca de leitura).")
+
+    try:
+        leitor = pypdf.PdfReader(io.BytesIO(dados))
+    except Exception as erro:
+        return None, "Nao consegui abrir esse PDF (%s)." % _resumo_erro(erro)
+
+    # PDF com senha: tenta a senha vazia (a mais comum). Se nao abrir,
+    # avisa com clareza em vez de estourar.
+    if getattr(leitor, "is_encrypted", False):
+        try:
+            resultado = leitor.decrypt("")
+            if not resultado:
+                return None, "Esse PDF tem senha, por isso nao consegui abrir."
+        except Exception:
+            return None, "Esse PDF tem senha, por isso nao consegui abrir."
+    return leitor, ""
+
+
+def paginas_de_pdf(dados):
+    """Texto de cada pagina: (lista_de_textos, erro). Mesmos limites do texto_de_pdf.
+
+    Serve ao "documento aberto" (documento.py): a pagina de cada trecho
+    e' o que permite a IA citar "(pag. N)". PDF digitalizado vai pelo OCR local.
+    """
+    leitor, erro = _abrir_leitor(dados)
+    if erro:
+        return [], erro
+    partes = []
+    try:
+        for i, pagina in enumerate(leitor.pages):
+            if i >= LIMITE_PAGINAS:
+                break
+            try:
+                partes.append(pagina.extract_text() or "")
+            except Exception:
+                partes.append("")
+        if len(leitor.pages) > LIMITE_PAGINAS:
+            partes.append("[... o resto do PDF foi ignorado ...]")
+    except Exception as erro:
+        return [], "Nao consegui ler esse PDF (%s)." % _resumo_erro(erro)
+    if not "".join(partes).strip():
+        return _texto_por_ocr(dados, por_pagina=True)
+    return partes, ""
 
 
 def texto_de_pdf(dados):
@@ -174,30 +232,9 @@ def texto_de_pdf(dados):
     - texto: o que foi lido (string vazia se deu erro).
     - erro: mensagem clara para a tela (string vazia se deu certo).
     """
-    if not dados:
-        return "", "O arquivo esta vazio."
-    if dados[:5] != b"%PDF-":
-        return "", "Esse arquivo nao parece ser um PDF."
-    if len(dados) > LIMITE_BYTES:
-        return "", "Esse PDF e' grande demais (limite de 25 MB)."
-    if not TEM_PDF:
-        return "", ("Para ler PDF, rode o arquivo '1 - Instalar.bat' "
-                    "de novo (falta a biblioteca de leitura).")
-
-    try:
-        leitor = pypdf.PdfReader(io.BytesIO(dados))
-    except Exception as erro:
-        return "", "Nao consegui abrir esse PDF (%s)." % _resumo_erro(erro)
-
-    # PDF com senha: tenta a senha vazia (a mais comum). Se nao abrir,
-    # avisa com clareza em vez de estourar.
-    if getattr(leitor, "is_encrypted", False):
-        try:
-            resultado = leitor.decrypt("")
-            if not resultado:
-                return "", "Esse PDF tem senha, por isso nao consegui abrir."
-        except Exception:
-            return "", "Esse PDF tem senha, por isso nao consegui abrir."
+    leitor, erro = _abrir_leitor(dados)
+    if erro:
+        return "", erro
 
     partes = []
     try:

@@ -2163,6 +2163,190 @@ except Exception as _erro_lem4:
     falha("lembretes: teste da tela/pacote falhou: %r" % (_erro_lem4,))
 
 
+# --- documento aberto: perguntar sobre PDF longo (PLANO-DOCUMENTOS-LONGOS.md) ---
+try:
+    import documento as _doc
+
+    _pgs = [
+        "CONTRATO DE ALUGUEL\n1. Objeto\nO locador cede ao locatário o imóvel da Rua das Flores.",
+        "2. Prazo\nO contrato dura 30 meses, com início em 1 de março.\n"
+        "3. Valor\nO aluguel mensal é de 2500 reais, reajustado pelo IGPM.",
+        "4. Rescisão\nA multa por rescisão antecipada é de três aluguéis, proporcional ao prazo restante.",
+    ]
+    _d = _doc.Documento("contrato.pdf", _pgs)
+    _multa = _d.trechos("qual a MULTA de rescisão?")
+    _sem_acento = _d.trechos("rescisao")                    # sem acento acha igual
+    _plural = _d.trechos("alugueis")                        # 'aluguéis' x 'alugueis'
+    _nada = _d.trechos("xyzabc")
+    _mont = _d.montar_pergunta("qual a multa?") or ""
+    _indice = _d.indice()
+    _gigante = _doc.Documento("g.pdf", ["x " * 100_000] * 5)
+    _muitas = _doc.Documento("m.pdf", ["pagina %d" % i for i in range(400)])
+    _com_nota = _doc.Documento("n.pdf", ["texto um", "[... OCR aplicado so as primeiras 20 paginas ...]"])
+    if (_d.info()["paginas"] == 3
+            and _multa and _multa[0][0] == 3 and "multa" in _multa[0][1]
+            and _sem_acento and _sem_acento[0][0] == 3
+            and any(_pg == 3 for _pg, _tx in _plural)
+            and _nada == [] and _d.montar_pergunta("xyzabc") is None
+            and "[pág. 3]" in _mont and "Pergunta: qual a multa?" in _mont
+            and "SOMENTE" in _mont
+            and (2, "2. Prazo") in _indice and (3, "4. Rescisão") in _indice
+            and "pág. 2" in _d.indice_texto()
+            and _gigante.caracteres <= _doc.LIMITE_CARACTERES and _gigante.aviso
+            and len(_muitas.paginas) == _doc.LIMITE_PAGINAS and _muitas.aviso
+            and len(_com_nota.paginas) == 1 and "OCR" in _com_nota.aviso
+            and _doc.eh_longo(["a"] * 11) and not _doc.eh_longo(["a"] * 3)
+            and _doc.eh_longo(["a" * 40_000])
+            and _doc.eh_pedido_de_indice("Índice do documento?")
+            and _doc.eh_pedido_de_resumo("resumir documento")
+            and not _doc.eh_pedido_de_resumo("resumo da reunião de ontem")
+            and _d.montar_resumo() and "pág. 1" in _d.montar_resumo()):
+        ok("documento: acha o trecho e a página certos (sem acento, plural), índice, limites e resumo")
+    else:
+        falha("documento: a busca de trechos/índice/limites não se comportou como o plano")
+except Exception as _erro_doc1:
+    falha("documento: teste do módulo falhou: %r" % (_erro_doc1,))
+
+try:
+    import io as _io_d
+    import pdf_leitor as _pl_d
+
+    def _pdf_paginas(textos):
+        objs = [b"<< /Type /Catalog /Pages 2 0 R >>", None,
+                b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"]
+        ids = []
+        for txt in textos:
+            fluxo = ("BT /F1 18 Tf 72 700 Td (" + txt + ") Tj ET").encode("latin-1")
+            objs.append(b"<< /Length " + str(len(fluxo)).encode() + b" >>\nstream\n"
+                        + fluxo + b"\nendstream")
+            c = len(objs)
+            objs.append(("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                         "/Resources << /Font << /F1 3 0 R >> >> /Contents %d 0 R >>" % c).encode())
+            ids.append(len(objs))
+        objs[1] = ("<< /Type /Pages /Kids [" + " ".join("%d 0 R" % i for i in ids)
+                   + "] /Count %d >>" % len(ids)).encode()
+        s = _io_d.BytesIO()
+        s.write(b"%PDF-1.4\n")
+        offs = []
+        for i, o in enumerate(objs, 1):
+            offs.append(s.tell())
+            s.write(str(i).encode() + b" 0 obj\n" + o + b"\nendobj\n")
+        x = s.tell()
+        s.write(b"xref\n0 " + str(len(objs) + 1).encode() + b"\n0000000000 65535 f \n")
+        for o in offs:
+            s.write(("%010d 00000 n \n" % o).encode())
+        s.write(b"trailer\n<< /Size " + str(len(objs) + 1).encode() + b" /Root 1 0 R >>\nstartxref\n"
+                + str(x).encode() + b"\n%%EOF")
+        return s.getvalue()
+
+    _longo = _pdf_paginas(["Pagina %d clausula%d assunto%d" % (k, k, k) for k in range(1, 13)])
+    _curto = _pdf_paginas(["Pagina 1 curta", "Pagina 2 curta"])
+    _pgs_l, _e1 = _pl_d.paginas_de_pdf(_longo)
+    _pgs_c, _e2 = _pl_d.paginas_de_pdf(_curto)
+    _pgs_x, _e3 = _pl_d.paginas_de_pdf(b"isto nao e pdf")
+    _txt_antigo, _ = _pl_d.texto_de_pdf(_curto)
+    if (not _e1 and len(_pgs_l) == 12 and "clausula7" in _pgs_l[6]
+            and not _e2 and len(_pgs_c) == 2
+            and _pgs_x == [] and _e3
+            and "Pagina 2 curta" in _txt_antigo):
+        ok("documento: o leitor de PDF entrega o texto por página (e o texto inteiro continua igual)")
+    else:
+        falha("documento: paginas_de_pdf não devolveu as páginas certas: %r %r" % (len(_pgs_l), _e1))
+except Exception as _erro_doc2:
+    falha("documento: teste do leitor por página falhou: %r" % (_erro_doc2,))
+
+try:
+    # A ponte de verdade (sem janela, sem gravar conversa, sem IA): PDF longo abre
+    # como documento; curto continua virando texto; com documento aberto a IA recebe
+    # trechos + pergunta, mas o que o Wolf escreveu fica na conversa.
+    import base64 as _b64_d
+    import json as _json_d
+    import app_web as _aw_doc
+    import pesquisa_ia as _pia_d
+
+    _CFG_D = PASTA / "_tmp" / "cfg_documento.json"
+    _CFG_D.parent.mkdir(exist_ok=True)
+    _CFG_D.write_text(_json_d.dumps({"api_key": "chave-de-teste"}), encoding="utf-8")
+    _antes_d = (_aw_doc.DEMO, _pia_d.ARQUIVO_CONFIG)
+    try:
+        _aw_doc.DEMO = False
+        _pia_d.ARQUIVO_CONFIG = _CFG_D
+        _pt = _aw_doc.Ponte.__new__(_aw_doc.Ponte)
+        _pt.ocupado = False
+        _pt.mensagens = []
+        _pt.id_atual = None
+        _pt.privada = True
+        _pt._janela = None
+        _capturado = []
+        _pt._responder = lambda *a, **k: _capturado.append(a)
+
+        def _enviar_pdf(pdf, nome):
+            _pt.pdf_iniciar("d1")
+            _pt.pdf_parte("d1", _b64_d.b64encode(pdf).decode())
+            return _pt.pdf_extrair("d1", nome)
+
+        _r_curto = _enviar_pdf(_curto, "curto.pdf")
+        _r_longo = _enviar_pdf(_longo, "livro.pdf")
+        _info = _pt.documento_info()
+
+        def _perguntar(txt):
+            _capturado.clear()
+            _pt.ocupado = False
+            _pt.mensagens.clear()
+            _ret = _pt.enviar(txt)
+            _fim = time.time() + 3
+            while time.time() < _fim and not _capturado and len(_pt.mensagens) < 2:
+                time.sleep(0.05)
+            return _ret
+
+        _perguntar("O que diz a clausula7?")
+        _foi_ia = (len(_capturado) == 1 and _capturado[0][0] == "O que diz a clausula7?"
+                   and "[pág. 7]" in (_capturado[0][4] or "")
+                   and _pt.mensagens[0]["text"] == "O que diz a clausula7?")
+        _perguntar("indice do documento")
+        _foi_local = (not _capturado and len(_pt.mensagens) == 2
+                      and "pág." in _pt.mensagens[1]["text"])
+        _perguntar("fale sobre dinossauros")
+        _nao_achou = (not _capturado and len(_pt.mensagens) == 2
+                      and "Não achei" in _pt.mensagens[1]["text"])
+        _pt.documento_fechar()
+        _perguntar("O que diz a clausula7?")
+        _normal = (len(_capturado) == 1 and _capturado[0][4] is None)
+        _fechou = _pt.documento_info() == {}
+    finally:
+        _aw_doc.DEMO, _pia_d.ARQUIVO_CONFIG = _antes_d
+        if _CFG_D.exists():
+            _CFG_D.unlink()
+    if ("texto" in _r_curto and "documento" not in _r_curto
+            and _r_longo.get("documento", {}).get("paginas") == 12
+            and _info.get("nome") == "livro.pdf"
+            and _foi_ia and _foi_local and _nao_achou and _normal and _fechou):
+        ok("documento: PDF longo abre como documento; a IA recebe só os trechos; fechar volta ao normal")
+    else:
+        falha("documento: a ponte não se comportou como o plano (curto=%r longo=%r ia=%r local=%r nao=%r normal=%r)"
+              % (list(_r_curto), list(_r_longo), _foi_ia, _foi_local, _nao_achou, _normal))
+except Exception as _erro_doc3:
+    falha("documento: teste da ponte falhou: %r" % (_erro_doc3,))
+
+try:
+    _js_d = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    _html_d = (PASTA / "web" / "index.html").read_text(encoding="utf-8")
+    _css_d = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+    _spec_d = all("'documento'" in (PASTA / _n).read_text(encoding="utf-8")
+                  for _n in ("Eye of Thundera.spec", "Eye of Thundera (debug).spec"))
+    if ('id="documento-aberto"' in _html_d and 'role="status"' in _html_d.split('id="documento-aberto"')[1][:80]
+            and 'id="documento-fechar"' in _html_d and "aria-label" in _html_d.split('id="documento-fechar"')[1][:120]
+            and "mostrarDocumento" in _js_d and "documento_fechar" in _js_d
+            and "r.documento" in _js_d and "arquivo.name" in _js_d
+            and "#documento-aberto" in _css_d and "var(--superficie)" in _css_d
+            and _spec_d):
+        ok("documento: a tela mostra o cartão do documento aberto com botão Fechar (e entra no pacote)")
+    else:
+        falha("documento: falta ligar o cartão na tela ou o módulo no pacote (.spec)")
+except Exception as _erro_doc4:
+    falha("documento: teste da tela/pacote falhou: %r" % (_erro_doc4,))
+
+
 # --- resumo -----------------------------------------------------------------
 print()
 print('VERIFICACOES: %d | FALHA: %d | AVISO: %d' % (verificacoes, len(falhas), len(avisos)))

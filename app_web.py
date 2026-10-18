@@ -888,6 +888,8 @@ class Ponte:
     # uma vez). `pdf_extrair` junta tudo, tira o texto com o modulo
     # `pdf_leitor` (local, sem internet) e devolve para a tela revisar.
 
+    _documento = None      # documento aberto (documento.py), so na memoria
+
     def pdf_iniciar(self, id):
         """Comeca a receber um PDF. Devolve o id para os pedacos."""
         if not hasattr(self, "_pdf_recebendo"):
@@ -912,8 +914,12 @@ class Ponte:
         recebendo[str(id)].append(pedaco)
         return {}
 
-    def pdf_extrair(self, id):
-        """Junta os pedacos e devolve o texto do PDF (ou um erro claro)."""
+    def pdf_extrair(self, id, nome=""):
+        """Junta os pedacos e devolve o texto do PDF (ou um erro claro).
+
+        PDF longo nao vira texto na caixa: abre como "documento" e devolve
+        {"documento": info} (ver documento.py).
+        """
         recebendo = getattr(self, "_pdf_recebendo", None)
         pedacos = recebendo.pop(str(id), None) if recebendo else None
         if pedacos is None:
@@ -927,10 +933,27 @@ class Ponte:
             import pdf_leitor
         except ImportError:
             return {"erro": "Falta o módulo de leitura de PDF neste programa."}
-        texto, erro = pdf_leitor.texto_de_pdf(dados)
+        paginas, erro = pdf_leitor.paginas_de_pdf(dados)
         if erro:
             return {"erro": erro}
-        return {"texto": texto}
+        try:
+            import documento
+        except ImportError:
+            return {"texto": "\n".join(paginas).strip()}
+        if documento.eh_longo(paginas):
+            self._documento = documento.Documento(nome, paginas)
+            return {"documento": self._documento.info()}
+        return {"texto": "\n".join(paginas).strip()}
+
+    def documento_info(self):
+        """Documento aberto agora (ou {} se nao ha)."""
+        doc = getattr(self, "_documento", None)
+        return doc.info() if doc is not None else {}
+
+    def documento_fechar(self):
+        """Fecha o documento: as perguntas voltam ao normal."""
+        self._documento = None
+        return {}
 
     # --- 3. a IA de verdade (este passo) ---
 
@@ -1024,6 +1047,37 @@ class Ponte:
                              daemon=True).start()
             return {}
 
+        # Documento aberto (PLANO-DOCUMENTOS-LONGOS.md): a pergunta vira
+        # "trechos relevantes + pergunta" so na chamada da IA. Indice e
+        # "nao achei" respondem aqui mesmo, sem gastar token.
+        texto_ia = None
+        doc = getattr(self, "_documento", None)
+        if doc is not None:
+            resposta_doc = None
+            try:
+                import documento
+                if documento.eh_pedido_de_indice(texto):
+                    resposta_doc = doc.indice_texto()
+                elif documento.eh_pedido_de_resumo(texto):
+                    texto_ia = doc.montar_resumo()
+                else:
+                    texto_ia = doc.montar_pergunta(texto)
+                    if texto_ia is None:
+                        resposta_doc = (
+                            "Não achei nada sobre isso em \"%s\". Tente outras "
+                            "palavras, peça o \"índice do documento\" ou feche o "
+                            "documento (botão acima da caixa) para conversar "
+                            "normalmente." % doc.nome)
+            except Exception as erro:
+                p.registrar_erro("documento.pergunta", erro)
+                texto_ia = None
+            if resposta_doc:
+                self.ocupado = True
+                self.mensagens.append({"role": "user", "text": texto})
+                threading.Thread(target=self._responder_lembrete,
+                                 args=(resposta_doc,), daemon=True).start()
+                return {}
+
         if not chave:
             return {"erro": "sem_chave"}
 
@@ -1032,7 +1086,8 @@ class Ponte:
         self.ocupado = True
         self.mensagens.append({"role": "user", "text": texto})
         threading.Thread(
-            target=self._responder, args=(texto, cfg, chave, bool(profundo)), daemon=True
+            target=self._responder, args=(texto, cfg, chave, bool(profundo), texto_ia),
+            daemon=True
         ).start()
         return {}
 
@@ -1109,7 +1164,7 @@ class Ponte:
             p.registrar_erro("imagem_ampliada", erro)
             return {"erro": "Não consegui abrir essa foto."}
 
-    def _responder(self, texto, cfg, chave, profundo=False):
+    def _responder(self, texto, cfg, chave, profundo=False, texto_ia=None):
         """A thread que trabalha enquanto a janela continua viva.
 
         Reaproveita o caminho do programa antigo: `pesquisa_ia.perguntar`
@@ -1125,6 +1180,8 @@ class Ponte:
             modelo = cfg.get("modelo", p.MODELO_PADRAO)
             usar_contexto = bool(cfg.get("usar_contexto", True))
             modo_cfg = cfg.get("modo_pesquisa", "auto")
+            if texto_ia:
+                modo_cfg = "nunca"    # pergunta sobre o documento: nao pesquisa na web
             if modo_cfg not in ("auto", "sempre", "nunca"):
                 modo_cfg = "auto"
 
@@ -1158,14 +1215,18 @@ class Ponte:
                 modo = "pesquisa"
                 consulta = (consulta or texto).strip()
 
+            # Com documento aberto, a IA recebe os trechos + a pergunta (texto_ia);
+            # o roteador e a memoria continuam vendo so o que o Wolf escreveu.
+            texto_modelo = texto_ia or texto
+
             def chamar_a_ia(qual_chave):
                 if modo == "amigo":
                     return p.conversar(
-                        qual_chave, modelo, historico, texto, usar_contexto,
+                        qual_chave, modelo, historico, texto_modelo, usar_contexto,
                         progresso=avisar, cfg=cfg, id_atual=self.id_atual,
                     )
                 return p.perguntar(
-                    qual_chave, modelo, historico, texto, usar_contexto,
+                    qual_chave, modelo, historico, texto_modelo, usar_contexto,
                     progresso=avisar, cfg=cfg, id_atual=self.id_atual,
                     consulta=consulta, profundo=profundo,
                 )
