@@ -84,6 +84,15 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
 - [ ] Arrastar um PDF de verdade com mais de 10 paginas, ver o cartao "documento aberto", perguntar algo e conferir se a resposta cita a pagina certa; testar "indice do documento", "resumir documento" e o botao Fechar.
 - Modo offline com Ollama (Prioridade 4 das sugestoes): cancelado pelo Wolf.
 
+## Prioridade 2 (das sugestões) — busca na Memória tolerante a erro de digitação (feito)
+
+- [x] Novo `web/busca.js`: Levenshtein iterativo + normalização NFD (acentos). "conta dluz" acha "conta de luz", "cafe" acha "café", "CONTA DE LUZ" funciona com maiúsculas, "casa" acha "casas". Roda na tela, sem Python e sem dependência — a Memória tem no máximo 200 itens, cada tecla custa poucos milissegundos.
+- [x] Regra corrigida: `q.startsWith(p)` em vez de `q.includes(p) || p.includes(q)` — a direção `p.includes(q)` fazia "chocolate" achar "a" e "rato" achar "gato".
+- [x] Limitação documentada: "rato" ainda acha "gato" (75% parecido, mesma conta que faz "gatu" achar "gato") — matematicamente impossível separar; decisão: manter tolerância e documentar.
+- [x] `app.js` usa `busca_pontos` em `desenhar()` com ordenação por relevância; `index.html` carrega `busca.js` antes de `app.js`.
+- [x] Dois testes novos no `verificar.py` (existência/regra do `busca.js` e ligação no HTML/`app.js`; e execução dos 18 casos de teste Node.js). Suíte: **172 verificações, 0 falhas, 0 avisos**.
+- [ ] Testar na tela com a Memória real: digitar um termo com erro de digitação e confirmar que o item aparece primeiro.
+
 ## Prioridade 4 — manter os documentos coerentes
 
 - Usar README.md como ponto de entrada.

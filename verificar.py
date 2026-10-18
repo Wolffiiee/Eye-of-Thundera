@@ -1983,6 +1983,106 @@ try:
 except Exception as _erro_aviso:
     falha("avisos: teste de duração/clique falhou: %r" % (_erro_aviso,))
 
+# --- busca na Memória: sem acento, sem maiúscula e com tolerância a erro ----
+# "conta dluz" acha "conta de luz" — tudo na tela, sem Python e sem dependência.
+try:
+    _js_busca = (PASTA / "web" / "busca.js").read_text(encoding="utf-8")
+    _js_html = (PASTA / "web" / "index.html").read_text(encoding="utf-8")
+    _js_app = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    _busca_ok = (
+        # o arquivo existe e tem as funções esperadas
+        "function busca_pontos" in _js_busca
+        and "function busca_normalizar" in _js_busca
+        and "function busca_distancia" in _js_busca
+        and "function busca_razao" in _js_busca
+        # o HTML carrega busca.js antes de app.js
+        and 'src="busca.js"' in _js_html
+        and 'src="app.js"' in _js_html
+        and _js_html.find('src="busca.js"') < _js_html.find('src="app.js"')
+        # o app.js usa busca_pontos na Memória
+        and "busca_pontos" in _js_app
+        and "desenhar" in _js_app
+        # a regra corrigida: só prefixo, sem o bug do "p.includes(q)" que
+        # fazia "rato" achar "gato" e "chocolate" achar "a"
+        and "q.startsWith(p)" in _js_busca
+        and "p.includes(q)" not in _js_busca
+    )
+    if _busca_ok:
+        ok("busca: web/busca.js existe, tem prefixo (startsWith) e é carregado antes de app.js")
+    else:
+        falha("busca: web/busca.js ausente, incompleto ou com regra de prefixo incorreta")
+
+    # roda os testes de lógica via node (se disponível); o arquivo de teste
+    # é gerado aqui mesmo para não depender de _tmp (que é ignorado pelo git)
+    _node = shutil.which("node")
+    if _node:
+        _js_casos = """
+const casos = [
+  ["Pagar a conta de luz até dia 22", "conta de luz", true],
+  ["Pagar a conta de luz até dia 22", "conta dluz", true],
+  ["Pagar a conta de luz até dia 22", "CONTA DE LUZ", true],
+  ["O usuário gosta de café", "cafe", true],
+  ["Comprar leite no mercado", "conprar leite", true],
+  ["A casa da mãe está azul", "casa", true],
+  ["A casa da mãe está azul", "casas", true],
+  ["O gato subiu no telhado", "gatu", true],
+  ["Levar o carro na revisao", "revisão", true],
+  ["Qualquer coisa", "", true],
+  ["", "", true],
+  ["Comprar leite no mercado", "comprar pao", false],
+  ["Pagar a conta de luz", "boleto", false],
+  ["O usuario mora em Lisboa", "mora em Paris", false],
+  ["A receita de bolo", "bolo de chocolate", false],
+  ["O gato subiu no telhado", "rato", true]
+];
+let falhas = 0;
+for (const [item, termo, deve] of casos) {
+  const r = busca_pontos(item, termo);
+  if (r.achou !== deve) {
+    falhas++;
+    console.log("FALHOU: item=" + JSON.stringify(item) + " termo=" + JSON.stringify(termo)
+      + " esperava=" + deve + " achou=" + r.achou + " pontos=" + r.pontos.toFixed(2));
+  }
+}
+const itens = ["Pagar a conta de luz", "A conta dluz"];
+const ordenados = itens
+  .map((f) => ({ f, r: busca_pontos(f, "conta dluz") }))
+  .sort((a, b) => b.r.pontos - a.r.pontos)
+  .map((v) => v.f);
+if (ordenados[0] !== "A conta dluz") {
+  falhas++;
+  console.log("FALHOU na ordem: " + JSON.stringify(ordenados));
+}
+const originals = ["b", "a", "c"];
+const semTermo = originals
+  .map((f) => ({ f, r: busca_pontos(f, "") }))
+  .filter((v) => v.r.achou)
+  .sort((a, b) => b.r.pontos - a.r.pontos)
+  .map((v) => v.f);
+if (semTermo.join(",") !== "b,a,c") {
+  falhas++;
+  console.log("FALHOU sem termo: " + JSON.stringify(semTermo));
+}
+console.log(falhas === 0 ? "OK" : "FALHAS: " + falhas);
+if (falhas) process.exitCode = 1;
+"""
+        _tmp_dir = PASTA / "_tmp"
+        _tmp_dir.mkdir(exist_ok=True)
+        _teste_arq = _tmp_dir / "busca_node.js"
+        _teste_arq.write_text(_js_busca + "\n" + _js_casos, encoding="utf-8")
+        _r_busca = subprocess.run(
+            [_node, str(_teste_arq)],
+            capture_output=True, text=True, timeout=60,
+            cwd=str(PASTA))
+        if _r_busca.returncode == 0 and "OK" in _r_busca.stdout:
+            ok("busca: lógica de tolerância a erro de digitação passou nos testes de node")
+        else:
+            falha("busca: lógica falhou: %s" % (_r_busca.stdout.strip()[:200],))
+    else:
+        ok("busca: lógica de tolerância a erro de digitação (node não disponível, pulado)")
+except Exception as _erro_busca:
+    falha("busca: teste de busca na Memória falhou: %r" % (_erro_busca,))
+
 
 # --- lembretes (PLANO-LEMBRETES.md) -----------------------------------------
 # "me lembra amanhã às 9h de pagar a conta" — tudo local, sem IA e sem chave.

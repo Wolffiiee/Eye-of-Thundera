@@ -5,6 +5,14 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-17 — Busca na Memória tolerante a erro de digitação e sem acentos (Prioridade 2 das sugestões)
+
+- **O que o usuário ganha:** na aba Memória, o campo de busca agora acha "conta de luz" quando o Wolf digita "conta dluz" (erro de digitação), "cafe" quando está escrito "café" (sem acento), "CONTA DE LUZ" (maiúsculas), e "casa" quando está escrito "casas" (plural/prefixo). A lista também ordena os resultados por relevância (o mais provável vem primeiro). Antes, a busca era `f.toLowerCase().includes(termo)` — texto exato, sem tolerância a nada.
+- **Tudo na tela, sem Python e sem dependência:** o novo `web/busca.js` tem 4 funções (`busca_normalizar`, `busca_distancia`, `busca_razao`, `busca_pontos`) — normalização NFD para acentos, Levenshtein iterativo para distância, e pontuação de 0 a 1 com limiar de 0.72 (ou 0.84 para palavras de 1-2 letras). A Memória guarda no máximo 200 itens, então cada tecla custa poucos milissegundos.
+- **Regra corrigida durante a validação:** a primeira versão usava `q.includes(p) || p.includes(q)` — a direção `p.includes(q)` fazia com que **qualquer letra** do termo casasse com qualquer palavra do texto: "chocolate" achava "a", "rato" achava "gato" (rato é substring de gato), "bolo de chocolate" achava "A receita de bolo" (porque "chocolate".includes("a")). A regra foi corrigida para **`q.startsWith(p)`** — a palavra do texto começa com o termo (prefixo), não contém como substring intermediária.
+- **Limitação conhecida e documentada:** "rato" ainda acha "gato" (75% parecido — só 1 letra de diferença), a **mesma conta** que faz "gatu" achar "gato". É matematicamente impossível aceitar o erro de digitação em palavra curta e recusar palavras diferentes de 1 letra: a decisão foi manter a tolerância (propósito do recurso) e documentar a limitação. O teste de Node.js (`_tmp/testar_busca_memoria.js`) tem 18 casos, incluindo a limitação como `true` com comentário explicando.
+- **`verificar.py`:** dois testes novos (existência e regra do `busca.js`, ligação no HTML e no `app.js`; e execução dos testes de Node.js com os 18 casos). Resultado: **172 verificações, 0 falhas, 0 avisos**.
+
 ## 18/10/2026 - Perguntar sobre documento longo (Prioridade 7) - plano em PLANO-DOCUMENTOS-LONGOS.md
 - Novo `documento.py`: PDF com mais de 10 paginas (ou 30.000 caracteres) abre como "documento" em vez de virar texto na caixa. O texto fica so na memoria, por pagina; cada pergunta manda para a IA apenas os trechos que combinam (busca local, sem acento) com "[pag. N]", e a IA cita "(pag. N)". Nada vai para a IA antes de perguntar.
 - Comandos locais (sem gastar token): "indice do documento" (titulos provaveis; sem titulos, a primeira linha de cada pagina) e "resumir documento" (trechos espalhados). Pergunta sem nada parecido no texto responde "Nao achei" sem chamar a IA.

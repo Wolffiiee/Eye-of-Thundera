@@ -1763,10 +1763,15 @@ async function abaMemoria(corpo) {
   const lista = el("div");
   const desenhar = () => {
     lista.replaceChildren();
-    const termo = busca.value.trim().toLowerCase();
+    const termoBusca = busca.value.trim();
     const daGaveta = filtroGaveta ? (gavetas[filtroGaveta] || []) : fatos;
     const daAssunto = filtroAssunto ? (assuntos[filtroAssunto] || []) : daGaveta;
-    const vistos = daAssunto.filter((f) => !termo || f.toLowerCase().includes(termo));    contador.textContent = fatos.length + (fatos.length === 1 ? " item guardado" : " itens guardados");
+    const vistos = daAssunto
+      .map((f) => ({ f, r: busca_pontos(f, termoBusca) }))
+      .filter((v) => v.r.achou)
+      .sort((a, b) => b.r.pontos - a.r.pontos)
+      .map((v) => v.f);
+    contador.textContent = fatos.length + (fatos.length === 1 ? " item guardado" : " itens guardados");
     if (!vistos.length) lista.append(el("div", "vazio-lista", fatos.length ? "Nada encontrado." : "Ainda não guardou nada."));
     for (const f of vistos) {
       const linha = el("div", "fato");
