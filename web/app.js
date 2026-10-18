@@ -2191,15 +2191,21 @@ async function salvarConfig() {
     if (i.value.trim()) chaves[i.dataset.campo] = i.value.trim();
     else delete chaves[i.dataset.campo];
   });
-  // Pasta de sincronização (aba Sincronização): o valor do campo no momento.
-  const campoPasta = $("#corpo-config input.campo-pasta");
-  if (campoPasta) estado.rascunho.pasta_sync = campoPasta.value;
-  // Plugins ativos (aba Plugins): os checkboxes plugin_<arquivo> marcados.
-  const ativos = [];
-  $$('#corpo-config input[type="checkbox"][id^="plugin_"]').forEach((i) => {
-    if (i.checked) ativos.push(i.id.slice("plugin_".length));
-  });
-  estado.rascunho.plugins_ativos = ativos;
+  // Pasta de sincronização (aba Sincronização): só envia se a aba está aberta.
+  if (estado.aba === "sincronizacao") {
+    const campoPasta = $("#corpo-config input.campo-pasta");
+    if (campoPasta) estado.rascunho.pasta_sync = campoPasta.value;
+  }
+  // Plugins ativos (aba Plugins): só envia se a aba está aberta. Se não
+  // enviar, o backend não mexe nos plugins ativos (salvar de outra aba não
+  // pode desligar plugins).
+  if (estado.aba === "plugins") {
+    const ativos = [];
+    $$('#corpo-config input[type="checkbox"][id^="plugin_"]').forEach((i) => {
+      if (i.checked) ativos.push(i.id.slice("plugin_".length));
+    });
+    estado.rascunho.plugins_ativos = ativos;
+  }
 
   try {
     const r = await chamar("config_salvar", { ...estado.rascunho, chaves });
@@ -2222,6 +2228,15 @@ async function salvarConfig() {
 
     estado.cfgTela = atual;
     estado.rascunho.chaves = {};
+    // Atualiza as infos pré-carregadas das abas que acabaram de salvar.
+    if (estado.aba === "plugins") {
+      try { estado.pluginsInfo = await chamar("plugins_listar"); }
+      catch (_e) { estado.pluginsInfo = null; }
+    }
+    if (estado.aba === "sincronizacao") {
+      try { estado.syncInfo = await chamar("sincronizar_config"); }
+      catch (_e) { estado.syncInfo = null; }
+    }
     mostrarAba(estado.aba);
     $("#config-aviso").textContent = "Salvo.";
     $("#config-aviso").className = "ok";
