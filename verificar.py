@@ -3132,6 +3132,174 @@ except Exception as _erro_cota:
     falha("cota: os testes quebraram: %r" % (_erro_cota,))
 
 
+# --- desfazer, exportar e atalhos novos --------------------------------------
+# Três coisas da mesma rodada: Ctrl+K (Configurações), Ctrl+Z (desfazer a
+# última troca) e "Exportar conversa". Nenhuma toca os dados reais: os testes
+# usam arquivo temporário em _tmp e DEVEM restaurar tudo no final.
+try:
+    _cfg_guardado = _pi2.ARQUIVO_CONFIG
+    _hist_guardado = _pi2.ARQUIVO_HISTORICO
+    _demo_guardado = _aw.DEMO
+    _arq_t = PASTA / "_tmp" / "verificar-rodada.json"
+    _arq_h = PASTA / "_tmp" / "verificar-rodada-hist.json"
+    _arq_t.parent.mkdir(parents=True, exist_ok=True)
+    for _a in (_arq_t, _arq_h):
+        if _a.exists():
+            _a.unlink()
+    _pi2.ARQUIVO_CONFIG = _arq_t
+    _pi2.ARQUIVO_HISTORICO = _arq_h
+    _aw.DEMO = False
+
+    def _p_rodada():
+        _p = _aw.Ponte()
+        _p._janela = None
+        return _p
+
+    # ---------- desfazer a ultima troca ----------
+    _p = _p_rodada()
+    _p.id_atual = "c1"
+    _p.mensagens = [
+        {"role": "user", "text": "primeira pergunta"},
+        {"role": "model", "text": "primeira resposta"},
+        {"role": "user", "text": "segunda pergunta"},
+        {"role": "model", "text": "segunda resposta"},
+    ]
+    _r = _p.conversa_desfazer()
+    if len(_r["mensagens"]) == 2 and _r["mensagens"][-1]["text"] == "primeira resposta":
+        ok("desfazer: tira a pergunta E a resposta juntas (nao deixa pergunta solta)")
+    else:
+        falha("desfazer: sobrou %r" % (_r.get("mensagens"),))
+
+    _r2 = _p.conversa_desfazer()
+    if _r2["vazia"] is True and _r2["mensagens"] == [] and _p.id_atual is None:
+        ok("desfazer: conversa vazia some do historico em vez de ficar guardada")
+    else:
+        falha("desfazer: conversa vazia ficou na historia (%r)" % (_r2,))
+
+    # erro depois de uma troca boa: tem que sair a tentativa que FALHOU
+    _p = _p_rodada()
+    _p.id_atual = "c2"
+    _p.mensagens = [
+        {"role": "user", "text": "pergunta"},
+        {"role": "model", "text": "resposta"},
+        {"role": "user", "text": "segunda"},
+        {"role": "erro", "text": "deu ruim"},
+    ]
+    _r3 = _p.conversa_desfazer()
+    if (len(_r3["mensagens"]) == 2
+            and _r3["mensagens"][0]["text"] == "pergunta"):
+        ok("desfazer: quando deu erro, sai a tentativa que falhou e a boa fica")
+    else:
+        falha("desfazer: com erro no fim, sobrou %r" % (_r3.get("mensagens"),))
+
+    _p = _p_rodada()
+    _p.id_atual = "c3"
+    _p.mensagens = []
+    if _p.conversa_desfazer().get("vazia") is True:
+        ok("desfazer: sem nada para desfazer nao quebra")
+    else:
+        falha("desfazer: conversa vazia deu erro")
+
+    # ---------- exportar a conversa ----------
+    _p = _p_rodada()
+    _p.mensagens = [
+        {"role": "user", "text": "Qual a capital da França?"},
+        {"role": "model", "text": "A capital é Paris.",
+         "fontes": [{"titulo": "França", "url": "https://exemplo.fr"}]},
+        {"role": "erro", "text": "erro que nao deve ser exportado"},
+    ]
+    _txt = _p._texto_da_conversa("txt")
+    if ("Qual a capital da França?" in _txt and "Paris" in _txt
+            and "https://exemplo.fr" in _txt):
+        ok("exportar: o arquivo traz pergunta, resposta e sites consultados")
+    else:
+        falha("exportar: faltou conteudo no .txt")
+    if "erro que nao deve ser exportado" not in _txt:
+        ok("exportar: aviso de erro da tela nao vai para o arquivo")
+    else:
+        falha("exportar: o aviso de erro foi junto para o arquivo")
+
+    _md = _p._texto_da_conversa("md")
+    if "## Você" in _md and "](https://exemplo.fr)" in _md:
+        ok("exportar: o .md sai com marcacao e link (o que o ChatGPT entende)")
+    else:
+        falha("exportar: o .md nao saiu com marcacao")
+
+    _p_a = _p_rodada()
+    _p_a.mensagens = [{"role": "user", "text": "coração, mãe, açúcar"}]
+    _ta = _p_a._texto_da_conversa("txt")
+    if all(x in _ta for x in ("coração", "mãe", "açúcar")):
+        ok("exportar: acento e cedilha saem certos no arquivo")
+    else:
+        falha("exportar: acento perdido no arquivo")
+
+    _p_v = _p_rodada()
+    _p_v.mensagens = []
+    if _p_v._texto_da_conversa("txt") is None:
+        ok("exportar: conversa vazia nao gera arquivo")
+    else:
+        falha("exportar: inventou arquivo sem conversa")
+
+    if _p_v.conversa_exportar().get("erro"):
+        ok("exportar: sem conversa, avisa em vez de quebrar")
+    else:
+        falha("exportar: sem conversa nao avisou")
+
+    _p_s = _p_rodada()
+    _p_s.mensagens = [{"role": "user", "text": "oi"}, {"role": "model", "text": "olá"}]
+    if _p_s.conversa_exportar().get("erro"):
+        ok("exportar: sem a janela pronta, avisa em vez de quebrar")
+    else:
+        falha("exportar: sem janela nao avisou")
+
+    # ---------- os atalhos e o botao na tela ----------
+    _js_h = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    _html_h = (PASTA / "web" / "index.html").read_text(encoding="utf-8")
+
+    if ('"k"' in _js_h and "abrirConfig(e.shiftKey" in _js_h):
+        ok("atalho: Ctrl+K abre as Configurações (e Ctrl+Shift+K vai nas Chaves)")
+    else:
+        falha("atalho: Ctrl+K nao esta ligado")
+
+    if ('"z"' in _js_h and "desfazerTroca" in _js_h
+            and 'chamar("conversa_desfazer")' in _js_h):
+        ok("atalho: Ctrl+Z desfaz a ultima troca")
+    else:
+        falha("atalho: Ctrl+Z nao esta ligado")
+
+    # o Ctrl+Z nao pode roubar o do campo de digitacao
+    if "estaDigitando" in _js_h and "!estaDigitando(e)" in _js_h:
+        ok("atalho: Ctrl+Z nao atrapalha quem esta digitando")
+    else:
+        falha("atalho: Ctrl+Z nao respeita o campo de digitacao")
+
+    if ("Exportar conversa" in _js_h and 'chamar("conversa_exportar")' in _js_h
+            and 'id="btn-exportar"' in _html_h and 'id="i-exportar"' in _html_h):
+        ok("exportar: o botao esta na barra lateral, com o seu icone")
+    else:
+        falha("exportar: o botao nao esta ligado na tela")
+
+    # os tres precisam aparecer na lista de atalhos da Ajuda
+    _trecho_atalhos = _js_h.split("Atalhos do teclado")[1][:1200]
+    if ("Ctrl + K" in _trecho_atalhos and "Ctrl + Z" in _trecho_atalhos):
+        ok("atalho: os novos atalhos aparecem na Ajuda")
+    else:
+        falha("atalho: os novos atalhos nao estao na Ajuda")
+
+    # restaura tudo
+    _pi2.ARQUIVO_CONFIG = _cfg_guardado
+    _pi2.ARQUIVO_HISTORICO = _hist_guardado
+    _aw.DEMO = _demo_guardado
+    for _a in (_arq_t, _arq_h):
+        try:
+            if _a.exists():
+                _a.unlink()
+        except Exception:
+            pass
+except Exception as _erro_rodada:
+    falha("desfazer/exportar/atalhos: os testes quebraram: %r" % (_erro_rodada,))
+
+
 # --- resumo -----------------------------------------------------------------
 print()
 print('VERIFICACOES: %d | FALHA: %d | AVISO: %d' % (verificacoes, len(falhas), len(avisos)))

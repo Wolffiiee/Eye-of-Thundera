@@ -16,6 +16,7 @@ Nunca compartilhe uma chave de API em mensagens, capturas de tela ou logs.
 
 TELA PRINCIPAL
 - Nova conversa: começa uma conversa nova.
+- Exportar conversa: salva a conversa inteira num arquivo (.md, que o ChatGPT entende melhor, ou .txt). Os sites consultados vão junto.
 - Conversas: lista e busca no histórico; use o menu da conversa para opções disponíveis.
 - Configurações: abre as abas Memória, Conversa, Chaves e Ajuda.
 - Web: alterna entre pesquisa automática, sempre e desligada.
@@ -44,6 +45,8 @@ ATALHOS
 - Ctrl+D: resumo do dia.
 - Ctrl+B: mostrar ou esconder a barra lateral.
 - Ctrl+Shift+S: pesquisa séria.
+- Ctrl+K: abre as Configurações (Ctrl+Shift+K abre direto nas Chaves).
+- Ctrl+Z: desfaz a última pergunta e a resposta, para você mandar de novo.
 
 DADOS E PRIVACIDADE
 Configurações, histórico e memória ficam no perfil local do Windows, em %LOCALAPPDATA%\Eye of Thundera. O programa envia a pergunta e o contexto necessário ao provedor de IA escolhido quando você pede uma resposta; não trate conversas privadas como substituto para não enviar informações sensíveis a serviços externos. Faça backup antes de alterações importantes.

@@ -552,6 +552,74 @@ class Ponte:
                 }
         return {"erro": "Não achei essa conversa."}
 
+    def conversa_desfazer(self):
+        """Desfaz a ultima troca (pergunta + resposta) da conversa.
+
+        O que o Wolf quer nao e' apagar uma palavra: e' desfazer a ultima
+        pergunta e tentar de novo. Por isso cai o PAR inteiro (pergunta E
+        resposta), e nao so' a resposta — desfazer so' a resposta deixaria
+        a pergunta pendurada e o modelo continuaria usando ela como
+        contexto na proxima vez.
+
+        A regra e' uma coisa so, para ser previsivel: **desfaz a ultima
+        troca da conversa**, seja ela a que deu certo ou a que falhou.
+
+        - Ultimo bloco = resposta (com ou sem erro antes): tira resposta e a
+          pergunta dela.
+        - Ultimo bloco = pergunta sem resposta: tira so a pergunta.
+        - Nao ha bloco (historico comecou no meio, ou ja vazio): nao mexe
+          em nada. E' melhor nao apagar por duvida.
+
+        Se a conversa ficar vazia, ela some do historico: nao faz sentido
+        guardar um casulo sem nenhuma mensagem.
+        """
+        try:
+            id_da_conversa = self.id_atual
+
+            # Limpa a cauda: erro e mensagem vazia nunca sao "a ultima
+            # troca"; sao o rastro de uma tentativa que falhou.
+            while self.mensagens and (
+                    self.mensagens[-1].get("role") == "erro"
+                    or not str(self.mensagens[-1].get("text") or "").strip()):
+                self.mensagens.pop()
+
+            # Ultimo bloco resposta+pergunta, ou so' pergunta.
+            if self.mensagens:
+                if self.mensagens[-1].get("role") == "model":
+                    self.mensagens.pop()                     # a resposta
+                    if self.mensagens and self.mensagens[-1].get("role") == "user":
+                        self.mensagens.pop()                 # a pergunta
+                elif self.mensagens[-1].get("role") == "user":
+                    self.mensagens.pop()                     # pergunta solta
+
+            if not self.mensagens:
+                self.id_atual = None
+                if not DEMO and not self.privada and id_da_conversa is not None:
+                    try:
+                        p.salvar_conversas(
+                            [c for c in p.carregar_conversas()
+                             if str(c.get("id")) != str(id_da_conversa)])
+                    except Exception as erro:
+                        p.registrar_erro("conversa_desfazer", erro)
+                self._evento({"tipo": "conversas",
+                              "conversas": _conversas_para_a_tela(),
+                              "atual": self.id_atual})
+                return {"mensagens": [], "atual": None, "vazia": True}
+
+            if not DEMO and not self.privada:
+                try:
+                    p.guardar_conversa(self.id_atual, self.mensagens)
+                except Exception as erro:
+                    p.registrar_erro("conversa_desfazer", erro)
+            self._evento({"tipo": "conversas",
+                          "conversas": _conversas_para_a_tela(),
+                          "atual": self.id_atual})
+            return {"mensagens": list(self.mensagens),
+                    "atual": self.id_atual, "vazia": False}
+        except Exception as erro:
+            p.registrar_erro("conversa_desfazer", erro)
+            return {"erro": "Não consegui desfazer."}
+
     def conversas_buscar(self, termo):
         """Procura um texto dentro das conversas (titulo e mensagens).
 
@@ -895,6 +963,92 @@ class Ponte:
         except Exception as erro:
             return {"erro": "Não consegui salvar: %s" % erro}
         return {"caminho": caminho}
+
+    # --- exportar a conversa inteira (levar para outro lugar) ----------
+    #
+    # O `salvar_texto` tira SO a ultima resposta. Isso aqui e' para quando
+    # o Wolf quer levar a conversa INTEIRA: passar para o ChatGPT, guardar
+    # num pendrive, ou simplesmente ter uma copia fora do programa.
+
+    def _texto_da_conversa(self, formato):
+        """Monta a conversa aberta como texto, para salvar.
+
+        `.txt` e' para gente ler; `.md` e' o mesmo conteudo com marcacao,
+        que e' o que o ChatGPT e' outros programas entendem melhor.
+        """
+        linhas = []
+        for msg in self.mensagens or []:
+            papel = msg.get("role")
+            texto = str(msg.get("text") or "").strip()
+            if not texto:
+                continue
+            if papel == "user":
+                linhas.append("## Você" if formato == "md" else "Você")
+            elif papel == "model":
+                linhas.append("## Assistente" if formato == "md" else "Assistente")
+            else:
+                continue        # erro e afins nao vao para o arquivo
+            linhas.append("")
+            linhas.extend(texto.splitlines())
+            linhas.append("")
+            # A lista de sites consultados importa: sem ela o texto perde
+            # a procedencia do que a IA respondeu.
+            fontes = msg.get("fontes") or []
+            if fontes:
+                linhas.append("")
+                linhas.append("Sites consultados:"
+                              if formato == "txt" else "**Sites consultados:**")
+                for fonte in fontes:
+                    url = (fonte.get("url") or "").strip()
+                    titulo = (fonte.get("titulo") or url).strip()
+                    if url:
+                        linhas.append("- [%s](%s)" % (titulo, url) if formato == "md"
+                                     else "- %s (%s)" % (titulo, url))
+        if not linhas:
+            return None
+        cabecalho = "Conversa exportada do Eye of Thundera em %s\n%s" % (
+            time.strftime("%d/%m/%Y as %H:%M"), "-" * 46)
+        return cabecalho + "\n\n" + "\n".join(linhas).rstrip() + "\n"
+
+    def conversa_exportar(self):
+        """Salva a conversa aberta num arquivo, usando o diálogo do Windows."""
+        try:
+            if not any(m.get("role") in ("user", "model") and
+                       str(m.get("text") or "").strip() for m in self.mensagens):
+                return {"erro": "Não tem conversa para exportar ainda."}
+            if self._janela is None:
+                return {"erro": "A janela ainda não está pronta para salvar arquivos."}
+            primeira = next((str(m.get("text") or "") for m in self.mensagens
+                             if m.get("role") == "user"), "")
+            nome = (p._nome_de_resposta(primeira) if primeira else "conversa")
+            try:
+                caminhos = self._janela.create_file_dialog(
+                    webview.FileDialog.SAVE,
+                    save_filename=nome + ".md",
+                    file_types=("Markdown (*.md)", "Arquivo de texto (*.txt)"),
+                )
+            except Exception as erro:
+                return {"erro": "Não consegui abrir a janela de salvar: %s" % erro}
+            if not caminhos:
+                return {}                      # cancelou: nao e erro
+            caminho = str(caminhos[0] if isinstance(caminhos, (list, tuple))
+                          else caminhos)
+            formato = "txt" if caminho.lower().endswith(".txt") else "md"
+            if not caminho.lower().endswith((".txt", ".md")):
+                caminho += ".md"
+                formato = "md"
+            conteudo = self._texto_da_conversa(formato)
+            if conteudo is None:
+                return {"erro": "Não tem conversa para exportar ainda."}
+            # utf-8-sig: o Bloco de Notas do Windows abre acento certo.
+            with open(caminho, "w", encoding="utf-8-sig") as arquivo:
+                arquivo.write(conteudo)
+            quantas = len([m for m in self.mensagens
+                           if m.get("role") in ("user", "model")])
+            return {"caminho": caminho, "mensagens": quantas}
+        except Exception as erro:
+            p.registrar_erro("conversa_exportar", erro)
+            return {"erro": "Não consegui exportar: %s" % erro}
 
     def abrir_link(self, url):
         """Clique num link da resposta (vai abrir o navegador de sempre)."""

@@ -5,6 +5,39 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-18 - Ctrl+K, Ctrl+Z (desfazer) e Exportar conversa
+
+As três sugestões que faltavam, feito de uma vez.
+
+### Ctrl+K (e Ctrl+Shift+K)
+- **O que é:** `Ctrl+K` abre as Configurações; `Ctrl+Shift+K` abre direto na aba **Chaves** (que é onde fica a correção mais comum).
+- **Por quê:** as Configurações são a tela que o Wolf mais procura quando algo deu errado, e até agora não tinha atalho — era preciso ir até o rodacento da barra lateral.
+- `abrirConfig` já aceitava o nome da aba, então não precisou de mudança no Python.
+
+### Ctrl+Z — desfazer a última troca
+- **O que é:** aperta `Ctrl+Z` e a **última pergunta com a resposta** some, para você mandar de novo.
+- **Cai o par inteiro, não só a resposta.** Desfazer só a resposta deixaria a pergunta pendurada, e o modelo continuaria usando ela como contexto na resposta seguinte.
+- **Se a conversa ficar vazia, ela sai do histórico** — não faz sentido guardar um casulo sem mensagem.
+- **Não rouba o Ctrl+Z de quem está digitando:** com o cursor na caixa de pergunta ou na busca, o atalho continua sendo o do campo de texto (desfaz a palavra que o Wolf acabou de escrever).
+- **Bug encontrado no caminho:** na primeira versão, uma mensagem de erro no fim da conversa fazia o desfazer **apagar a conversa inteira**. O erro saía, mas a resposta boa continuava lá e o par inteiro eraconsiderado a "última troca". Corrigido: a regra ficou previsível — *desfaz a última troca, seja ela a que deu certo ou a que falhou*.
+- Depois de desfazer, o foco volta para a caixa: o passo seguinte é escrever.
+
+### Exportar conversa
+- **O que é:** botão **"Exportar conversa"** no alto da barra lateral (com ícone próprio). Salva a conversa **inteira** num arquivo.
+- **`.md` ou `.txt`:** o `.md` é o que o ChatGPT e outros programas entendem melhor; o `.txt` é para ler. O programa pergunta o tipo no diálogo do Windows.
+- **Os sites consultados vão junto** — sem eles o arquivo perde a procedência do que a IA respondeu.
+- **O aviso de erro da tela não vai para o arquivo** (é só o aviso de que algo deu errado, não parte da conversa).
+- Acento e cedilha saem certos (`utf-8-sig`, que é o que o Bloco de Notas do Windows entende).
+- Diferente do `Ctrl+S`, que tira **só a última resposta**.
+
+### Testes
+16 verificações novas (**233 no total, 0 falhas, 0 avisos**): desfazer em 4 situações, exportar em 7 (incluindo acento e "sem conversa"), e a ligação dos atalhos e do botão na tela. Nada disso toca os dados reais: os testes usam arquivos temporários em `_tmp` e restauram tudo no final.
+
+### Instalador
+O `.zip` **ainda não foi regerado** — ficou para o fim da rodada, como combinado.
+
+---
+
 ## 2026-10-18 - Aviso de cota (e o bug da reserva que estava escondido)
 
 - **BUG encontrado antes de qualquer aviso:** eu ia mostrar um aviso dizendo "a cota acabou, estou usando a reserva" e fui conferir se o programa realmente trocava. **Nao trocava.** O `tentar_com_reserva` so' trocava quando a **chave** era recusada; quando a **cota** acabava, levantava o erro — mesmo com a chave de reserva configurada. O Wolf perdia o programa inteiro por um limite que se renova sozinho.

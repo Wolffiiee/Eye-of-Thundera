@@ -21,6 +21,8 @@
   <!-- fixar no topo: a seta sobe. 'soltar' e' a mesma seta para baixo. -->
   <symbol id="i-fixar" viewBox="0 0 24 24"><path d="M12 20V6M6 12l6-6 6 6"/></symbol>
   <symbol id="i-soltar" viewBox="0 0 24 24"><path d="M12 4v14M6 12l6 6 6-6"/></symbol>
+  <!-- exportar: a seta desce e sai pela base, como quem salva um arquivo. -->
+  <symbol id="i-exportar" viewBox="0 0 24 24"><path d="M12 3v10M7.5 9.5L12 14l4.5-4.5"/><path d="M5 15v4h14v-4"/></symbol>
   <symbol id="i-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
   <!-- conversa privada: cadeado -->
   <symbol id="i-privado" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol>
@@ -47,6 +49,9 @@
       <button id="btn-recolher" class="icone" title="Recolher a barra"><svg><use href="#i-recolher"/></svg></button>
     </div>
     <button id="btn-nova" class="item-menu"><svg><use href="#i-mais"/></svg><span>Nova conversa</span></button>
+    <!-- Exportar a conversa inteira (levar para outro lugar). Diferente
+         do Ctrl+S, que tira só a última resposta. -->
+    <button id="btn-exportar" class="item-menu" title="Salvar a conversa inteira num arquivo"><svg><use href="#i-exportar"/></svg><span>Exportar conversa</span></button>
     <div class="titulo-secao">Conversas</div>
     <div class="busca-conv"><input id="campo-busca" placeholder="Procurar nas conversas..." spellcheck="false" autocomplete="off" aria-label="Procurar nas conversas"><button id="btn-limpar-busca" class="icone oculto" title="Limpar a busca"><svg><use href="#i-fechar"/></svg></button></div>
     <nav id="lista-conversas" aria-label="Conversas"></nav>

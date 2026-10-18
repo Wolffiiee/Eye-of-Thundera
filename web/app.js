@@ -323,6 +323,39 @@ function desenharMensagens() {
   rolarParaOFim();
 }
 
+/* O atalho pertence a um campo de texto? Aí o Ctrl+Z é do próprio campo
+   (desfaz a palavra que o Wolf acabou de escrever) e o nosso não pode
+   roubar. Vale para a caixa da conversa, a busca e os campos de
+   Configurações. */
+function estaDigitando(e) {
+  const alvo = (e && e.target) || document.activeElement;
+  if (!alvo || !alvo.tagName) return false;
+  if (alvo.isContentEditable) return true;
+  const tag = alvo.tagName.toLowerCase();
+  return tag === "input" || tag === "textarea" || tag === "select";
+}
+
+/* ---- desfazer a ultima troca (Ctrl+Z) ----
+   O que o Wolf quer nao e' apagar uma palavra: e' desfazer a ultima
+   pergunta e tentar de novo. O Python decide o que e' "a ultima troca"
+   (pergunta E resposta juntas) e devolve o que sobrou. */
+async function desfazerTroca() {
+  if (estado.ocupado) return aviso("Espera a resposta terminar.");
+  const r = await chamar("conversa_desfazer");
+  if (r.erro) return aviso(r.erro, true);
+  estado.mensagens = r.mensagens || [];
+  estado.atual = r.atual ?? null;
+  desenharMensagens();
+  if (r.vazia) {
+    aviso("Desfeito. A conversa ficou vazia e saiu do histórico.");
+  } else {
+    aviso("Desfeito. Pode mandar a pergunta de novo.");
+  }
+  // Devolve o foco para a caixa: o passo seguinte do Wolf e' escrever.
+  const entrada = $("#entrada");
+  if (entrada) entrada.focus({ preventScroll: true });
+}
+
 function anexarMensagem(m) {
   estado.mensagens.push(m);
   $("#vazio").classList.add("oculto");
@@ -1256,6 +1289,24 @@ document.addEventListener("keydown", (e) => {
     campo.select();
     return;
   }
+  // Ctrl+K: abre as Configuracoes. E' a tela que o Wolf mais procura
+  // quando algo deu errado, entao o atalho economiza o caminho ate o
+  // botao no rodacento da barra lateral. Ctrl+Shift+K abre direto a aba
+  // das Chaves, que e' onde fica a correcao mais comum.
+  if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
+    e.preventDefault();
+    abrirConfig(e.shiftKey ? "chaves" : undefined);
+    return;
+  }
+  // Ctrl+Z: desfaz a ultima troca (pergunta + resposta) e tenta de novo.
+  // Nao enquanto o Wolf esta digitando: ali o Ctrl+Z e' o do proprio campo
+  // de texto, que desfaz a palavra que ele acabou de escrever.
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === "z" || e.key === "Z")
+      && !estaDigitando(e)) {
+    e.preventDefault();
+    desfazerTroca();
+    return;
+  }
   // Ctrl +, / Ctrl - / Ctrl 0: tamanho da letra.
   if ((e.ctrlKey || e.metaKey) && (e.key === "=" || e.key === "+")) {
     e.preventDefault();
@@ -1455,6 +1506,17 @@ async function abrirConversa(id) {
   desenharConversas();
   desenharMensagens();
 }
+/* ---- exportar a conversa inteira ----
+   Diferente do Ctrl+S (que tira SO a ultima resposta): aqui sai a conversa
+   toda, com os sites consultados, para levar para outro lugar. */
+async function exportarConversa() {
+  if (estado.ocupado) return aviso("Espera a resposta terminar.");
+  const r = await chamar("conversa_exportar");
+  if (r.erro) return aviso(r.erro, true);
+  if (!r.caminho) return;                    // o Wolf cancelou: não é erro
+  aviso(`Conversa exportada (${r.mensagens} mensagens): ${r.caminho}`);
+}
+
 async function novaConversa() {
   if (estado.ocupado) return aviso("Aguarde a resposta terminar.", true);
   const r = await chamar("nova_conversa");
@@ -2038,7 +2100,9 @@ function abaAjuda(corpo) {
     el("p", "", "Arraste um arquivo para a janela: .txt, .md, .csv e .json entram direto. Um PDF também funciona: o texto é lido aqui no seu computador (nada é enviado antes de você apertar Enter) e aparece na caixa para você conferir."),
     el("p", "", "PDF digitalizado (uma foto da página) não tem texto para ler — nesse caso o programa avisa, e você pode copiar e colar o trecho."),
     el("h4", "", "Falar"),
-    el("p", "", "O botão do microfone grava; o clique seguinte para e o que você falou aparece na caixa para conferir. Se a opção “enviar sozinho” estiver ligada, ele manda sem você precisar apertar Enter.")
+    el("p", "", "O botão do microfone grava; o clique seguinte para e o que você falou aparece na caixa para conferir. Se a opção “enviar sozinho” estiver ligada, ele manda sem você precisar apertar Enter."),
+    el("h4", "", "Levar a conversa para outro lugar"),
+    el("p", "", "“Exportar conversa”, no alto da barra da esquerda, salva a conversa inteira num arquivo: .md (o que o ChatGPT e outros programas entendem melhor) ou .txt (para ler). Os sites consultados vão junto, para não perder de onde a resposta veio. O Ctrl+S é diferente: ele salva só a última resposta.")
   );
   const atalhos = el("div", "cartao atalhos");
   atalhos.append(el("h4", "", "Atalhos do teclado"));
@@ -2050,6 +2114,9 @@ function abaAjuda(corpo) {
     ["Ctrl + S", "salva a última resposta em .txt"],
     ["Ctrl + N", "começa uma conversa nova"],
     ["Ctrl + F", "procura nas conversas"],
+    ["Ctrl + K", "abre as Configurações"],
+    ["Ctrl + Shift + K", "abre as Configurações nas Chaves"],
+    ["Ctrl + Z", "desfaz a última pergunta para tentar de novo"],
     ["Ctrl + D", "pede o resumo das notícias de hoje"],
     ["Ctrl + Shift + S", "envia com pesquisa profunda"],
     ["Ctrl + e Ctrl −", "aumenta ou diminui a letra"],
@@ -2560,6 +2627,7 @@ function ligarEventos() {
   });
   $("#btn-nova").addEventListener("click", novaConversa);
   $("#btn-config").addEventListener("click", () => abrirConfig());
+  $("#btn-exportar").addEventListener("click", exportarConversa);
   $("#btn-fechar-config").addEventListener("click", fecharConfig);
   $("#btn-salvar-config").addEventListener("click", salvarConfig);
   $("#modal").addEventListener("mousedown", (e) => { if (e.target.id === "modal") fecharConfig(); });
