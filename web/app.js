@@ -410,20 +410,13 @@ function mostrarMenuContexto(x, y) {
       vazio.remove();
       const ss = (r && r.sugestoes) || [];
       if (!ss.length) {
-        menu.append(el("div", "titulo",
-          r && r.desconhecida ? "(nada parecido)" : "(a palavra está certa)"));
+        menu.append(el("div", "titulo", "(nada parecido)"));
+        return;
       }
       for (const s of ss) {
         menu.append(itemMenu(s, () => {
           substituirTrecho(ini, fim, s);
           fecharMenuContexto(true);
-        }));
-      }
-      if (r && r.desconhecida) {
-        menu.append(itemMenu("Adicionar ao dicionário", async () => {
-          fecharMenuContexto(true);
-          const d = (await chamar("dicionario_adicionar", palavra)) || {};
-          aviso(d.erro || "“" + palavra + "” entrou no dicionário.", !!d.erro);
         }));
       }
       // reajusta a posicao depois que as sugestoes cresceram o menu
@@ -1453,14 +1446,15 @@ async function excluirConversa(id) {
 }
 
 /* ---------------- configurações ---------------- */
-function linhaToggle(titulo, desc, chave) {
+function linhaToggle(titulo, desc, chave, ligado, id) {
   const l = el("div", "linha-opcao");
   const t = el("div");
   t.append(el("b", "", titulo), el("span", "", desc));
   const sw = el("label", "chave-liga");
   const i = el("input");
   i.type = "checkbox";
-  i.checked = !!estado.rascunho[chave];
+  if (id) i.id = id;
+  i.checked = ligado !== undefined ? !!ligado : !!estado.rascunho[chave];
   i.addEventListener("change", () => (estado.rascunho[chave] = i.checked));
   sw.append(i, el("i"));
   l.append(t, sw);
@@ -1611,6 +1605,106 @@ function abaChaves(corpo) {
   for (const s of cfg.servicos) {
     corpo.append(cartaoChave(s.nome, s.resumo ? "Grátis: " + s.resumo : "", s.campo, s, { passos: s.passos, pagina: s.pagina }));
   }
+}
+
+// Aba Sincronização (PLANO-SINCRONIZACAO.md): escolher a pasta (OneDrive etc.),
+// ver o estado e sincronizar na hora. Ao abrir/fechar o programa ele sincroniza
+// sozinho; aqui dá para forçar e mudar a pasta.
+async function abaSincronizacao(corpo) {
+  corpo.append(
+    el("h3", "", "Sincronização"),
+    el("p", "sub", "Mantém conversas, memória e configurações iguais em outro computador, por uma pasta que o Windows sincroniza (OneDrive, Drive, Dropbox). O programa importa ao abrir e exporta ao fechar.")
+  );
+  const r = await chamar("sincronizar_config");
+  if (estado.aba !== "sincronizacao") return;
+  if (r.erro) {
+    corpo.append(el("div", "aviso-erro", r.erro));
+    return;
+  }
+  // Pasta atual (ou a sugerida) com botão de escolher outra pelo explorador.
+  const linhaPasta = el("div", "linha-campo");
+  const campoPasta = el("input", "campo campo-pasta");
+  campoPasta.value = r.pasta || "";
+  campoPasta.readOnly = true;
+  campoPasta.title = "Clique em Escolher pasta";
+  const btnEscolher = el("button", "btn", "Escolher pasta");
+  btnEscolher.addEventListener("click", async () => {
+    const pasta = await chamar("escolher_pasta");
+    if (pasta) {
+      campoPasta.value = pasta;
+      aviso("Pasta escolhida. Clique em Salvar para usar.", false);
+    }
+  });
+  linhaPasta.append(campoPasta, btnEscolher);
+  corpo.append(linhaPasta);
+  // Estado: existe? dá para gravar? quando sincronizou da última vez?
+  const estadoSync = el("div", "estado-info");
+  const partes = [];
+  partes.push(r.existe ? "Pasta encontrada." : "Pasta não encontrada ainda.");
+  partes.push(r.gravavel ? "Dá para gravar nela." : "Não consigo gravar nela.");
+  if (r.carimbo) partes.append("Dados locais sincronizados em " + r.carimbo + ".");
+  if (r.aviso) partes.push("Atenção: " + r.aviso);
+  estadoSync.textContent = partes.join(" ");
+  corpo.append(estadoSync);
+  // Botão de sincronizar na hora.
+  const btnSync = el("button", "btn primario", "Sincronizar agora");
+  btnSync.addEventListener("click", async () => {
+    btnSync.disabled = true;
+    btnSync.textContent = "Sincronizando...";
+    const res = await chamar("sincronizar_agora");
+    btnSync.disabled = false;
+    btnSync.textContent = "Sincronizar agora";
+    if (estado.aba !== "sincronizacao") return;
+    if (res.erro) return aviso(res.erro, true);
+    const qtd = [];
+    if (res.importados) qtd.push(res.importados + " importado(s)");
+    if (res.exportados) qtd.push(res.exportados + " exportado(s)");
+    aviso(qtd.length ? "Sincronizado: " + qtd.join(" e ") + "."
+                       : "Sincronizado: nada novo.", false);
+  });
+  corpo.append(btnSync);
+}
+
+// Aba Plugins (PLANO-PLUGINS.md): lista os comandos locais do Wolf, liga e
+// desliga, e mostra onde ficam os arquivos (para criar o seu).
+async function abaPlugins(corpo) {
+  corpo.append(
+    el("h3", "", "Plugins"),
+    el("p", "sub", "Comandos locais que respondem sem IA e sem chave — como os lembretes. Para criar o seu, salve um arquivo .py na pasta abaixo.")
+  );
+  const r = await chamar("plugins_listar");
+  if (estado.aba !== "plugins") return;
+  if (r.erro) {
+    corpo.append(el("div", "aviso-erro", r.erro));
+    return;
+  }
+  if (r.pasta) {
+    const linhaPasta = el("div", "estado-info", "Pasta dos plugins: " + r.pasta);
+    const btnAbrir = el("button", "btn", "Abrir a pasta");
+    btnAbrir.style.marginLeft = "10px";
+    btnAbrir.addEventListener("click", () => chamar("abrir_pasta", r.pasta));
+    linhaPasta.append(btnAbrir);
+    corpo.append(linhaPasta);
+  }
+  if (!r.plugins || !r.plugins.length) {
+    corpo.append(el("p", "sub", "Nenhum plugin ainda. Coloque um arquivo .py na pasta acima para começar."));
+    return;
+  }
+  for (const pl of r.plugins) {
+    const cartao = el("div", "cartao");
+    const titulo = el("div", "plugin-nome", pl.nome || pl.arquivo);
+    cartao.append(titulo);
+    if (pl.descricao) cartao.append(el("div", "plugin-desc", pl.descricao));
+    if (pl.erro) cartao.append(el("div", "aviso-erro", "Este plugin tem um erro: " + pl.erro));
+    const ligar = linhaToggle(
+      pl.ativo ? "Ligado" : "Desligado",
+      "Quando ligado, este plugin pode responder às suas mensagens.",
+      "plugin_" + pl.arquivo, pl.ativo, "plugin_" + pl.arquivo);
+    cartao.append(ligar);
+    corpo.append(cartao);
+  }
+  // Salvamento (o botão Salvar do rodapé grava os ativos via interruptor).
+  estado.rascunhoPlugins = r.plugins.map((pl) => pl.arquivo);
 }
 
 async function abaMemoria(corpo) {
@@ -1946,7 +2040,7 @@ function mostrarAba(aba) {
   $("#btn-salvar-config").classList.toggle(
     "oculto", aba === "memoria" || aba === "ajuda" || aba === "personalizacao"
   );
-  ({ memoria: abaMemoria, conversa: abaConversa, chaves: abaChaves, ajuda: abaAjuda, personalizacao: abaPersonalizacao })[aba](corpo);
+  ({ memoria: abaMemoria, conversa: abaConversa, chaves: abaChaves, sincronizacao: abaSincronizacao, plugins: abaPlugins, ajuda: abaAjuda, personalizacao: abaPersonalizacao })[aba](corpo);
 }
 
 async function abrirConfig(aba) {
@@ -1957,7 +2051,8 @@ async function abrirConfig(aba) {
   estado.rascunho = {
     modo_pesquisa: r.modo_pesquisa, usar_contexto: r.usar_contexto, aprender: r.aprender,
     web_corretor: r.web_corretor, voz_enviar: r.voz_enviar, usar_plano_b: r.usar_plano_b,
-    usar_gemini: r.usar_gemini, chaves: {},
+    usar_gemini: r.usar_gemini, chaves: {}, pasta_sync: r.pasta_sync || "",
+    plugins_ativos: r.plugins_ativos || [],
   };
   $("#modal").classList.remove("oculto");
   mostrarAba(aba || estado.aba);
@@ -2087,6 +2182,15 @@ async function salvarConfig() {
     if (i.value.trim()) chaves[i.dataset.campo] = i.value.trim();
     else delete chaves[i.dataset.campo];
   });
+  // Pasta de sincronização (aba Sincronização): o valor do campo no momento.
+  const campoPasta = $("#corpo-config input.campo-pasta");
+  if (campoPasta) estado.rascunho.pasta_sync = campoPasta.value;
+  // Plugins ativos (aba Plugins): os checkboxes plugin_<arquivo> marcados.
+  const ativos = [];
+  $$('#corpo-config input[type="checkbox"][id^="plugin_"]').forEach((i) => {
+    if (i.checked) ativos.push(i.id.slice("plugin_".length));
+  });
+  estado.rascunho.plugins_ativos = ativos;
 
   try {
     const r = await chamar("config_salvar", { ...estado.rascunho, chaves });

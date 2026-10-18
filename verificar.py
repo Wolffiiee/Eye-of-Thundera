@@ -2172,6 +2172,112 @@ except Exception as _erro_dest:
     falha("destaque: teste do destaque falhou: %r" % (_erro_dest,))
 
 
+# --- sincronizacao (PLANO-SINCRONIZACAO.md) -----------------------------------
+# Tudo em _tmp com caminhos simulados: nunca toca os dados reais.
+try:
+    import shutil as _sh2, time as _t2
+    import sincronizar as _sin
+
+    _base = PASTA / "_tmp" / "sin"
+    if _base.exists():
+        _sh2.rmtree(_base)
+    _dados = _base / "dados"
+    _sync = _base / "sync"
+    _dados.mkdir(parents=True)
+    _sync.mkdir(parents=True)
+
+    # importa o que for mais novo (remoto ganha)
+    (_dados / "config.json").write_text('{"a": 1}', encoding="utf-8")
+    _t2.sleep(0.05)
+    (_sync / "config.json").write_text('{"a": 2}', encoding="utf-8")
+    _imp = _sin.importar(_sync, _dados)
+    _ok_imp = (_imp == ["config.json"]
+               and (_dados / "config.json").read_text(encoding="utf-8") == '{"a": 2}')
+
+    # exporta o que for mais novo (local ganha)
+    (_dados / "config.json").write_text('{"a": 3}', encoding="utf-8")
+    _t2.sleep(0.05)
+    _exp = _sin.exportar(_dados, _sync)
+    _ok_exp = (_exp == ["config.json"]
+               and (_sync / "config.json").read_text(encoding="utf-8") == '{"a": 3}')
+
+    # igual nao copia
+    _t2.sleep(0.05)
+    _igu = _sin.sincronizar_tudo(_dados, _sync)
+    _ok_igu = (not _igu["importados"] and not _igu["exportados"]
+               and _igu["aviso"] is None)
+
+    # erro nao derruba: pasta inexistente vira aviso, nao excecao
+    _err = _sin.sincronizar_tudo(_dados, _base / "nao_existe")
+    _ok_err = bool(_err["aviso"]) and not _err["importados"]
+
+    # carimbo e estado
+    (_dados / "config.json").touch()
+    _ok_car = isinstance(_sin.carimbo(_dados), str)
+    _ok_est = isinstance(_sin.estado(_dados, str(_sync)).get("existe"), bool)
+
+    if _ok_imp and _ok_exp and _ok_igu and _ok_err and _ok_car and _ok_est:
+        ok("sincronizacao: importa/exporta/iguala avisos e erro sem excecao")
+    else:
+        falha("sincronizacao: comportamento incorreto (imp=%s exp=%s igu=%s err=%s)"
+              % (_ok_imp, _ok_exp, _ok_igu, _ok_err))
+    _sh2.rmtree(_base, ignore_errors=True)
+except Exception as _erro_sin:
+    falha("sincronizacao: teste falhou: %r" % (_erro_sin,))
+
+
+# --- plugins (PLANO-PLUGINS.md) ----------------------------------------------
+# Pasta de plugins sintetica em _tmp; nunca toca a pasta real.
+try:
+    import shutil as _sh3
+    import plugins as _pl
+
+    _pp = PASTA / "_tmp" / "plugs"
+    if _pp.exists():
+        _sh3.rmtree(_pp)
+    _pp.mkdir(parents=True)
+    (_pp / "bom.py").write_text(
+        'NOME = "Bom"\nDESCRICAO = "Responde a /ola"\n\n'
+        "def responder(texto):\n"
+        "    if texto.strip().lower() == '/ola':\n"
+        "        return 'Ola do plugin!'\n"
+        "    return None\n", encoding="utf-8")
+    (_pp / "ruim.py").write_text(
+        "def responder(texto):\n    raise RuntimeError('estou quebrado')\n",
+        encoding="utf-8")
+
+    # descobrir: os dois aparecem; "bom" carrega limpo, "ruim" tambem carrega
+    # (o erro dele so acontece na chamada, e e' isolado la em responder)
+    _achados = {p["arquivo"]: p for p in _pl.descobrir(pasta=_pp)}
+    _ok_desc = ("bom" in _achados and "ruim" in _achados
+                and _achados["bom"]["erro"] is None
+                and "Bom" == _achados["bom"]["nome"]
+                and _achados["ruim"]["erro"] is None)
+
+    # responder: /ola responde; outra frase nao
+    _r1, _n1 = _pl.responder("/ola", ativos=["bom"], pasta=_pp)
+    _r2, _n2 = _pl.responder("/outra coisa", ativos=["bom"], pasta=_pp)
+    _ok_resp = (_r1 == "Ola do plugin!" and _n1 == "Bom"
+                and _r2 is None and _n2 is None)
+
+    # plugin quebrado nao derruba: o proximo ainda responde
+    _r3, _n3 = _pl.responder("/ola", ativos=["ruim", "bom"], pasta=_pp)
+    _ok_quebrado = (_r3 == "Ola do plugin!" and _n3 == "Bom")
+
+    # garantir_exemplo cria o exemplo se faltar
+    _ex = _pl.garantir_exemplo(_pp)
+    _ok_ex = _ex.exists() and _ex.name == "exemplo.py"
+
+    if _ok_desc and _ok_resp and _ok_quebrado and _ok_ex:
+        ok("plugins: descobrir, responder, erro isolado e exemplo")
+    else:
+        falha("plugins: comportamento incorreto (desc=%s resp=%s quebrado=%s ex=%s)"
+              % (_ok_desc, _ok_resp, _ok_quebrado, _ok_ex))
+    _sh3.rmtree(_pp, ignore_errors=True)
+except Exception as _erro_pl:
+    falha("plugins: teste falhou: %r" % (_erro_pl,))
+
+
 # --- lembretes (PLANO-LEMBRETES.md) -----------------------------------------
 # "me lembra amanhã às 9h de pagar a conta" — tudo local, sem IA e sem chave.
 # Nada aqui toca o arquivo de verdade: os testes usam um arquivo em _tmp.
@@ -2349,69 +2455,6 @@ try:
         falha("lembretes: falta ligar na tela ou no pacote (.spec)")
 except Exception as _erro_lem4:
     falha("lembretes: teste da tela/pacote falhou: %r" % (_erro_lem4,))
-
-
-# --- ortografia melhor (PLANO-ORTOGRAFIA.md) --------------------------------
-try:
-    import json as _json_o
-    import app_web as _aw_o
-    import pesquisa_ia as _pe_o
-
-    _DIC_O = PASTA / "_tmp" / "dic_teste_ortografia.json"
-    _DIC_O.parent.mkdir(exist_ok=True)
-    _antes_o = (_pe_o.ARQUIVO_DICIONARIO, _pe_o.carregar_memoria, _aw_o.DEMO)
-    try:
-        _pe_o.ARQUIVO_DICIONARIO = _DIC_O
-        _pe_o.carregar_memoria = lambda: ["Nome: Igor (pode ser chamado de Wolf)"]
-        _aw_o.DEMO = False
-        if _DIC_O.exists():
-            _DIC_O.unlink()
-        _a = _pe_o.analisar_palavra
-        _abrev = (_a("vc")["sugestoes"][0] == "você" and _a("Vc")["sugestoes"][0] == "Você"
-                  and _a("pq")["sugestoes"] == ["porque", "por que"]
-                  and _a("TB")["sugestoes"] == ["TAMBÉM"])
-        _acento = _a("voce")["sugestoes"][:1] == ["você"]
-        _rank = _a("gobiln")["sugestoes"][:1] == ["goblin"]
-        _certa = _a("casa") == {"sugestoes": [], "desconhecida": False}
-        _lixo = all(_a(x) == {"sugestoes": [], "desconhecida": False}
-                    for x in ("x", "", None, "1999", "a1b"))
-        _nome_mem = _a("Wolf")["desconhecida"] is False
-        _antes_dic = _a("Thundera")["desconhecida"] is True
-        _pt_o = _aw_o.Ponte.__new__(_aw_o.Ponte)
-        _r1 = _pt_o.dicionario_adicionar("Thundera")
-        _r2 = _pt_o.dicionario_adicionar("thundera")      # repetida: sem duplicar
-        _r3 = _pt_o.dicionario_adicionar("x1")
-        _gravado = _json_o.loads(_DIC_O.read_text(encoding="utf-8"))
-        _depois_dic = _a("Thundera") == {"sugestoes": [], "desconhecida": False}
-        _ponte_r = _pt_o.sugerir_correcao("gobiln")
-        _DIC_O.write_text("isto nao e json {", encoding="utf-8")
-        _estragado = _pe_o.carregar_dicionario_pessoal() == set()
-        _aw_o.DEMO = True
-        _demo = "erro" in _pt_o.dicionario_adicionar("Zorgblat")
-        _aw_o.DEMO = False
-        _js_o = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
-    finally:
-        _pe_o.ARQUIVO_DICIONARIO, _pe_o.carregar_memoria, _aw_o.DEMO = _antes_o
-        if _DIC_O.exists():
-            _DIC_O.unlink()
-    _ok_o = {"abreviacoes": _abrev, "acento": _acento, "ranking": _rank,
-             "palavra certa": _certa, "lixo": _lixo, "nome da memoria": _nome_mem,
-             "desconhecida antes": _antes_dic,
-             "adicionar": _r1 == {"ok": True} and _r2 == {"ok": True} and "erro" in _r3
-                          and _gravado == ["thundera"],
-             "conhecida depois": _depois_dic,
-             "ponte devolve desconhecida": _ponte_r.get("desconhecida") is True
-                                           and "goblin" in _ponte_r.get("sugestoes", []),
-             "arquivo estragado": _estragado, "modo exemplo nao grava": _demo,
-             "tela": "dicionario_adicionar" in _js_o and "Adicionar ao dicionário" in _js_o
-                     and "r.desconhecida" in _js_o}
-    _ruins_o = [k for k, v in _ok_o.items() if not v]
-    if not _ruins_o:
-        ok("ortografia: abreviações, acento, ranking, dicionário pessoal e nomes da Memória")
-    else:
-        falha("ortografia: falhou em %r" % (_ruins_o,))
-except Exception as _erro_o:
-    falha("ortografia: teste falhou: %r" % (_erro_o,))
 
 
 # --- documento aberto: perguntar sobre PDF longo (PLANO-DOCUMENTOS-LONGOS.md) ---

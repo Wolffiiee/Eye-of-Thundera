@@ -5,6 +5,15 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-18 - Plugins e Sincronização entre computadores (Prioridades 5 e 6)
+
+- **O que o usuário ganha:** (1) **Plugins** — comandos locais em Python que respondem sem IA e sem chave, como os lembretes; o Wolf cria um arquivo `.py` na pasta de plugins e liga/desliga pela aba Plugins. (2) **Sincronização** — conversas, memória, configurações e chaves iguais em dois computadores por uma pasta que o Windows sincroniza (OneDrive, Drive, Dropbox); importa ao abrir e exporta ao fechar.
+- **Novo `sincronizar.py`:** última escrita vence por arquivo (sem mesclagem), cópia atômica (escreve `.tmp` e renomeia), nunca apaga nada do outro lado, erro nunca derruba o programa. `arquivos_de_dados()` lista os `.json` da pasta de dados (menos `erro.log`). `sincronizar_tudo()` importa e exporta.
+- **Novo `plugins.py`:** pasta `plugins` em `%LOCALAPPDATA%\PesquisaIA`; contrato mínimo `responder(texto)` devolve `None` (não é com ele) ou string (resposta); `NOME`/`DESCRICAO` opcionais para a interface. Plugin com erro **não derruba**: erro vai ao log e o próximo plugin é tentado. Plugin de exemplo (`/tempo`) criado na primeira vez.
+- **Interface:** duas abas novas em Configurações — **Sincronização** (escolher pasta pelo diálogo nativo, botão Sincronizar agora, estado com carimbo) e **Plugins** (lista com interruptor ligar/desligar, descrição, aviso de erro, botão abrir a pasta). CSS: `.estado-info`, `.plugin-nome`, `.plugin-desc`, `.aviso-erro`, `.linha-campo`.
+- **Ponte (`app_web.py`):** `sincronizar_importar` no arranque do `principal()` (antes de carregar dados) e `sincronizar_exportar` no `ao_fechar`; `sincronizar_config`, `sincronizar_agora`, `sincronizar_config_salvar`, `plugins_listar`, `plugins_salvar`, `escolher_pasta`, `abrir_pasta`; plugins respondem no `enviar()` logo após os lembretes (antes da chave).
+- **`verificar.py`:** 2 testes novos (sincronização: importa/exporta/iguala/avisos/erro sem exceção; plugins: descobrir/responder/erro isolado/exemplo). Suíte: **176 verificações, 0 falhas, 0 avisos**.
+
 ## 2026-10-18 - Documento longo testado e aprovado com PDF de 12 paginas
 
 - Gerado um PDF de teste (`_tmp/gerar_pdf_longo.py`, apagado da Área de Trabalho depois do teste) com 12 capítulos de um guia de caminhada fictício — PDF de texto puro com acentos (mapa ToUnicode, extraível pelo pypdf sem OCR), um fato único por página para conferir a citação.

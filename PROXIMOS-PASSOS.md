@@ -1,6 +1,6 @@
 # Próximos passos
 
-Atualizado em 18/10/2026. Este documento contém pendências reais; o histórico detalhado fica em HISTORICO-DE-MUDANCAS.md.
+Atualizado em 18/10/2026. Este documento contém pendências reais; o histórico detalhado fica em HISTORICO-DE-MUDANCAS.md. **Plugins (Prioridade 5) e Sincronização (Prioridade 6) estão implementados — todas as sugestões originais estão prontas.**
 
 ## Prioridade 1 — validar a correção da interface
 

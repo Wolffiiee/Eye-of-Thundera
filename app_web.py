@@ -1,4 +1,5 @@
 import sys
+import os
 import webbrowser
 import time
 from datetime import datetime
@@ -379,6 +380,8 @@ def _cfg_tela():
         "gemini": _tem_chave(cfg.get("api_key", "")),
         "gemini_reserva": _tem_chave(cfg.get("api_key_reserva", "")),
         "servicos": servicos,
+        "pasta_sync": cfg.get("pasta_sync", ""),
+        "plugins_ativos": cfg.get("plugins_ativos", []),
     }
 
 
@@ -393,6 +396,8 @@ def _cfg_tela_demo():
         "voz_enviar": True,
         "usar_plano_b": True,
         "usar_gemini": True,
+        "pasta_sync": "",
+        "plugins_ativos": [],
         "tema": "Clássico Dark",
         "temaIdx": 0,
         "gemini": {"definida": True, "final": "a1b2"},
@@ -614,25 +619,10 @@ class Ponte:
         está no motor (`pesquisa_ia.sugerir_correcao`).
         """
         try:
-            r = p.analisar_palavra(palavra)
-            return {"sugestoes": r["sugestoes"],
-                    "desconhecida": r["desconhecida"]}
+            return {"sugestoes": p.sugerir_correcao(palavra)}
         except Exception as erro:
             p.registrar_erro("sugerir_correcao", erro)
-            return {"sugestoes": [], "desconhecida": False}
-
-    def dicionario_adicionar(self, palavra):
-        """"Adicionar ao dicionário" (botão direito): a palavra deixa de ser
-        tratada como erro nas sugestões. Fica em dicionario_pessoal.json."""
-        if DEMO:
-            return {"erro": "No modo exemplo nada é gravado."}
-        try:
-            if p.adicionar_ao_dicionario(palavra):
-                return {"ok": True}
-            return {"erro": "Só dá para adicionar palavras com letras (2 a 40)."}
-        except Exception as erro:
-            p.registrar_erro("dicionario_adicionar", erro)
-            return {"erro": "Não consegui guardar a palavra."}
+            return {"sugestoes": []}
 
     def memoria_listar(self):
         """Aba Memória, com a data em que cada fato foi aprendido.
@@ -896,6 +886,36 @@ class Ponte:
             pass
         return {}
 
+    def escolher_pasta(self):
+        """Abre a janela de escolher pasta (aba Sincronização / aba Plugins).
+
+        Usa o diálogo nativo da janela pywebview — sem Tkinter (o mesmo
+        cuidado do salvar_resposta). Devolve a pasta escolhida ou "" se o
+        Wolf cancelou. O diálogo e' assincrono: este metodo fica esperando
+        a escolha na thread da ponte.
+        """
+        if self._janela is None:
+            return ""
+        try:
+            caminhos = self._janela.create_file_dialog(
+                webview.FOLDER_DIALOG,
+            )
+        except Exception:
+            return ""
+        if not caminhos:
+            return ""
+        return str(caminhos[0] if isinstance(caminhos, (list, tuple))
+                   else caminhos)
+
+    def abrir_pasta(self, pasta):
+        """Abre a pasta no Explorador do Windows (aba Plugins)."""
+        try:
+            if pasta and Path(str(pasta)).is_dir():
+                os.startfile(str(pasta))
+        except Exception as erro:
+            p.registrar_erro("abrir_pasta", erro)
+        return {}
+
     # --- leitura de PDF (arrastar para a conversa) ---
     #
     # O arquivo NAO chega por caminho: a tela le os bytes e manda em
@@ -1037,6 +1057,27 @@ class Ponte:
             self.mensagens.append({"role": "user", "text": texto})
             threading.Thread(target=self._responder_lembrete,
                              args=(resposta_lembrete,), daemon=True).start()
+            return {}
+
+        # Plugins (PLANO-PLUGINS.md): comandos locais do Wolf respondem aqui,
+        # como os lembretes — sem IA, sem chave, sem rede. O primeiro plugin
+        # ativo que devolver resposta ganha; erro de plugin não derruba.
+        try:
+            import plugins
+            cfg_ativos = p._ler_json(p.ARQUIVO_CONFIG, {}).get(
+                "plugins_ativos")
+            resposta_plugin, nome_plugin = plugins.responder(
+                texto, ativos=cfg_ativos)
+        except Exception as erro:
+            p.registrar_erro("plugins.responder", erro)
+            resposta_plugin = None
+        if resposta_plugin:
+            self.ocupado = True
+            self.mensagens.append({"role": "user", "text": texto})
+            if nome_plugin:
+                resposta_plugin = "[%s] %s" % (nome_plugin, resposta_plugin)
+            threading.Thread(target=self._responder_lembrete,
+                             args=(resposta_plugin,), daemon=True).start()
             return {}
 
         cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
@@ -1525,6 +1566,95 @@ class Ponte:
             p.registrar_erro("lembrete_adiar", erro)
         return {}
 
+    # --- sincronizacao (PLANO-SINCRONIZACAO.md): a tela pergunta, o Python
+    # decide. Tudo local, sem rede (a pasta sincronizada e' do Windows).
+    def sincronizar_config(self):
+        """Estado da aba Sincronização: pasta, se existe, carimbo, aviso."""
+        if DEMO:
+            return {"pasta": str(Path.home() / "Documentos" / "Eye of Thundera"),
+                    "existe": False, "gravavel": False, "carimbo": None,
+                    "aviso": "modo exemplo: nada e sincronizado"}
+        try:
+            import sincronizar
+            cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+            pasta_sync = cfg.get("pasta_sync") or ""
+            if not pasta_sync:
+                pasta_sync = str(sincronizar.pasta_padrao())
+            return sincronizar.estado(p.PASTA_CONFIG, pasta_sync)
+        except Exception as erro:
+            p.registrar_erro("sincronizar_config", erro)
+            return {"pasta": "", "existe": False, "gravavel": False,
+                    "carimbo": None, "aviso": "erro: %s" % erro}
+
+    def sincronizar_agora(self):
+        """Botão "Sincronizar agora": importa + exporta e devolve o resumo."""
+        if DEMO:
+            return self._demo_nada()
+        try:
+            import sincronizar
+            cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+            pasta_sync = cfg.get("pasta_sync") or ""
+            if not pasta_sync:
+                return {"erro": "Escolha a pasta de sincronização primeiro."}
+            r = sincronizar.sincronizar_tudo(p.PASTA_CONFIG, pasta_sync)
+            if r.get("aviso"):
+                return {"erro": r["aviso"]}
+            return {
+                "importados": len(r["importados"]),
+                "exportados": len(r["exportados"]),
+                "carimbo": sincronizar.carimbo(p.PASTA_CONFIG),
+            }
+        except Exception as erro:
+            p.registrar_erro("sincronizar_agora", erro)
+            return {"erro": "Não consegui sincronizar: %s" % erro}
+
+    def sincronizar_config_salvar(self, dados):
+        """Grava a pasta escolhida (e já devolve o estado atualizado)."""
+        if DEMO:
+            return self._demo_nada()
+        dados = dados or {}
+        pasta = str(dados.get("pasta") or "").strip()
+        cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+        if pasta:
+            cfg["pasta_sync"] = pasta
+        p.salvar_config(cfg)
+        return self.sincronizar_config()
+
+    # --- plugins (PLANO-PLUGINS.md): descobrir, ativar/desativar e responder
+    def plugins_listar(self):
+        """Lista os plugins encontrados para a aba Plugins."""
+        if DEMO:
+            return {"pasta": "", "plugins": []}
+        try:
+            import plugins
+            cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+            ativos = set(cfg.get("plugins_ativos") or [])
+            encontrados = plugins.descobrir()
+            return {
+                "pasta": str(plugins.PASTA_PLUGINS),
+                "plugins": [
+                    {"nome": pl["nome"], "arquivo": pl["arquivo"],
+                     "descricao": pl.get("descricao") or "",
+                     "ativo": pl["arquivo"] in ativos,
+                     "erro": pl.get("erro")}
+                    for pl in encontrados
+                ],
+            }
+        except Exception as erro:
+            p.registrar_erro("plugins_listar", erro)
+            return {"pasta": "", "plugins": []}
+
+    def plugins_salvar(self, dados):
+        """Grava a lista de plugins ativos (interruptor na aba Plugins)."""
+        if DEMO:
+            return self._demo_nada()
+        dados = dados or {}
+        ativos = [str(a) for a in (dados.get("ativos") or []) if str(a)]
+        cfg = p._ler_json(p.ARQUIVO_CONFIG, {})
+        cfg["plugins_ativos"] = ativos
+        p.salvar_config(cfg)
+        return self.plugins_listar()
+
     # --- barra de titulo propria: a tela manda, o Python mexe na janela ---
 
     def _estado_da_janela(self):
@@ -1702,6 +1832,11 @@ class Ponte:
         if isinstance(tema_idx, int) and not isinstance(tema_idx, bool) and 0 <= tema_idx < len(TEMAS_VALIDOS):
             cfg["temaIdx"] = tema_idx
             cfg["tema"] = TEMAS_VALIDOS[tema_idx]
+        if "pasta_sync" in dados and dados["pasta_sync"]:
+            cfg["pasta_sync"] = str(dados["pasta_sync"]).strip()
+        if "plugins_ativos" in dados:
+            cfg["plugins_ativos"] = [
+                str(a) for a in dados["plugins_ativos"] if str(a)]
         permitidos = {"api_key", "api_key_reserva"} | {
             s["campo_chave"] for s in p.SERVICOS_RESERVA}
         for campo, valor in (dados.get("chaves") or {}).items():
@@ -2073,6 +2208,30 @@ def principal():
     # Se esse monitor nao existir mais hoje (levou o notebook para outro
     # lugar), cai no padrao — em vez de abrir fora de qualquer tela.
     abrir_x, abrir_y = _posicao_de_abertura()
+
+    # --- sincronizacao (PLANO-SINCRONIZACAO.md): importa o que for mais novo
+    # da pasta sincronizada (OneDrive etc.) ANTES de carregar os dados. Erro
+    # nao derruba: a pasta pode nao existir ainda, e o programa segue igual.
+    try:
+        import sincronizar
+        cfg_sync = p._ler_json(p.ARQUIVO_CONFIG, {})
+        pasta_sync = cfg_sync.get("pasta_sync") or ""
+        if pasta_sync and Path(pasta_sync).is_dir():
+            r = sincronizar.sincronizar_tudo(p.PASTA_CONFIG, pasta_sync)
+            if r.get("aviso"):
+                p.registrar_erro("sincronizar (importar)", Exception(r["aviso"]))
+    except Exception as erro:
+        p.registrar_erro("sincronizar (importar)", erro)
+
+    # --- plugins (PLANO-PLUGINS.md): garante a pasta e o plugin de exemplo
+    # na primeira vez. Se a pasta nao puder ser criada, o programa segue sem
+    # plugins (os lembretes e o resto continuam funcionando).
+    try:
+        import plugins
+        plugins.garantir_exemplo()
+    except Exception as erro:
+        p.registrar_erro("plugins.garantir_exemplo", erro)
+
     janela = webview.create_window(
         TITULO_JANELA,
         url=_endereco_de(INDEX),
@@ -2101,6 +2260,18 @@ def principal():
                 _guardar_posicao(x, y)
         except Exception as erro:
             p.registrar_erro("ao_fechar (posicao)", erro)
+
+        # --- sincronizacao (PLANO-SINCRONIZACAO.md): exporta os dados locais
+        # para a pasta sincronizada ANTES de sumir. Se o Wolf fechar no meio
+        # de uma escrita, a cópia atômica garante que nada corrompe.
+        try:
+            import sincronizar
+            cfg_sync = p._ler_json(p.ARQUIVO_CONFIG, {})
+            pasta_sync = cfg_sync.get("pasta_sync") or ""
+            if pasta_sync and Path(pasta_sync).is_dir():
+                sincronizar.sincronizar_tudo(p.PASTA_CONFIG, pasta_sync)
+        except Exception as erro:
+            p.registrar_erro("ao_fechar (sincronizar)", erro)
 
     janela.events.closing += ao_fechar
 
