@@ -1790,7 +1790,8 @@ async function abaMemoria(corpo) {
       // Clicar no TEXTO edita na hora (a Tarefa D pede "editar: clique no
       // texto"). Nao abro uma janelinha: edita-se aqui mesmo, e so grava
       // quando o Wolf confirmar.
-      const texto = el("span", "editavel", f);
+      const texto = el("span", "editavel");
+      texto.innerHTML = destacarTexto(f, termoBusca);
       texto.title = "Clique para editar";
       texto.addEventListener("click", () => {
         if (linha.classList.contains("editando")) return;
