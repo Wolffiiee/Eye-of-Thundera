@@ -1,10 +1,12 @@
 # Onde paramos
 
-Atualizado em 18/10/2026, após pintar os termos da busca na Memória e commitar a remoção do avatar das respostas.
+Atualizado em 18/10/2026, após testar e aprovar o modo documento longo com um PDF real de 12 páginas.
 
 ## Resumo do estado atual
 
-A rodada mais recente **pintou os termos encontrados na busca da Memória**: quando o Wolf digita "conta dluz", os itens que aparecem têm "conta" e "luz" destacados em cor de acento — dá para ver por quê o item casou. Nova função `destacarTexto()` no `web/app.js` (mesma tolerância do `busca.js`: prefixo ou razão de Levenshtein, limiares 0.72/0.84), com `escaparHtml()` antes do `innerHTML` e a classe `.destaque-busca` no CSS (acompanha os dez temas). Também foi commitada a **remoção do avatar/lupa** das respostas da IA (pedido de 18/10 que estava só no working tree e um `git checkout` tinha restaurado). `verificar.py`: **174 verificações, 0 falhas, 0 avisos**.
+A rodada mais recente **testou e aprovou o modo documento longo**: um PDF de 12 capítulos (gerado para o teste, apagado depois) abriu como "documento", as 4 perguntas citaram a página exata, o "índice do documento" listou os 12 capítulos e o "resumir documento" cobriu os 10 trechos. **Todas as funcionalidades das sugestões originais estão implementadas, testadas e aprovadas** — só restam validações visuais menores (escala do Windows >100%, persistência de tema, disposição do menu).
+
+A rodada anterior **pintou os termos encontrados na busca da Memória**: quando o Wolf digita "conta dluz", os itens que aparecem têm "conta" e "luz" destacados em cor de acento — dá para ver por quê o item casou. Nova função `destacarTexto()` no `web/app.js` (mesma tolerância do `busca.js`: prefixo ou razão de Levenshtein, limiares 0.72/0.84), com `escaparHtml()` antes do `innerHTML` e a classe `.destaque-busca` no CSS (acompanha os dez temas). Também foi commitada a **remoção do avatar/lupa** das respostas da IA (pedido de 18/10 que estava só no working tree e um `git checkout` tinha restaurado). `verificar.py`: **174 verificações, 0 falhas, 0 avisos**.
 
 A rodada anterior tornou a **busca na Memória tolerante a erro de digitação e sem acentos**: "conta dluz" acha "conta de luz", "cafe" acha "café", "CONTA DE LUZ" funciona com maiúsculas, e "casa" acha "casas". O novo `web/busca.js` (Levenshtein + normalização NFD) roda na tela, sem Python e sem dependência, com tolerância de 72% (ou 84% para palavras de 1-2 letras). O `app.js` usa `busca_pontos` na função `desenhar()` com ordenação por relevância. `verificar.py`: 172 verificações, 0 falhas, 0 avisos.
 

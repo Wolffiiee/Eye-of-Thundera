@@ -5,6 +5,12 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-18 - Documento longo testado e aprovado com PDF de 12 paginas
+
+- Gerado um PDF de teste (`_tmp/gerar_pdf_longo.py`, apagado da Área de Trabalho depois do teste) com 12 capítulos de um guia de caminhada fictício — PDF de texto puro com acentos (mapa ToUnicode, extraível pelo pypdf sem OCR), um fato único por página para conferir a citação.
+- **Resultado do teste manual (aprovado pelo usuário):** as 4 perguntas ("resistência da corda", "graus de queda indicam tempestade", "canal de rádio", "ponto de encontro") citaram a página exata (5, 7, 11 e 12); o "índice do documento" listou os 12 capítulos com a página de cada; o "resumir documento" cobriu os 10 trechos com o aviso honesto de que não cobre o documento inteiro. O modo "documento" foi ativado corretamente (12 > 10 páginas).
+- Pendência de teste manual do Prioridade 7 concluída; sobram só validações visuais (escala do Windows >100%, persistência de tema, disposição do menu).
+
 ## 2026-10-18 — Termos da busca pintados na Memória
 
 - **O que o usuário ganha:** ao buscar na aba Memória, os termos que casaram com a busca aparecem **pintados** no item ("conta dluz" pinta "conta" e "luz" em "Pagar a conta de luz"), usando a mesma tolerância a erro de digitação e acentos do `busca.js` — dá para ver **por quê** o item apareceu nos resultados.

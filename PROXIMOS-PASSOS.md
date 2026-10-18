@@ -81,7 +81,7 @@ Atualizado em 18/10/2026. Este documento contém pendências reais; o histórico
 - [x] Testado e aprovado pelo usuário (17/10): o cartão aparece no alto à direita, "Feito" e "Adiar 10 min" funcionam, e os botões de microfone e enviar continuam visíveis.
 
 ## Prioridade 7 (das sugestoes) - documento longo (feito, falta teste real)
-- [ ] Arrastar um PDF de verdade com mais de 10 paginas, ver o cartao "documento aberto", perguntar algo e conferir se a resposta cita a pagina certa; testar "indice do documento", "resumir documento" e o botao Fechar.
+- [x] Arrastar um PDF de verdade com mais de 10 paginas, ver o cartao "documento aberto", perguntar algo e conferir se a resposta cita a pagina certa; testar "indice do documento", "resumir documento" e o botao Fechar. **Testado e aprovado pelo usuário em 18/10** com um PDF de 12 páginas gerado para o teste (`_tmp/gerar_pdf_longo.py`, apagado depois): as 4 perguntas citaram a página exata (5, 7, 11 e 12), o índice listou os 12 capítulos com as páginas e o resumo cobriu os 10 trechos com o aviso honesto de que não cobre o documento inteiro.
 - Modo offline com Ollama (Prioridade 4 das sugestoes): cancelado pelo Wolf.
 
 ## Prioridade 2 (das sugestões) — busca na Memória tolerante a erro de digitação (feito)
