@@ -5,6 +5,23 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-18 - O aviso de cota agora diz QUANTO falta
+
+- **O que mudou:** o aviso dizia "espere alguns minutos" — vago demais. O Google manda no próprio erro o tempo que falta (`duration 1m0s`, `duration 1d`), e o limite do plano (`limit 15`). O programa agora traduz isso.
+- **Exemplos reais:**
+  - cota por minuto (o caso comum): *"O limite recarrega cerca de 1 minuto. O plano de graça faz 15 por vez."*
+  - cota por segundo: *"recarrega uns 30 segundos"*
+  - cota por hora: *"recarrega cerca de 2 horas"*
+  - **cota do dia:** *"recarrega amanhã"* — o caso grave, em que não adianta ficar esperando
+- **Nunca inventa prazo:** quando o erro vem sem `duration` (mensagem curta), o texto fica no "em pouco tempo". Preferível a inventar um número.
+- Detalhe bobo que importa: limite de `1` não aparece no texto — "o plano faz 1 por vez" só enfeita.
+- O aviso **continua sendo um só por hora**, mesmo com o tempo no texto.
+- 8 verificações novas (**241 no total, 0 falhas, 0 avisos**).
+- `ONDE-PARAMOS.md` reescrito: estava defasado (falava em 177 verificações) e agora descreve a rodada inteira, os bugs corrigidos e o que ainda está pendente.
+- **Instalador não foi regerado** — esta é uma melhoria pequena; quando for a hora de mandar para o amigo, é só rodar `gerar_instalador.py`.
+
+---
+
 ## 2026-10-18 - Ctrl+K, Ctrl+Z (desfazer) e Exportar conversa
 
 As três sugestões que faltavam, feito de uma vez.

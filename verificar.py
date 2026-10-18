@@ -3132,6 +3132,89 @@ except Exception as _erro_cota:
     falha("cota: os testes quebraram: %r" % (_erro_cota,))
 
 
+# --- cota: o aviso diz QUANTO tempo falta ------------------------------------
+# O Google manda o tempo no proprio erro ("duration 1m0s"). Um aviso vago
+# ("espere alguns minutos") faz o Wolf perder tempo esperando, ou desistir.
+try:
+    import cota as _cota_dur
+
+    if (_cota_dur._duracao_do_erro("duration 1m0s") == "cerca de 1 minuto"
+            and _cota_dur._duracao_do_erro("duration 30s") == "uns 30 segundos"
+            and _cota_dur._duracao_do_erro("duration 2h") == "cerca de 2 horas"
+            and _cota_dur._duracao_do_erro("duration 1d") == "amanhã"
+            and _cota_dur._duracao_do_erro("duration 3d") == "daqui a 3 dias"
+            and _cota_dur._duracao_do_erro("duration 2h45m") == "cerca de 2 horas"):
+        ok("cota: traduz o tempo do Google (segundos, minutos, horas, dias)")
+    else:
+        falha("cota: nao traduziu a duracao que o Google mandou")
+
+    if (_cota_dur._duracao_do_erro("sem tempo aqui") is None
+            and _cota_dur._duracao_do_erro("duration 0s") is None):
+        ok("cota: erro sem tempo (ou com 0) nao inventa um prazo")
+    else:
+        falha("cota: inventou prazo onde o Google nao informou")
+
+    _cota_dur.esquecer()
+    _d = _cota_dur.avisar("RESOURCE_EXHAUSTED: limit 15, duration 1m0s",
+                          tem_reserva=True)
+    if _d and "cerca de 1 minuto" in _d and "15 por vez" in _d:
+        ok("cota: o aviso diz quanto recarrega e qual e' o limite do plano")
+    else:
+        falha("cota: o aviso nao traz o tempo nem o limite: %r" % (_d,))
+
+    # cota do dia e' o caso grave: o aviso tem que dizer "amanha"
+    _cota_dur.esquecer()
+    _dia = _cota_dur.avisar("RESOURCE_EXHAUSTED: limit 1500, duration 1d",
+                            tem_reserva=False)
+    if _dia and "amanhã" in _dia:
+        ok("cota: cota do dia avisa que so' volta amanha")
+    else:
+        falha("cota: cota do dia nao avisou que volta amanha: %r" % (_dia,))
+
+    # sem informacao de tempo, o texto continua honesto (nao inventa)
+    _cota_dur.esquecer()
+    _sem = _cota_dur.avisar("You exceeded your current quota", tem_reserva=True)
+    if _sem and "em pouco tempo" in _sem:
+        ok("cota: sem tempo informado, o aviso nao inventa um prazo")
+    else:
+        falha("cota: aviso inventou prazo sem informacao do Google")
+
+    # limite 1 nao precisa aparecer ("faz 1 por vez" so' enfeita)
+    _cota_dur.esquecer()
+    _um = _cota_dur.avisar("RESOURCE_EXHAUSTED: limit 1, duration 1m0s",
+                           tem_reserva=True)
+    if _um and "1 por vez" not in _um:
+        ok("cota: limite de 1 nao aparece no texto (so' enfeita)")
+    else:
+        falha("cota: limite 1 poluiu o aviso: %r" % (_um,))
+
+    # os dois textos (com e sem reserva) continuam diferentes
+    _cota_dur.esquecer()
+    _com = _cota_dur.avisar("RESOURCE_EXHAUSTED: limit 15, duration 1m0s",
+                            tem_reserva=True)
+    _cota_dur.esquecer()
+    _sem_res = _cota_dur.avisar("RESOURCE_EXHAUSTED: limit 15, duration 1m0s",
+                               tem_reserva=False)
+    if _com != _sem_res:
+        ok("cota: com e sem reserva, o aviso continua diferente")
+    else:
+        falha("cota: o aviso ficou igual com e sem reserva")
+
+    # nao pode encher o saco: so' UM aviso, mesmo com o tempo no texto
+    _cota_dur.esquecer()
+    _primeiro = _cota_dur.avisar("RESOURCE_EXHAUSTED: limit 15, duration 1m0s",
+                                 tem_reserva=True)
+    _segundo = _cota_dur.avisar("RESOURCE_EXHAUSTED: limit 15, duration 1m0s",
+                               tem_reserva=True)
+    if _primeiro and _segundo is None:
+        ok("cota: continua avisando uma vez so', mesmo com o tempo no texto")
+    else:
+        falha("cota: avisou mais de uma vez")
+
+except Exception as _erro_cota_dur:
+    falha("cota (duracao): os testes quebraram: %r" % (_erro_cota_dur,))
+
+
 # --- desfazer, exportar e atalhos novos --------------------------------------
 # Três coisas da mesma rodada: Ctrl+K (Configurações), Ctrl+Z (desfazer a
 # última troca) e "Exportar conversa". Nenhuma toca os dados reais: os testes

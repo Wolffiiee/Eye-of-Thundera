@@ -1,115 +1,85 @@
 # Onde paramos
 
-Atualizado em 18/10/2026, após todas as validações manuais aprovadas pelo usuário e o fix do Gerenciador de Tarefas (modo onedir).
+Atualizado em 18/10/2026, depois da rodada que implementou log de erros
+dentro do programa, contador de uso, aviso de cota (com um bug corrigido),
+Ctrl+K, Ctrl+Z e "Exportar conversa". Suíte: **233 verificações, 0 falhas,
+0 avisos**.
 
 ## Resumo do estado atual
 
-A rodada mais recente corrigiu o **Gerenciador de Tarefas**: o EXE do PyInstaller estava em modo "onefile" (extrai e executa um segundo processo), por isso apareciam **dois** "Eye of Thundera.exe". Mudou para modo "onedir" (pasta com o executável e as dependências) — agora existe apenas **um processo**, com ícone correto. Suíte: 177 verificações, 0 falhas, 0 avisos. Confirmado pelo usuário: um único processo no Gerenciador de Tarefas.
+A rodada de hoje menambah **seis coisas**, todas verificadas na tela de verdade:
 
-A rodada anterior (plugins + sincronização) implementou as duas últimas sugestões grandes: **plugins** (comandos locais em Python que respondem sem IA, como os lembretes — pasta própria, aba Plugins com ligar/desligar, plugin de exemplo `/tempo`) e **sincronização** (dados iguais em dois computadores por pasta sincronizada do Windows — importa ao abrir, exporta ao fechar, última escrita vence, cópia atômica, erro não derruba). Módulos novos `plugins.py` e `sincronizar.py`, duas abas novas em Configurações, integração na ponte e 2 testes novos no `verificar.py`: **176 verificações, 0 falhas, 0 avisos**. Com isso, **todas as sugestões originais estão implementadas**.
+1. **Log de erros dentro do programa** (aba Ajuda): um cartão "Se algo der
+   errado" mostra os últimos 8 erros com data, origem e texto. Botões
+   Atualizar e Apagar histórico (este pede confirmação). O `erro.log` sempre
+   existiu, mas morava dentro do computador — o Wolf não tinha como ver nada
+   sem pedir ajuda.
+2. **Contador de uso** no rodapé: `hoje: 23 perguntas`, numa etiqueta discreta
+   ao lado da dica de atalhos. Conta **só o que vai para a IA** (lembrete,
+   plugin, busca de imagens e índice de documento são locais e gratuitos).
+   Clicar na etiqueta zera o dia. Arquivo novo `contagem.json`, separado do
+   `config.json` de propósito — o config guarda as chaves de API e não pode
+   ser reescrito a cada pergunta.
+3. **Aviso de cota**: faixa amarela na conversa que não some sozinha (fecha no
+   clique, Enter ou Espaço). Avisa **uma vez por hora** — avisar a cada
+   pergunta faria o Wolf largar o programa — e perdoa quando a cota volta.
+4. **Ctrl+K** abre as Configurações; **Ctrl+Shift+K** vai direto nas Chaves.
+5. **Ctrl+Z** desfaz a última troca (pergunta **e** resposta, sempre juntas)
+   para mandar de novo. Não rouba o atalho de quem está digitando. Se a
+   conversa ficar vazia, ela some do histórico.
+6. **Exportar conversa**: botão na barra lateral que salva a conversa inteira
+   em `.md` (que o ChatGPT entende melhor) ou `.txt`, com os sites
+   consultados junto.
 
-A rodada anterior testou e aprovou o modo documento longo: um PDF de 12 capítulos (gerado para o teste, apagado depois) abriu como "documento", as 4 perguntas citaram a página exata, o "índice do documento" listou os 12 capítulos e o "resumir documento" cobriu os 10 trechos.
+## 🐛 Bugs reais encontrados e corrigidos nesta rodada
 
-A rodada anterior **pintou os termos encontrados na busca da Memória**: quando o Wolf digita "conta dluz", os itens que aparecem têm "conta" e "luz" destacados em cor de acento — dá para ver por quê o item casou. Nova função `destacarTexto()` no `web/app.js` (mesma tolerância do `busca.js`: prefixo ou razão de Levenshtein, limiares 0.72/0.84), com `escaparHtml()` antes do `innerHTML` e a classe `.destaque-busca` no CSS (acompanha os dez temas). Também foi commitada a **remoção do avatar/lupa** das respostas da IA (pedido de 18/10 que estava só no working tree e um `git checkout` tinha restaurado). `verificar.py`: **174 verificações, 0 falhas, 0 avisos**.
+- **A cota acabava e o programa falhava mesmo com chave de reserva
+  configurada.** O `tentar_com_reserva` só trocava quando a *chave* era
+  recusada. Corrigido: agora troca por dois motivos. Pior: corrigindo o
+  primeiro bug, apareceu que a 2ª tentativa olhava `estado["falhou"]`, que é
+  `False` no caso da cota (a chave está ótima, só o limite acabou) — então
+  chamava o Gemini de novo em vez da reserva. Feito de qualquer jeito, nunca
+  funcionava.
+- **`contagem.py` e `cota.py` não estavam no `.spec`** — o instalador ficaria
+  sem contador e sem aviso de cota, sem qualquer aviso. Corrigido nos dois
+  arquivos de build.
+- **O `fazer_backup.py` salvava na pasta antiga** `OneDrive\Backup Pesquisa
+  IA\` com nome `pesquisa-ia_*.zip`. Corrigido e os backups foram movidos.
+- **Desfazer com erro no fim da conversa apagava tudo.** Agora a regra é
+  previsível: desfaz a última troca, seja a que deu certo ou a que falhou.
+- **Leitor do contador aceitava chave torta** (`"xyz": 5`) como se fosse um
+  dia. Corrigido.
 
-A rodada anterior tornou a **busca na Memória tolerante a erro de digitação e sem acentos**: "conta dluz" acha "conta de luz", "cafe" acha "café", "CONTA DE LUZ" funciona com maiúsculas, e "casa" acha "casas". O novo `web/busca.js` (Levenshtein + normalização NFD) roda na tela, sem Python e sem dependência, com tolerância de 72% (ou 84% para palavras de 1-2 letras). O `app.js` usa `busca_pontos` na função `desenhar()` com ordenação por relevância. `verificar.py`: 172 verificações, 0 falhas, 0 avisos.
+## Estado do instalador
 
-A rodada anterior acrescentou **perguntar sobre documento longo**: PDF com mais de 10 páginas abre como "documento" (cartão acima da caixa, botão Fechar) e cada pergunta manda para a IA só os trechos que combinam, com a página (`documento.py`, plano em `PLANO-DOCUMENTOS-LONGOS.md`). Foi corrigido um defeito da busca (`clausula7` virava `clausu` e a página certa ficava de fora). O modo offline com Ollama foi cancelado pelo Wolf. `verificar.py`: 170 verificações, 0 falhas, 0 avisos. Falta testar com um PDF longo de verdade.
+`gerar_instalador.py` monta tudo num comando (roda os testes → compila →
+copia o código → gera o zip). O zip sai com **uma pasta só** na raiz
+(`Eye of Thundera`), com o `.exe`, o `_internal`, o `codigo` e o `LEIA-ME`
+dentro. Testado descompactando numa pasta limpa: abriu com **um processo
+só**, criou a pasta de dados certa e **não levou nenhum dado do Wolf junto**.
+Fica em `_tmp\Eye of Thundera.zip` (65,1 MB).
 
+## Renomeação do projeto
 
-A rodada mais recente **fez o PDF digitalizado ser lido** — a **Prioridade 1** do documento de sugestões recebido (`SUGESTOES-MELHORIAS-Eye-of-Thundera.md`). Antes, arrastar um PDF que é uma foto da página (sem camada de texto) só recebia o aviso "não encontrei texto". Agora o programa **renderiza as páginas na memória e as lê com o OCR do próprio Windows** (em português, offline), e o texto entra na caixa para o usuário revisar antes de enviar — o mesmo fluxo do PDF com texto. A viabilidade foi medida antes de implementar: o `pytesseract` precisaria do Tesseract instalado no sistema, então o caminho foi o OCR do Windows (já vem com o sistema) com `pypdfium2` (renderização, só `pip`) e `winsdk` (OCR). O OCR lê até **20 páginas** e avisa no texto quando o PDF passa disso; sem as duas bibliotecas, o aviso antigo continua valendo. Um achado do caminho: o OCR é assíncrono e, **na thread principal depois do pywebview, o `await` nunca volta** — por isso ele roda em **thread própria**, com limite de 60 s.
+O nome antigo "PesquisaIA" foi padronizado para **"Eye of Thundera"**: módulo
+(`eye_of_thundera.py`), pasta de trabalho (`D:\Projetos\Eye of Thundera`),
+pasta de dados (`%LOCALAPPDATA%\Eye of Thundera`) e backup
+(`OneDrive\Backup Eye of Thundera`). A migração dos dados é automática e a
+pasta antiga **não foi apagada** (cópia de segurança).
 
-A rodada anterior **corrigiu o contraste dos dez temas** — a **Prioridade 3.6** do `PROXIMOS-PASSOS.md`, que estava parada esperando decisão porque mexe na aparência. O problema mais visível era o **texto do botão**: o Enviar e os botões de destaque (Feito, Salvar) escreviam em branco sobre um acento claro em **9 dos 10 temas** — no Grafite Dourado ficava **1,53:1**, quase ilegível. Agora o pior caso é **4,63:1**. Duas chaves novas por paleta resolveram isso **sem trocar nenhuma cor escolhida**: `--btn-texto` (a cor do texto do botão — branco no Clássico Dark e no Thundera, escuro nos 8 temas de acento claro) e `--btn-hover` (o fundo do botão no hover). O **texto apagado** (`--texto-3`: horário da conversa, notas, de 11,5 a 13 px) foi clareado só o necessário em 7 temas, e o `--azul` como borda saiu de 2,83:1 (Thundera) e 2,91:1 (Forest) para 3,06:1 e 3,07:1. O **interruptor** também apareceu na conta: a bolinha era branca fixa e desaparecia sobre o acento claro (2,2 a 3,0:1); agora usa `--btn-texto` e o trilho desligado usa `--texto-3`, ficando visível nos dois estados nos dez temas. Os valores **não foram chutados**: um script (`_tmp/planejar_cores.py`) mediu luminância e contraste (WCAG) tema por tema e buscou o menor ajuste que resolve cada par. O aviso do `verificar.py` virou falha (cada par abaixo do mínimo aparece com o valor medido) e a suíte foi para **162 verificações, 0 falhas, 0 avisos**.
+## Pendências reais
 
-A rodada anterior **ligou os lembretes**. O módulo `lembretes.py` já existia, com plano próprio (`PLANO-LEMBRETES.md`), mas **nenhum arquivo o chamava** — era código órfão: para o usuário, o recurso não existia. Agora a frase escrita na conversa ("me lembra amanhã às 9h de pagar a conta") é interpretada **antes** da checagem de chave, tudo local, sem chamar a IA e **funcionando sem chave** (nenhum token gasto); a resposta entra na conversa como uma mensagem normal. Quando a hora chega, a tela mostra um cartão no canto superior direito com "Feito" e "Adiar 10 min" — ao abrir o programa, se algum lembrete venceu enquanto ele estava fechado. Também entende "daqui a 30 minutos", "segunda às 14h30", "dia 25", "20/10 às 7h" e "depois de amanhã às 10 da noite"; lista com "meus lembretes" e cancela com "cancelar lembrete 2". Um detalhe só apareceu nas capturas de tela: os cartões, na primeira versão, ficavam embaixo e **cobriam os botões de microfone e enviar**; passaram para o alto à direita, abaixo da barra de título.
+- O **usuário ainda não testou** o instalador num outro computador (foi
+  adiado de propósito — ele vai pedir quando chegar o momento).
+- A pasta antiga `D:\Projetos\PesquisaIA` está vazia mas o Windows ainda
+  segura o apagamento (só solta depois de reiniciar). É inofensiva.
+- `_tmp\` tem uns 250 arquivos de rascunho (scripts de teste, prints, logs).
+  É gitignored, então não causa problema; pode ser apagado quando quiser.
 
-Antes dela, a rodada do **redimensionamento da janela** terminou com duas correções. A correção recebida (`PATCH_redimensionamento.md`) mostrou que `_tirar_barra_nativa` removia o `WS_CAPTION` **e** o `WS_THICKFRAME`, o que apagava a borda que se arrasta para mudar o tamanho da janela — e o encaixe com Win+setas. Vale notar que o comentário do próprio bloco já dizia que era para manter o `WS_THICKFRAME`; só o código não cumpria. A lógica saiu para `_estilo_sem_barra(estilo)`, que tira só o `WS_CAPTION`, com teste comportamental no `verificar.py`. Isso trouxe de volta a borda e, com ela, uma **faixa preta no topo**: a medição dos pixels mostrou 6 a 7 linhas de preto puro, que eram a **moldura não-cliente** da janela (não o vidro do DWM, como se supunha). A resposta foi `WM_NCCALCSIZE = 0`, e o conteúdo passou a cobrir a janela inteira (confirmado pixel a pixel). Por fim veio a descoberta desconfortável: **o mouse não redimensionava pelas bordas**, porque o WebView2 é uma janela-filha que cobre a área do cliente e fica com o mouse — a mensagem `WM_NCHITTEST` **nunca chegava** na janela principal (o teste que parecia provar o contrário passava por mandar a mensagem direto, sem mouse de verdade). A solução que funciona está em `PLANO-BORDAS-REDIMENSIONAR.md`: **8 faixas invisíveis em HTML** nas bordas e cantos que, ao serem arrastadas, chamam o Python, que redimensiona a janela por conta própria (`SetWindowPos`, mínimo 640×480).
+## Ideias para o futuro (não são urgência)
 
-Também nesta rodada: o teste de contraste dos temas — **Prioridade 3** do documento de sugestões recebido (`SUGESTOES-MELHORIAS-Eye-of-Thundera.md`) — passou a varrer **os 10 temas e os 4 fundos de cada um**, antes só comparava `--texto` e `--texto-2` contra o `--bg`. A varredura completa encontrou **32 pares abaixo da norma** e passou a emitir um aviso a cada execução; foi essa medição que permitiu a correção da rodada seguinte, feita com o menor ajuste possível em cada tema.
-
-A rodada anterior deixou a interface usável **sem mouse**: a área do título de cada conversa abre a conversa com Enter ou Espaço; o menu “…“ de cada conversa recebe o foco ao abrir, anda com as setas (e Home/End), fecha com Tab ou Esc e devolve o foco ao botão; o menu “Mais” fecha com Esc (o navegador não faz isso sozinho para `details/summary`); e o botão “…“ passou a aparecer também quando recebe foco pelo teclado (antes só aparecia no hover). Também foram padronizados os textos que o usuário vê: a frase de “ocupado” virou uma só (“Aguarde a resposta terminar.”), a frase de “sem chave” também, e foram corrigidos acentos que faltavam em mensagens de sugestões, PDF, área de transferência, modo exemplo e voz.
-
-A rodada anterior acrescentou a **leitura de PDF** arrastado para a conversa. O arquivo vira texto **no próprio computador** (biblioteca `pypdf`, no módulo `pdf_leitor.py`) e o texto entra na caixa de digitar para o usuário conferir e enviar quando quiser — nada é enviado à IA antes do Enter. O arquivo viaja da tela para o Python em pedaços base64, e os casos ruins (PDF com senha, corrompido, grande demais ou digitalizado sem texto) recebem aviso claro, sem travar a janela. O `pypdf` entrou no `requirements.txt`, nos dois `.spec` do PyInstaller e na verificação automática. A rodada seguinte completou isso com o **OCR local** para PDF digitalizado.
-
-Também nesta rodada: o **foco do diálogo** de Configurações agora fica preso dentro da janela enquanto ela está aberta (Tab não escapa para a tela de trás), entra no diálogo ao abrir e volta ao botão que o abriu ao fechar; **avisos de erro** ficam 8 segundos na tela (o normal fica 4,2 s) e podem ser fechados com um clique; e testes novos confirmam que a resposta da IA, a galeria e a voz sempre liberam a tela. Na acessibilidade, os botões e links de “sites consultados” e o campo de pergunta ganharam rótulos e navegação por teclado.
-
-A rodada anterior (paletas e seleção de texto) está descrita abaixo. O logger de erros continua mascarando padrões conhecidos de credenciais; a cobertura não garante remover todo segredo de mensagens inesperadas.
-
-A aba Personalização oferece dez temas: Clássico Dark, Purpurina, Amethyst, Ocean, Forest, Aurora, Pôr do Sol, Rosa Chá, Grafite Dourado e Thundera. As paletas ficam centralizadas em `TEMAS_UI`, com **12 chaves cada** (`--btn-texto` e `--btn-hover` entraram na rodada de cores); o backend valida os nomes e índices pela lista equivalente `TEMAS_VALIDOS`. Testes isolados confirmam gravação e leitura dos temas, rejeição de índices inválidos e contraste de texto de pelo menos 4,5:1 sobre os quatro fundos de cada tema, além do texto do botão (normal e hover) e da bolinha do interruptor.
-
-O menu de seleção mostra os atalhos Ctrl+X/C/V/A, aceita setas, Home/End e Escape e devolve o foco à caixa de texto ao fechar. Copiar usa a API do navegador e tenta um fallback compatível com WebView; Recortar só apaga o trecho depois de confirmar a cópia. Uma simulação em modo de demonstração forçou falha e sucesso do fallback sem escrever na área de transferência real: o texto permaneceu após a falha. O clique direito agora calcula a posição do cursor pelo texto e pela geometria da caixa, sem tratar pixels como índices de caracteres. A cópia de uma seleção na resposta também informa sucesso ou falha e preserva espaços selecionados.
-
-As capturas em modo de demonstração foram conferidas em 1180 px e 900 px; os dez cartões de tema são acessíveis por rolagem vertical e não criam rolagem horizontal. A verificação automática está em **166 verificações, 0 falhas e nenhum aviso**. A configuração pessoal não foi alterada; ainda falta confirmar visualmente a persistência pelo atalho real e conferir a escala do Windows acima de 100%.
-
-O Eye of Thundera usa a interface HTML/JavaScript em web/ e a janela Python em app_web.py. O atalho real da Área de Trabalho é Eye of Thundera.lnk e aponta para .venv/Scripts/pythonw.exe com o argumento app_web.py, usando D:/Projetos/Eye of Thundera como pasta de trabalho.
-
-### Problema encontrado e corrigido nesta rodada
-
-O menu anterior iniciava a cópia de forma assíncrona e apagava o texto imediatamente, mesmo quando a área de transferência recusava a cópia. O novo fluxo só recorta após sucesso, comunica falhas, preserva o intervalo escolhido enquanto o menu está em foco e oferece fallback para WebView. O menu também recebeu atalhos visíveis e navegação por teclado. A antiga reserva de posição para correções usava `offsetX` (pixels) como se fosse um índice de caractere; foi substituída por medição do texto em uma caixa espelhada.
-
-Um commit recente inseriu uma chave de fechamento extra em web/app.js, imediatamente depois da função abaChaves. O Node.js reportava SyntaxError: Unexpected token '}' na linha 1278. Como o navegador não consegue interpretar o arquivo JavaScript, nenhuma função de inicialização ou registro de cliques era executada: a janela abria, mas os botões não respondiam.
-
-A chave extra foi removida. Também foram corrigidos um texto quebrado na descrição do Gemini e uma duplicação na atualização das datas da memória.
-
-A revisão seguinte encontrou que a aba Personalização existia no JavaScript, mas faltava no HTML; o backend também ignorava tema/temaIdx ao salvar, as cores usavam variáveis CSS que a interface não consumia e a seleção não era aplicada na abertura. Após o teste manual, surgiu mais um defeito: `Ponte.iniciar()` não incluía tema/temaIdx no estado inicial e a interface voltava ao Clássico Dark mesmo com Ocean salvo. Corrigido para retornar `self._cfg_curta()` e incluído teste automatizado que verifica os cinco temas também no payload de inicialização. Corrigido: a aba agora aparece em Configurações, os cinco temas (Clássico Dark, Purpurina, Amethyst, Ocean, Forest) usam as variáveis CSS reais, são salvos pelo backend e reaplicados ao iniciar. A troca é imediata e a aba não mostra um botão Salvar desnecessário. Também foi corrigido o salvamento de respostas: a função deixou de criar uma raiz Tkinter dentro da thread da ponte e passou a usar o diálogo nativo da janela pywebview; o teste automatizado usa uma janela falsa e um arquivo temporário.
-
-A verificação automática agora executa node --check web/app.js quando Node.js está disponível. O contador final também foi corrigido: antes imprimia TESTES: 0 mesmo depois de registrar dezenas de verificações; agora imprime VERIFICACOES e conta as mensagens OK, FALHA e AVISO.
-
-### Revisão de ações e botões — correção encontrada
-
-A revisão estática confirmou que todos os nomes usados nas chamadas da interface existem na ponte Python e que não há IDs duplicados no HTML. Também corrigiu uma colisão de CSS: as sugestões dinâmicas de continuação estavam alterando o estilo dos cartões da página inicial; agora cada bloco tem regras próprias e a grade da página inicial vira uma coluna em janelas estreitas. A revisão encontrou ainda uma falha funcional que os testes antigos não detectavam: `enviar(texto)` ignorava o segundo argumento, então o botão dedicado “Pesquisa séria” e Ctrl+Shift+S não forçavam pesquisa profunda; só funcionavam se o alternador separado já estivesse ligado. A função agora aceita `profundo = estado.profundo` e passa esse valor à ponte. Foi adicionado um teste de regressão para o botão, o atalho e o envio normal.
-
-### Verificação executada
-
-- `verificar.py`: **176 verificações, 0 falhas, 0 avisos**; RESULTADO: TUDO CERTO. Inclui a sintaxe JavaScript (Node.js), a leitura de PDF com arquivos sintéticos, a ponte recebendo o PDF em pedaços, o **OCR local de PDF digitalizado** (1 e 2 páginas, limite de 20 páginas e aviso quando as bibliotecas faltam), o foco preso no diálogo, a liberação de `ocupado` no `finally`, a duração dos avisos de erro, a navegação por teclado (conversas com Enter/Espaço e menus com setas, Esc e retorno de foco), o padrão de texto/acentuação, o teste comportamental da barra de título (`_estilo_sem_barra`), a varredura de contraste dos 10 temas (texto normal, apagado, link, botão em repouso e no hover, borda/acento e bolinha do interruptor), os **cinco testes dos lembretes** (interpretador com datas fixas, armazenamento isolado em `_tmp`, a ponte, o envio **sem chave** pelo caminho de verdade e a ligação na tela/pacote), os **dois testes da busca na Memória** (existência e regra de prefixo do `web/busca.js`, ligação no HTML e no `app.js`, e os 18 casos de teste de Node.js), os **dois testes do destaque** (`destacarTexto`/`escaparHtml` no `app.js`, `.destaque-busca` no CSS e a lógica via Node.js: destaque, escape de `<`/`&`, acento preservado), e os **dois testes das sincronização e plugins** (importa/exporta/iguala/avisos/erro sem exceção; descobrir/responder/erro isolado/exemplo). O contraste deixou de ser aviso e virou **falha**: cada par abaixo do mínimo aparece na saída com o valor medido.
-- Os testes de PDF usam apenas arquivos sintéticos em `_tmp`; nenhum documento pessoal é lido e nenhum dado real é alterado.
-- A leitura de PDF depende do `pypdf`, declarado no `requirements.txt`. Se ele faltar, o programa avisa e continua funcionando; a verificação automática aponta a biblioteca faltando.
-- Rodada anterior: capturas em modo demonstração conferidas em 1180 px e 900 px; falha/sucesso da cópia simulados com valores sintéticos e sem alterar a área de transferência real.
-- O `.exe` distribuível foi **recompilado nesta rodada** (`dist/Eye of Thundera.exe`, 64,5 MB), porque a interface e as dependências mudaram — as cores dos temas vão empacotadas em `web/`, e o OCR trouxe `pypdfium2` (com a DLL do PDFium) e `winsdk` (196 módulos) para dentro do pacote. O atalho de uso diário continua executando `app_web.py` pelo `.venv`. O pacote foi aberto com dados isolados em `_tmp` e o tema Grafite Dourado: a janela abriu com o **botão Enviar dourado e a seta escura** (a cor nova chegou ao pacote) e **nenhum `erro.log`** foi criado. Detalhe do teste: o `.exe` é *onefile*, então quem abre a janela é um processo **filho** do bootloader — ao automatizar, mate a **árvore** (`taskkill /PID <pid> /T /F`) **com o bootloader ainda vivo**; encerrar o bootloader antes deixa o filho órfão e a janela fica aberta na tela (aconteceu nos testes desta rodada; as janelas foram fechadas).
-
-- JavaScript: sintaxe aprovada com Node.js.
-- Python: app_web.py, eye_of_thundera.py e verificar.py passaram na compilação de sintaxe.
-- verificar.py: VERIFICACOES: 135 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO. Inclui regressão da pesquisa profunda, menu de modos, proteção contra duplo salvamento, persistência isolada das opções, preservação de chaves e campos permitidos, cinco temas, sanitização de credenciais com valores sintéticos, salvar resposta via diálogo pywebview e regras responsivas/acessíveis, sem tocar no config.json real.
-- Teste de abertura: o comando usado pelo atalho foi iniciado novamente, a janela com título Eye of Thundera ficou visível no Windows e não foi criado erro.log.
-- O usuário confirmou que a validação manual da janela real está em ordem: Nova conversa, Configurações, abas, alternância Web e tema Ocean.
-- Pesquisa séria, Privada e Resumo do dia ficam em “Mais”; nesta rodada, o envio único com pesquisa profunda também foi movido para o menu, reduzindo um botão permanente. `Ctrl+Shift+S` continua enviando com pesquisa profunda e aparece na Ajuda.
-- O rascunho de novas chaves sobrevive à troca de abas e é limpo após salvar com sucesso. Trocar o tema salva apenas o tema, sem confirmar opções de conversa não salvas.
-- O estado atual do Git contém mudanças apenas nos arquivos do Eye of Thundera descritos nesta rodada, além das alterações preexistentes do plugin OpenCode e de `show.png`, que devem permanecer fora do commit.
-- O usuário confirmou que o menu “Mais” e o cartão Gemini ficaram bonitos e funcionais.
-- O salvamento das configurações mostra “Salvando...”, bloqueia cliques duplicados e desativa temporariamente os controles da aba para não perder alterações concorrentes. Um `finally` reabilita os controles após falha; mensagens de erro ficam visíveis no rodapé. A gravação de `config.json` usa arquivo temporário + `os.replace`, e o teste isolado confirma que uma falha simulada preserva a versão anterior.
-- Teste isolado cobre persistência das opções, preservação da chave principal quando o campo fica vazio, atualização da chave reserva e rejeição de campos não permitidos.
-- Configurações: foco de teclado destacado, abas podem rolar horizontalmente e o corpo permanece rolável em janelas estreitas/baixas; a interface respeita `prefers-reduced-motion`. O diálogo tem nome acessível e declara modalidade.
-- `show.png` aparece como excluído no diretório de trabalho. Não foi alterado nem incluído no commit desta rodada.
-
-## Arquivos centrais
-
-- README.md: entrada principal e mapa do projeto.
-- INSTRUCOES-PARA-IA.md: regras obrigatórias para quem altera o código.
-- PASSO-A-PASSO.md: método de diagnóstico, correção e teste.
-- HISTORICO-DE-MUDANCAS.md: registro cronológico das mudanças.
-- PROXIMOS-PASSOS.md: tarefas pendentes confirmadas.
-- web/LEIA-ME.md: detalhes da interface e da ponte pywebview.
-- pdf_leitor.py: leitura local de PDF (usa `pypdf` quando instalado).
-- lembretes.py: lembretes locais — entende a frase ("me lembra amanhã às 9h de ..."), guarda e diz o que já venceu. Nada sai para a internet.
-
-## Dados e segurança
-
-Os dados do usuário ficam em %LOCALAPPDATA%/Eye of Thundera, fora do repositório. Não ler, alterar ou apagar os dados reais durante testes. Use pastas temporárias em _tmp. Não exiba chaves de API nem as grave em código, logs ou commits.
-
-## Próximos passos imediatos
-
-1. Fechar e reabrir o Eye of Thundera pelo atalho da Área de Trabalho para carregar a versão atualizada da interface.
-2. **Testar os lembretes** (recurso desta rodada, não precisa de chave): escrever na conversa "me lembra amanhã às 9h de pagar a conta" e conferir a resposta; depois "me lembra daqui a 1 minuto de testar" e esperar o cartão aparecer no canto superior direito. Apertar "Feito" e conferir que ele não volta; repetir e apertar "Adiar 10 min". "meus lembretes" mostra a lista e "cancelar lembrete 1" tira o primeiro. Se o cartão aparecer no alto, conferir também que os botões de microfone e enviar continuam visíveis.
-3. Testar a leitura de PDF: arrastar um PDF com texto para a janela e conferir se o texto aparece na caixa para revisão antes de enviar. Testar também um PDF digitalizado (uma foto da página): ele deve ser **lido pelo OCR local** e o texto deve aparecer na caixa — se faltar alguma das bibliotecas de OCR, o aviso é "pode ser digitalizado", sem travar.
-4. Confirmar visualmente que a barra principal tem Web, Mais, microfone e Enviar; dentro de Mais, conferir “Modo profundo”, “Enviar com pesquisa profunda”, “Privada” e “Resumo do dia”.
-5. Testar o redimensionamento da janela (faixas na tela): arrastar uma borda e um canto e confirmar que a janela muda de tamanho; conferir também o encaixe com Win+setas e que **não sobrou faixa preta no topo**.
-6. Testar sem mouse: com Tab, chegar até uma conversa da lista e abrir com Enter ou Espaço; no botão “…“ da conversa, conferir que o foco entra no menu, que as setas andam entre as opções e que Esc fecha devolvendo o foco ao botão. No menu “Mais”, conferir que Esc também fecha.
-7. Em Configurações > Chaves, digitar um texto de teste que não seja uma chave real, trocar para outra aba e voltar: o rascunho deve permanecer. Apagar esse texto de teste sem salvar. Não exibir nem compartilhar chaves reais.
-8. Se quiser confirmar a persistência no uso real, escolher uma das novas paletas pelo atalho e reabrir a aplicação; os dados de configuração real não foram alterados durante esta rodada.
-9. Conferir a interface em escala do Windows acima de 100%; nenhuma pergunta à IA é necessária.
-10. Conferir a aparência nova dos temas (rodada de cores): abrir Configurações > Personalização e olhar principalmente os temas de acento claro (Grafite Dourado, Pôr do Sol, Ocean, Rosa Chá) — o **texto do botão** Enviar e dos botões Feito/Salvar agora é escuro, e o interruptor desligado ficou um pouco mais claro. Se preferir como estava, é só pedir para voltar: a mudança está isolada em duas chaves por tema (`--btn-texto` e `--btn-hover`).
-11. Se algum clique falhar, consultar %LOCALAPPDATA%/Eye of Thundera/erro.log e registrar o erro sem incluir credenciais.
-
-## Estado do Git
-
-As alterações desta rodada abrangem o `pdf_leitor.py` (OCR local de PDF digitalizado), o `requirements.txt` e os dois `.spec` do PyInstaller (`pypdfium2` e `winsdk`), o `verificar.py` (testes do OCR) e estes documentos. Ficaram de fora, de propósito: `btns.txt`, `check_btns.py` e `check_btns2.py` (arquivos soltos de sessão antiga, não rastreados), `_tmp/` (arquivos temporários de teste, incluindo os scripts e capturas do OCR) e `dist/` (o `.exe` reconstruído não é versionado). `show.png` já aparecia como excluído antes desta rodada; foi preservado como está. Confira `git status` antes de qualquer outra mudança.
+- **Arrastar imagem** para a conversa (precisa de OCR ou visão, e de
+  consentimento explícito antes de enviar imagem para um provedor).
+- **Separar o motor**: `eye_of_thundera.py` tem ~7.200 linhas, das quais 152
+  são da tela tkinter antiga que está morta. Funciona, mas é um arquivo
+  grande e meio arriscado de mexer.
