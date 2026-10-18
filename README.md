@@ -17,7 +17,7 @@ Assistente pessoal de pesquisa, com interface escura em HTML/JavaScript e integr
 
 O atalho da Área de Trabalho, Eye of Thundera.lnk, aponta para:
 
-- Executável Python: .venv/Scripts/pythonw.exe
+- Executável Python: .venv/Scripts/Eye of Thundera.exe (cópia renomeada do pythonw.exe, para o Gerenciador de Tarefas mostrar o nome do programa)
 - Argumento: app_web.py
 - Pasta de trabalho: D:/Projetos/PesquisaIA
 

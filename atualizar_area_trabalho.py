@@ -8,7 +8,15 @@ PASTA = Path(r"D:\Projetos\PesquisaIA")
 DESKTOP = Path.home() / "Desktop"
 LNK = DESKTOP / "Eye of Thundera.lnk"
 ICONE = PASTA / "icone.ico"
-PYW = PASTA / ".venv" / "Scripts" / "pythonw.exe"
+PYW_ORIGINAL = PASTA / ".venv" / "Scripts" / "pythonw.exe"
+PYW = PASTA / ".venv" / "Scripts" / "Eye of Thundera.exe"
+
+# Garante que a copia renomeada existe: o Gerenciador de Tarefas mostra o
+# nome do executavel (pythonw.exe -> "Python"). Renomear a copia para
+# "Eye of Thundera.exe" faz o processo aparecer com o nome do programa.
+if not PYW.exists() and PYW_ORIGINAL.exists():
+    shutil.copy2(str(PYW_ORIGINAL), str(PYW))
+    print("[OK] copia renomeada criada: " + PYW.name)
 
 _base = (PASTA / "_arquivo_morto")
 _base.mkdir(exist_ok=True)
