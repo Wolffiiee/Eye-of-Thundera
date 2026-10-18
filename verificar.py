@@ -2803,6 +2803,141 @@ except Exception as _erro_log:
     falha("log de erros: os testes quebraram: %r" % (_erro_log,))
 
 
+# --- contador de uso (contagem.py) --------------------------------------------
+# O contador fica em arquivo SEPARADO do config.json de proposito: o config
+# guarda as chaves de API e nao pode ser reescrito a cada pergunta. Estes
+# testes usam arquivo temporario em _tmp — a contagem real do Wolf nao e' tocada.
+try:
+    import time as _tempo_cont
+    import contagem as _contagem
+
+    _arq_cont = PASTA / "_tmp" / "verificar-contagem.json"
+    _arq_cont.parent.mkdir(parents=True, exist_ok=True)
+    if _arq_cont.exists():
+        _arq_cont.unlink()
+    _hoje_cont = _contagem._hoje()
+    _ontem_cont = _tempo_cont.strftime(
+        "%Y-%m-%d", _tempo_cont.localtime(_tempo_cont.time() - 86400))
+
+    # Comeca em zero e soma uma de cada vez.
+    if _contagem.hoje(_arq_cont) == 0:
+        ok("contagem: comeca em zero")
+    else:
+        falha("contagem: começou em %d em vez de 0" % _contagem.hoje(_arq_cont))
+    if (_contagem.somar(1, _arq_cont) == 1
+            and _contagem.somar(1, _arq_cont) == 2
+            and _contagem.somar(1, _arq_cont) == 3):
+        ok("contagem: soma uma pergunta de cada vez (1, 2, 3)")
+    else:
+        falha("contagem: nao somou 1, 2, 3")
+
+    # Dia diferente e' contagem diferente (vira o dia, zera sozinho).
+    _contagem._gravar({_ontem_cont: 5, _hoje_cont: 2}, _arq_cont)
+    if _contagem.hoje(_arq_cont) == 2:
+        ok("contagem: cada dia tem a sua conta (ontem=5, hoje=2)")
+    else:
+        falha("contagem: hoje deu %d em vez de 2" % _contagem.hoje(_arq_cont))
+
+    # Arquivo corrompido nao quebra e o programa volta a contar.
+    _arq_cont.write_text("isto nao e json {{{", encoding="utf-8")
+    if _contagem.hoje(_arq_cont) == 0 and _contagem.somar(1, _arq_cont) == 1:
+        ok("contagem: arquivo corrompido volta a zero e segue contando")
+    else:
+        falha("contagem: arquivo corrompido quebrou a contagem")
+
+    # Chave torta (que nao e data) e valor errado sao descartados.
+    _arq_cont.write_text(
+        '{"%s": "abc", "xyz": 5, "%s": -3, "2026-10-16": 7}'
+        % (_hoje_cont, _ontem_cont), encoding="utf-8")
+    _sobres = _contagem._ler(_arq_cont)
+    if _sobres == {"2026-10-16": 7}:
+        ok("contagem: chave que nao e data e valor invalido sao descartados")
+    else:
+        falha("contagem: sobrou lixo no arquivo: %r" % (_sobres,))
+
+    # So' os ultimos 30 dias ficam guardados, e o dia de hoje sempre fica.
+    _base = _tempo_cont.time() - 40 * 86400
+    _muitos = {}
+    for _n in range(40):
+        _d = _tempo_cont.strftime(
+            "%Y-%m-%d", _tempo_cont.localtime(_base + _n * 86400))
+        _muitos[_d] = 1
+    _muitos[_hoje_cont] = 4
+    _contagem._gravar(_muitos, _arq_cont)
+    _contagem.somar(1, _arq_cont)
+    _final_cont = _contagem._ler(_arq_cont)
+    if (len(_final_cont) <= _contagem.DIAS_GUARDADOS
+            and _hoje_cont in _final_cont and _final_cont[_hoje_cont] == 5):
+        ok("contagem: guarda no maximo 30 dias e nunca perde o dia de hoje")
+    else:
+        falha("contagem: guardou %d dias (hoje=%r)"
+              % (len(_final_cont), _final_cont.get(_hoje_cont)))
+
+    # A ponte: o numero absurdo vira 0 para nao assustar o Wolf.
+    _arq_cont.write_text('{"%s": 999999999}' % _hoje_cont, encoding="utf-8")
+    _arq_cont_real_guardado = _contagem.ARQUIVO
+    _contagem.ARQUIVO = _arq_cont
+    _p_uso = _aw.Ponte()
+    _u = _p_uso.uso_hoje()
+    if _u["hoje"] == 0 and _u["disponivel"] is True:
+        ok("contagem: numero absurdo na tela vira 0 (nao assusta)")
+    else:
+        falha("contagem: numero absurdo deu %r" % (_u,))
+
+    if _p_uso.uso_zerar().get("ok") is True and not _arq_cont.exists():
+        ok("contagem: o botao Zerar limpa a contagem de verdade")
+    else:
+        falha("contagem: zerar nao limpou")
+
+    # A tela: rotape com a etiqueta, atualiza ao abrir e a cada resposta.
+    _js_f = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    _html_f = (PASTA / "web" / "index.html").read_text(encoding="utf-8")
+    _css_f = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+    _placar = ('id="uso-hoje"' in _html_f
+               and "atualizarUso" in _js_f
+               and 'chamar("uso_hoje")' in _js_f
+               and 'chamar("uso_zerar")' in _js_f
+               # atualiza ao abrir e tambem quando a resposta chega
+               and _js_f.count("atualizarUso()") >= 3
+               and "confirm(" in _js_f
+               and "#uso-hoje" in _css_f)
+    if _placar:
+        ok("contagem: o rodape mostra a etiqueta e atualiza ao abrir e a cada resposta")
+    else:
+        falha("contagem: falta ligar a etiqueta no rodape (html/js/css)")
+
+    # A contagem tem que acontecer DEPOIS dos atalhos locais, para nao
+    # contar lembrete nem plugin (que nao gastam chave).
+    _txt_aw = (PASTA / "app_web.py").read_text(encoding="utf-8")
+    _i_cont = _txt_aw.find("contagem.somar(1)")
+    _i_plug = _txt_aw.find("plugins.responder")
+    _i_lemb = _txt_aw.find("lembretes.responder")
+    _i_img = _txt_aw.find("_responder_imagens")
+    if (_i_cont > 0 and _i_plug > 0 and _i_lemb > 0 and _i_img > 0
+            and _i_cont > _i_plug and _i_cont > _i_lemb and _i_cont > _i_img):
+        ok("contagem: so conta depois dos atalhos locais (lembrete/plugin/imagens nao contam)")
+    else:
+        falha("contagem: a contagem pode estar antes dos atalhos locais "
+              "(contagem=%d, plugin=%d, lembrete=%d, imagens=%d)"
+              % (_i_cont, _i_plug, _i_lemb, _i_img))
+
+    # `contagem.py` tem que entrar no pacote do instalador.
+    _spec_f = all("'contagem'" in (PASTA / _n).read_text(encoding="utf-8")
+                  for _n in ("Eye of Thundera.spec", "Eye of Thundera (debug).spec"))
+    if _spec_f:
+        ok("contagem: o modulo entra no pacote do instalador (.spec)")
+    else:
+        falha("contagem: 'contagem' nao esta no .spec — o instalador ficaria sem contador")
+
+    _contagem.ARQUIVO = _arq_cont_real_guardado
+    try:
+        _arq_cont.unlink()
+    except Exception:
+        pass
+except Exception as _erro_cont:
+    falha("contagem: os testes quebraram: %r" % (_erro_cont,))
+
+
 # --- resumo -----------------------------------------------------------------
 print()
 print('VERIFICACOES: %d | FALHA: %d | AVISO: %d' % (verificacoes, len(falhas), len(avisos)))

@@ -5,6 +5,22 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-18 - Contador de uso: quantas perguntas foram para a IA hoje
+
+- **O problema:** o programa nao mostrava nada de consumo. O Wolf so descobria quanto usou quando olhava a fatura do Google — ou quando a cota acabava de surpresa.
+- **A solucao:** uma etiqueta discreta no rodape, ao lado da dica de atalhos: `hoje: 23 perguntas`. Atualiza sozinha ao abrir o programa e a cada resposta recebida. **Clicar** nela pergunta e zera a contagem do dia.
+- **O que conta:** so o que REALMENTE vai para a IA. A contagem acontece logo depois da checagem de chave, ou seja, depois dos atalhos locais — lembrete, plugin, busca de imagens e indice do documento **nao entram na conta** (sao gratuitos e nao usam chave). Ha um teste so' para garantir essa ordem.
+- **Novo `contagem.py`:** guarda em `contagem.json`, na pasta de dados. **Por que um arquivo separado?** Porque o `config.json` guarda as CHAVES de API; reescrever esse arquivo a cada pergunta seria arriscado demais para o ganho.
+- **A conta zera sozinha:** a chave do dicionario e' a data (`2026-10-18`), entao virar o dia comeca de novo. Guarda so os ultimos **30 dias**, para o arquivo nao crescer.
+- **Cuidado com numero absurdo:** um arquivo copiado do PC de outra pessoa traria uma contagem que nao e' do Wolf. Acima de 100.000 a tela mostra **0** em vez de assustar.
+- **Nada derruba o programa:** arquivo corrompido vira 0 e o contador segue; arquivo ausente e' criado; se ainda assim nao der para ler, a etiqueta **some em silencio** (e' so um extra de informacao, nunca um erro).
+- **Bug encontrado no caminho:** a leitura do arquivo aceitava uma chave torta (`"xyz": 5`) como se fosse um dia. Corrigido com `_data_valida()`, que so aceita data no formato `YYYY-MM-DD`.
+- **Bug encontrado pelos testes:** o modulo `contagem.py` nao estava na lista de `hiddenimports` do `.spec` — o instalador ficaria **sem contador** para quem installasse. Corrigido nos dois `.spec` (normal e debug).
+- **Testes:** 11 verificacoes novas (195 no total, 0 falhas, 0 avisos). Todas com arquivo temporario em `_tmp` — a contagem real do Wolf nunca e' tocada.
+- **Conferido na tela:** 23 perguntas, 1 pergunta (singular), 0, indisponivel (some) e voltando ao normal.
+
+---
+
 ## 2026-10-18 - Log de erros visivel dentro do programa (aba Ajuda)
 
 - **O problema:** o programa gravava os erros num arquivo `erro.log`, mas esse arquivo morava dentro do computador. Se algo dava errado, o Wolf nao tinha como ver nada e tinha de vir perguntar o que aconteceu.

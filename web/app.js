@@ -735,6 +735,7 @@ function aplicarEvento(o) {
     esperar(false);
     estado.ultimaResposta = o.texto;
     anexarMensagem({ role: "model", text: o.texto, fontes: o.fontes });
+    atualizarUso(); // a pergunta acabou de sair para a IA: o numero subiu
   } else if (o.tipo === "erro") {
     esperar(false);
     anexarMensagem({ role: "erro", text: o.texto });
@@ -2592,6 +2593,38 @@ async function iniciar() {
   desenharMensagens();
   $("#entrada").focus();
   if (!r.tem_chave) aviso("Cole a sua chave do Google em Configurações > Chaves para começar.");
+  atualizarUso();
+}
+
+/* ---- contador de uso: quantas perguntas foram para a IA hoje (contagem.py) ----
+   Fica no rodape, ao lado da dica de atalhos. Some sozinho se o programa nao
+   conseguir ler a contagem - e' so um extra de informacao, nunca um erro. */
+async function atualizarUso() {
+  const caixa = $("#uso-hoje");
+  if (!caixa) return;
+  try {
+    const r = await chamar("uso_hoje");
+    if (!r || r.disponivel !== true) return caixa.classList.add("oculto");
+    const n = Number(r.hoje) || 0;
+    caixa.textContent = n === 1 ? "hoje: 1 pergunta" : `hoje: ${n} perguntas`;
+    caixa.title = `${n} pergunta${n === 1 ? "" : "s"} enviada${n === 1 ? "" : "s"} para a IA hoje.\n` +
+      "Lembretes, plugins e busca de imagens são locais e não contam.\nClique para zerar a contagem de hoje.";
+    caixa.style.cursor = "pointer";
+    caixa.classList.remove("oculto");
+    // Clicar zera a contagem de hoje (util para recomeçar a conta).
+    caixa.onclick = async () => {
+      if (!confirm("Zerar a contagem de hoje?\n\nIsso só muda o número que aparece aqui; nada mais é apagado.")) return;
+      try {
+        const z = await chamar("uso_zerar");
+        if (z && z.ok) {
+          caixa.textContent = "hoje: 0 perguntas";
+          aviso("Contagem de hoje zerada.");
+        }
+      } catch (_e) { /* o chamar() ja avisou */ }
+    };
+  } catch (_e) {
+    caixa.classList.add("oculto"); // o chamar() ja avisou
+  }
 }
 
 /* ---- barra de titulo propria (PLANO-BARRA-PROPRIA.md) ---- */

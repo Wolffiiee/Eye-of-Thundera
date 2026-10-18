@@ -1008,6 +1008,37 @@ class Ponte:
             return {"ok": False}
         return {"ok": True}
 
+    # --- contador de uso (contagem.py) ---------------------------------
+    #
+    # A tela so quer o numero de hoje, para mostrar no rodape. Um numero
+    # absurdo (arquivo copiado do PC de outra pessoa) vira 0, para nao
+    # assustar o Wolf com uma conta que nao e' dele.
+
+    # Acima disso e' bug ou arquivo estranho: a tela mostra 0.
+    LIMITE_ABSURDO = 100000
+
+    def uso_hoje(self):
+        """Quantas perguntas foram para a IA hoje."""
+        try:
+            import contagem
+            dados = contagem.resumo()
+            hoje = int(dados.get("hoje") or 0)
+            if hoje < 0 or hoje > self.LIMITE_ABSURDO:
+                hoje = 0
+            return {"hoje": hoje, "disponivel": bool(dados.get("disponivel"))}
+        except Exception as erro:
+            p.registrar_erro("uso_hoje", erro)
+            return {"hoje": 0, "disponivel": False}
+
+    def uso_zerar(self):
+        """Zera a contagem de hoje (a tela pede confirmacao antes)."""
+        try:
+            import contagem
+            return {"ok": bool(contagem.zerar())}
+        except Exception as erro:
+            p.registrar_erro("uso_zerar", erro)
+            return {"ok": False}
+
     # --- leitura de PDF (arrastar para a conversa) ---
     #
     # O arquivo NAO chega por caminho: a tela le os bytes e manda em
@@ -1228,6 +1259,16 @@ class Ponte:
 
         if not chave:
             return {"erro": "sem_chave"}
+
+        # Contador de uso (contagem.py): a pergunta vai mesmo para a IA, entao
+        # conta UMA. Tudo que voltou antes daqui (lembrete, plugin, imagens,
+        # indice do documento) e' local e nao entra na conta.
+        # Perder uma contagem e' melhor do que travar a conversa.
+        try:
+            import contagem
+            contagem.somar(1)
+        except Exception as erro:
+            p.registrar_erro("contagem.somar", erro)
 
         # A pergunta entra no espelho da conversa antes da thread comecar,
         # para ela ja fazer parte do historico que a IA vai ler.

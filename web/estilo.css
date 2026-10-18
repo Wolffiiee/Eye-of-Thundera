@@ -199,6 +199,13 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .enviar:disabled { background: var(--superficie-2); color: var(--texto-3); opacity: 1; }
 
 #dica { max-width: 780px; margin: 7px auto 0; text-align: center; font-size: 11.5px; color: var(--texto-3); }
+/* Contador de uso: quantas perguntas foram para a IA hoje. Fica discreto ao
+   lado da dica de atalhos e some sozinho quando o contador não está disponível
+   (por exemplo quando o programa não conseguiu ler o arquivo). */
+#uso-hoje { display: inline-block; margin-left: 8px; padding: 1px 8px;
+  border: 1px solid var(--borda); border-radius: 999px; color: var(--texto-2);
+  background: var(--superficie-2); cursor: default; }
+#uso-hoje.oculto { display: none; }
 /* galeria de imagens dentro da conversa: mesma ideia do programa antigo
    (grade de miniaturas, clicar abre a foto), mas desenhada em HTML. */
 .galeria-titulo { color: var(--texto-3); font-size: 12.5px; margin: 12px 0 8px; }

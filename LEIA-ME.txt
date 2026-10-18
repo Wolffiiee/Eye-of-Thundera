@@ -22,6 +22,7 @@ TELA PRINCIPAL
 - Pesquisa séria: liga/desliga o modo de pesquisa profunda para a próxima pergunta.
 - Privada: inicia uma conversa que não deve ser salva no histórico nem usada para aprender memória.
 - Resumo do dia: pede um resumo das notícias atuais.
+- Contador de uso: no rodapé, ao lado da dica de atalhos, aparece "hoje: N perguntas". Conta só o que vai para a IA (lembretes, plugins e busca de imagens são locais e não contam). Clique na etiqueta para zerar a contagem do dia.
 - Microfone: clique para começar a gravar e clique novamente para parar. O texto transcrito aparece na caixa para revisão antes do envio.
 - Soltar um arquivo de texto compatível na janela pode carregar seu conteúdo para a caixa de pergunta. Confira o conteúdo antes de enviar.
 
