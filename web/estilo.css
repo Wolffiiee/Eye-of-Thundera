@@ -134,9 +134,6 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 @keyframes entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .msg.eu { justify-content: flex-end; }
 .msg.eu .corpo { background: var(--superficie-2); border-radius: 18px 18px 6px 18px; padding: 10px 16px; max-width: 78%; }
-.avatar { width: 30px; height: 30px; border-radius: 50%; flex: none; margin-top: 2px; display: grid; place-items: center;
-  background: linear-gradient(135deg, #2c3a6b, #1d2547); color: #cfd9ff; }
-.avatar svg { width: 16px; height: 16px; }
 .msg.ia .corpo { min-width: 0; flex: 1; }
 .msg.erro .corpo { background: var(--erro-fundo); border: 1px solid #4a2630; color: #ffc9c9; border-radius: 12px; padding: 10px 14px; flex: 1; }
 .corpo p { margin: 0 0 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
