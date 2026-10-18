@@ -38,6 +38,39 @@ PASTA_DADOS = Path(
 NAO_VIAJAM = {"erro.log"}
 
 
+_VARIANTES_LOCALIZADAS = {
+    "Documents": "Documentos",
+    "Documentos": "Documents",
+    "Pictures": "Imagens",
+    "Imagens": "Pictures",
+    "Downloads": "Downloads",
+    "Desktop": "Area de Trabalho",
+    "Area de Trabalho": "Desktop",
+}
+
+
+def _pasta_real(pasta):
+    """Devolve a pasta que realmente existe no disco.
+
+    No Windows, o nome exibido no Explorer pode ser localizado (ex.:
+    "Documentos") enquanto o nome real no disco e' em ingles ("Documents").
+    O seletor de pasta do Windows pode retornar um dos dois. Esta funcao
+    tenta as duas variantes e devolve a que existe; se nenhuma existir,
+    devolve a original (para o chamador criar).
+    """
+    pasta = Path(pasta)
+    if pasta.is_dir():
+        return pasta
+    pai = pasta.parent
+    nome = pasta.name
+    alt_nome = _VARIANTES_LOCALIZADAS.get(nome)
+    if alt_nome:
+        alt = pai / alt_nome
+        if alt.is_dir():
+            return alt
+    return pasta
+
+
 def pasta_padrao():
     """Onde sugerir criar a pasta de sincronizacao.
 
@@ -47,7 +80,13 @@ def pasta_padrao():
     onedrive = Path.home() / "OneDrive"
     if onedrive.is_dir():
         return onedrive / "Eye of Thundera"
-    return Path.home() / "Documentos" / "Eye of Thundera"
+    # Tenta Documents (ingles, nome real no disco em Windows) e Documentos
+    # (portugues, exibido pelo Explorer).
+    for nome in ("Documents", "Documentos"):
+        candidata = Path.home() / nome
+        if candidata.is_dir():
+            return candidata / "Eye of Thundera"
+    return Path.home() / "Documents" / "Eye of Thundera"
 
 
 def arquivos_de_dados(pasta=None):
@@ -128,8 +167,15 @@ def sincronizar_tudo(pasta_dados, pasta_sync):
 
     Devolve {"importados": [...], "exportados": [...], "aviso": None ou str}.
     Erro de pasta (nao existe, sem gravacao) NUNCA vira excecao: vira "aviso".
+    A pasta de sincronizacao e' criada se nao existir (mkdir parents=True).
     """
-    pasta_dados, pasta_sync = Path(pasta_dados), Path(pasta_sync)
+    pasta_dados, pasta_sync = Path(pasta_dados), _pasta_real(pasta_sync)
+    # Tenta criar a pasta de sincronizacao se nao existir.
+    try:
+        pasta_sync.mkdir(parents=True, exist_ok=True)
+    except OSError as erro:
+        return {"importados": [], "exportados": [],
+                "aviso": "nao consigo criar a pasta %s (%s)" % (pasta_sync, erro)}
     problema = _destino_valido(pasta_sync)
     if problema:
         return {"importados": [], "exportados": [], "aviso": problema}
@@ -160,10 +206,13 @@ def carimbo(pasta):
 
 def estado(pasta_dados, pasta_sync):
     """Resumo para a aba de sincronizacao: pasta, se existe, carimbo, aviso."""
-    pasta_sync = Path(pasta_sync)
+    pasta_sync = _pasta_real(pasta_sync)
+    if not pasta_sync.is_dir():
+        try:
+            pasta_sync.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
     aviso = None if pasta_sync.is_dir() else "a pasta %s nao existe" % pasta_sync
-    if not aviso and not pasta_sync.exists():
-        aviso = "a pasta %s nao existe" % pasta_sync
     grava = aviso is None
     if grava:
         grava = _destino_valido(pasta_sync) is None

@@ -2207,9 +2207,14 @@ try:
     _ok_igu = (not _igu["importados"] and not _igu["exportados"]
                and _igu["aviso"] is None)
 
-    # erro nao derruba: pasta inexistente vira aviso, nao excecao
-    _err = _sin.sincronizar_tudo(_dados, _base / "nao_existe")
-    _ok_err = bool(_err["aviso"]) and not _err["importados"]
+    # erro nao derruba: pasta inexistente e' criada automaticamente
+    _base_inexistente = _base / "nao_existe_2"
+    _err = _sin.sincronizar_tudo(_dados, _base_inexistente)
+    _ok_err = (_err["aviso"] is None  # pasta foi criada, sem aviso
+               and _base_inexistente.is_dir())
+    # limpa a pasta criada
+    if _base_inexistente.exists():
+        _sh2.rmtree(_base_inexistente)
 
     # carimbo e estado
     (_dados / "config.json").touch()
@@ -2455,6 +2460,69 @@ try:
         falha("lembretes: falta ligar na tela ou no pacote (.spec)")
 except Exception as _erro_lem4:
     falha("lembretes: teste da tela/pacote falhou: %r" % (_erro_lem4,))
+
+
+# --- ortografia melhor (PLANO-ORTOGRAFIA.md) --------------------------------
+try:
+    import json as _json_o
+    import app_web as _aw_o
+    import pesquisa_ia as _pe_o
+
+    _DIC_O = PASTA / "_tmp" / "dic_teste_ortografia.json"
+    _DIC_O.parent.mkdir(exist_ok=True)
+    _antes_o = (_pe_o.ARQUIVO_DICIONARIO, _pe_o.carregar_memoria, _aw_o.DEMO)
+    try:
+        _pe_o.ARQUIVO_DICIONARIO = _DIC_O
+        _pe_o.carregar_memoria = lambda: ["Nome: Igor (pode ser chamado de Wolf)"]
+        _aw_o.DEMO = False
+        if _DIC_O.exists():
+            _DIC_O.unlink()
+        _a = _pe_o.analisar_palavra
+        _abrev = (_a("vc")["sugestoes"][0] == "você" and _a("Vc")["sugestoes"][0] == "Você"
+                  and _a("pq")["sugestoes"] == ["porque", "por que"]
+                  and _a("TB")["sugestoes"] == ["TAMBÉM"])
+        _acento = _a("voce")["sugestoes"][:1] == ["você"]
+        _rank = _a("gobiln")["sugestoes"][:1] == ["goblin"]
+        _certa = _a("casa") == {"sugestoes": [], "desconhecida": False}
+        _lixo = all(_a(x) == {"sugestoes": [], "desconhecida": False}
+                    for x in ("x", "", None, "1999", "a1b"))
+        _nome_mem = _a("Wolf")["desconhecida"] is False
+        _antes_dic = _a("Thundera")["desconhecida"] is True
+        _pt_o = _aw_o.Ponte.__new__(_aw_o.Ponte)
+        _r1 = _pt_o.dicionario_adicionar("Thundera")
+        _r2 = _pt_o.dicionario_adicionar("thundera")      # repetida: sem duplicar
+        _r3 = _pt_o.dicionario_adicionar("x1")
+        _gravado = _json_o.loads(_DIC_O.read_text(encoding="utf-8"))
+        _depois_dic = _a("Thundera") == {"sugestoes": [], "desconhecida": False}
+        _ponte_r = _pt_o.sugerir_correcao("gobiln")
+        _DIC_O.write_text("isto nao e json {", encoding="utf-8")
+        _estragado = _pe_o.carregar_dicionario_pessoal() == set()
+        _aw_o.DEMO = True
+        _demo = "erro" in _pt_o.dicionario_adicionar("Zorgblat")
+        _aw_o.DEMO = False
+        _js_o = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    finally:
+        _pe_o.ARQUIVO_DICIONARIO, _pe_o.carregar_memoria, _aw_o.DEMO = _antes_o
+        if _DIC_O.exists():
+            _DIC_O.unlink()
+    _ok_o = {"abreviacoes": _abrev, "acento": _acento, "ranking": _rank,
+             "palavra certa": _certa, "lixo": _lixo, "nome da memoria": _nome_mem,
+             "desconhecida antes": _antes_dic,
+             "adicionar": _r1 == {"ok": True} and _r2 == {"ok": True} and "erro" in _r3
+                          and _gravado == ["thundera"],
+             "conhecida depois": _depois_dic,
+             "ponte devolve desconhecida": _ponte_r.get("desconhecida") is True
+                                           and "goblin" in _ponte_r.get("sugestoes", []),
+             "arquivo estragado": _estragado, "modo exemplo nao grava": _demo,
+             "tela": "dicionario_adicionar" in _js_o and "Adicionar ao dicionário" in _js_o
+                     and "r.desconhecida" in _js_o}
+    _ruins_o = [k for k, v in _ok_o.items() if not v]
+    if not _ruins_o:
+        ok("ortografia: abreviações, acento, ranking, dicionário pessoal e nomes da Memória")
+    else:
+        falha("ortografia: falhou em %r" % (_ruins_o,))
+except Exception as _erro_o:
+    falha("ortografia: teste falhou: %r" % (_erro_o,))
 
 
 # --- documento aberto: perguntar sobre PDF longo (PLANO-DOCUMENTOS-LONGOS.md) ---
