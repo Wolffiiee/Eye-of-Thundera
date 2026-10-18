@@ -2235,16 +2235,27 @@ async function salvarConfig() {
     }
     if (estado.aba === "sincronizacao") {
       try { estado.syncInfo = await chamar("sincronizar_config"); }
-      catch (_e) { estado.syncInfo = null; }
+      catch (_e) {
+        console.error("Erro ao recarregar sincronizar_config:", _e);
+        estado.syncInfo = null;
+      }
     }
-    mostrarAba(estado.aba);
+    try {
+      mostrarAba(estado.aba);
+    } catch (erroMostrar) {
+      console.error("Erro ao re-renderizar aba após salvar:", erroMostrar);
+      $("#config-aviso").textContent = "Salvo, mas não consegui atualizar a tela. Feche e abra Configurações.";
+      $("#config-aviso").className = "erro";
+      return;
+    }
     $("#config-aviso").textContent = "Salvo.";
     $("#config-aviso").className = "ok";
   } catch (erro) {
     const av = $("#config-aviso");
-    av.textContent = "Ocorreu um erro inesperado ao salvar. Tente novamente.";
+    const msg = (erro && erro.message) ? erro.message : String(erro);
+    av.textContent = "Ocorreu um erro inesperado ao salvar: " + msg;
     av.className = "erro";
-    console.error("Falha ao salvar configurações:", erro);
+    console.error("Falha ao salvar configurações:", erro, erro?.stack || "");
   } finally {
     liberarControles();
     botao.disabled = false;
