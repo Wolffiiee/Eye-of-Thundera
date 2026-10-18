@@ -410,13 +410,20 @@ function mostrarMenuContexto(x, y) {
       vazio.remove();
       const ss = (r && r.sugestoes) || [];
       if (!ss.length) {
-        menu.append(el("div", "titulo", "(nada parecido)"));
-        return;
+        menu.append(el("div", "titulo",
+          r && r.desconhecida ? "(nada parecido)" : "(a palavra está certa)"));
       }
       for (const s of ss) {
         menu.append(itemMenu(s, () => {
           substituirTrecho(ini, fim, s);
           fecharMenuContexto(true);
+        }));
+      }
+      if (r && r.desconhecida) {
+        menu.append(itemMenu("Adicionar ao dicionário", async () => {
+          fecharMenuContexto(true);
+          const d = (await chamar("dicionario_adicionar", palavra)) || {};
+          aviso(d.erro || "“" + palavra + "” entrou no dicionário.", !!d.erro);
         }));
       }
       // reajusta a posicao depois que as sugestoes cresceram o menu
