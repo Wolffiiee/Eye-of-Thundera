@@ -358,6 +358,7 @@ def salvar_config(cfg):
 
 ARQUIVO_HISTORICO = PASTA_CONFIG / "historico.json"
 ARQUIVO_MEMORIA = PASTA_CONFIG / "memoria.json"
+ARQUIVO_DICIONARIO = PASTA_CONFIG / "dicionario_pessoal.json"   # palavras que o Wolf ensinou
 
 MAX_MEMORIAS = 80
 MAX_CARACTERES_CONTEXTO = 5000
@@ -1175,30 +1176,97 @@ def _obter_corretor(lingua):
     return _CORRETORES[lingua]
 
 
-def sugerir_correcao(palavra, maximo=6):
-    """Sugestões de correção para UMA palavra. Devolve [] se não houver.
+# Abreviações de chat: viram sugestão direta (ver PLANO-ORTOGRAFIA.md).
+_ABREVIACOES = {
+    "vc": ["você"], "vcs": ["vocês"], "tb": ["também"], "tbm": ["também"],
+    "pq": ["porque", "por que"], "oq": ["o que"], "msm": ["mesmo"],
+    "hj": ["hoje"], "td": ["tudo"], "blz": ["beleza"], "obg": ["obrigado"],
+    "qdo": ["quando"], "qnd": ["quando"], "naum": ["não"], "mto": ["muito"],
+    "mt": ["muito"], "dps": ["depois"], "cmg": ["comigo"], "ctz": ["certeza"],
+    "agr": ["agora"], "pfv": ["por favor"], "pf": ["por favor"],
+    "vlw": ["valeu"], "nd": ["nada"], "ngm": ["ninguém"], "tds": ["todos"],
+    "bjs": ["beijos"], "flw": ["falou"],
+}
 
-    Vive aqui no motor (e não dentro do tkinter) porque **os dois
-    programas** precisam dela: o antigo pelo botão direito, o novo pelo
-    menu que a própria tela monta. Duas cópias dessa lógica iam divergir
-    com o tempo — foi o que aconteceu com `registrar_erro`.
 
-    Português é a língua primária; o dicionário de inglês só entra quando
-    a palavra se assemelha **mais** a ele (jogo, game, chat...).
+def _sem_acento_ortog(texto):
+    """Minúsculas e sem acento (para achar 'voce' -> 'você')."""
+    import unicodedata
+    return "".join(unicodedata.normalize("NFD", c)[0] for c in str(texto)).lower()
+
+
+def carregar_dicionario_pessoal():
+    """Palavras que o Wolf ensinou ("Adicionar ao dicionário"). Arquivo
+    estragado ou com formato estranho = conjunto vazio (nunca derruba nada)."""
+    try:
+        dados = _ler_json(ARQUIVO_DICIONARIO, [])
+    except Exception:
+        return set()
+    if not isinstance(dados, list):
+        return set()
+    return {x.strip().lower() for x in dados if isinstance(x, str) and x.strip()}
+
+
+def adicionar_ao_dicionario(palavra):
+    """Guarda a palavra no dicionário pessoal. False se não for uma palavra."""
+    palavra = (palavra or "").strip().lower()
+    if not re.fullmatch(r"[^\W\d_]{2,40}", palavra, re.UNICODE):
+        return False
+    _gravar_json(ARQUIVO_DICIONARIO,
+                 sorted(carregar_dicionario_pessoal() | {palavra})[:2000])
+    return True
+
+
+def _nomes_da_memoria():
+    """Palavras com inicial maiúscula nos fatos da Memória (nomes de gente,
+    lugares, jogos). Só leitura: nada é gravado por causa disto."""
+    nomes = set()
+    try:
+        for fato in carregar_memoria() or []:
+            for w in re.findall(r"[^\W\d_]{3,}", str(fato), re.UNICODE):
+                if w[0].isupper():
+                    nomes.add(w.lower())
+    except Exception:
+        pass
+    return nomes
+
+
+def analisar_palavra(palavra, maximo=6):
+    """{"sugestoes": [...], "desconhecida": bool} para UMA palavra.
+
+    Ordem das decisões: abreviação de chat (vc, tb...), palavra conhecida
+    (dicionário pessoal, nomes da Memória, português, inglês) e só então as
+    sugestões, ranqueadas: mesma palavra sem acento primeiro, mesma letra
+    inicial, mais parecida, mais comum. Português é a língua primária; o
+    dicionário de inglês só entra quando a palavra se parece MAIS com ele.
     """
+    vazio = {"sugestoes": [], "desconhecida": False}
     palavra = (palavra or "").strip()
     if not re.fullmatch(r"[^\W\d_]{2,}", palavra, re.UNICODE):
-        return []
+        return vazio
     baixo = palavra.lower()
+
+    def ajustar(lista):
+        if palavra.isupper() and len(palavra) > 1:
+            return [s.upper() for s in lista]
+        if palavra[0].isupper():
+            return [s[:1].upper() + s[1:] for s in lista]
+        return list(lista)
+
+    if baixo in _ABREVIACOES:
+        return {"sugestoes": ajustar(_ABREVIACOES[baixo])[:maximo],
+                "desconhecida": True}
+    if baixo in carregar_dicionario_pessoal() or baixo in _nomes_da_memoria():
+        return vazio
     pt = _obter_corretor("pt")
     if not pt:
-        return []
+        return vazio
     if baixo not in pt.unknown({baixo}):
-        return []                      # a palavra está certa
+        return vazio                   # a palavra está certa
     en = _obter_corretor("en")
     # termo válido em inglês não sugere nada (evita "casa" -> "case")
     if en and baixo not in en.unknown({baixo}):
-        return []
+        return vazio
     cands_pt = list(pt.candidates(baixo) or [])
     cands_en = list(en.candidates(baixo) or []) if en else []
 
@@ -1209,11 +1277,32 @@ def sugerir_correcao(palavra, maximo=6):
                    for c in cands)
 
     if cands_pt and cands_en:
-        cands = cands_en if melhor(cands_en) > melhor(cands_pt) + 0.10 \
-            else cands_pt
+        usa_en = melhor(cands_en) > melhor(cands_pt) + 0.10
     else:
-        cands = cands_en or cands_pt
-    return sorted(cands)[:maximo]
+        usa_en = bool(cands_en) and not cands_pt
+    cands = cands_en if usa_en else cands_pt
+    fonte = en if usa_en else pt
+    alvo = _sem_acento_ortog(baixo)
+
+    def chave(c):
+        csa = _sem_acento_ortog(c)
+        return (csa != alvo, csa[:1] != alvo[:1],
+                -difflib.SequenceMatcher(None, baixo, c).ratio(),
+                -(fonte.word_frequency[c] or 0), c)
+
+    return {"sugestoes": ajustar(sorted(cands, key=chave)[:maximo]),
+            "desconhecida": True}
+
+
+def sugerir_correcao(palavra, maximo=6):
+    """Sugestões de correção para UMA palavra. Devolve [] se não houver.
+
+    Vive aqui no motor (e não dentro do tkinter) porque **os dois
+    programas** precisam dela: o antigo pelo botão direito, o novo pelo
+    menu que a própria tela monta. Duas cópias dessa lógica iam divergir
+    com o tempo - foi o que aconteceu com `registrar_erro`.
+    """
+    return analisar_palavra(palavra, maximo)["sugestoes"]
 
 
 def _criar_cliente(api_key):

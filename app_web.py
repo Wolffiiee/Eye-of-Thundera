@@ -614,10 +614,25 @@ class Ponte:
         está no motor (`pesquisa_ia.sugerir_correcao`).
         """
         try:
-            return {"sugestoes": p.sugerir_correcao(palavra)}
+            r = p.analisar_palavra(palavra)
+            return {"sugestoes": r["sugestoes"],
+                    "desconhecida": r["desconhecida"]}
         except Exception as erro:
             p.registrar_erro("sugerir_correcao", erro)
-            return {"sugestoes": []}
+            return {"sugestoes": [], "desconhecida": False}
+
+    def dicionario_adicionar(self, palavra):
+        """"Adicionar ao dicionário" (botão direito): a palavra deixa de ser
+        tratada como erro nas sugestões. Fica em dicionario_pessoal.json."""
+        if DEMO:
+            return {"erro": "No modo exemplo nada é gravado."}
+        try:
+            if p.adicionar_ao_dicionario(palavra):
+                return {"ok": True}
+            return {"erro": "Só dá para adicionar palavras com letras (2 a 40)."}
+        except Exception as erro:
+            p.registrar_erro("dicionario_adicionar", erro)
+            return {"erro": "Não consegui guardar a palavra."}
 
     def memoria_listar(self):
         """Aba Memória, com a data em que cada fato foi aprendido.
