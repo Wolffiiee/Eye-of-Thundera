@@ -19,7 +19,7 @@ Atualizado em 18/10/2026. Este documento contém pendências reais; o histórico
 - [x] Preservar chaves digitadas no rascunho ao trocar de aba; limpar o rascunho temporário depois de salvar com sucesso.
 - [x] Alterar o tema sem salvar opções de conversa que ainda estejam em rascunho.
 - [x] Durante o salvamento, bloquear temporariamente os controles da aba para evitar perder edições; garantir que eles sejam reabilitados mesmo se ocorrer uma falha.
-- [ ] Validar visualmente Configurações na escala do Windows acima de 100%; a janela de 900 px foi conferida em modo demonstração.
+- [x] Validar visualmente Configurações na escala do Windows acima de 100% (confirmado pelo usuário em 18/10: funcionando); a janela de 900 px foi conferida em modo demonstração.
 - [x] Melhorar a hierarquia dos cartões, destacar discretamente o Gemini principal, esclarecer descrições e colocar o seletor de tema em um cartão próprio sem alterar o tema Ocean.
 - Conferir se as chaves aparecem mascaradas e se o texto de ajuda é claro.
 - Testar edição e exportação de memória somente com cuidado para não alterar dados reais sem autorização.
@@ -28,8 +28,8 @@ Atualizado em 18/10/2026. Este documento contém pendências reais; o histórico
 
 - [x] Agrupar Pesquisa séria, Privada e Resumo do dia em “Mais”, mantendo indicação dos modos ativos e atalhos existentes.
 - [x] Mover o envio único com pesquisa profunda para “Mais”; o atalho Ctrl+Shift+S continua ativo e foi documentado na Ajuda.
-- [ ] Reabrir o app pelo atalho e confirmar a persistência da troca de tema; as capturas de demonstração não alteram configuração real.
-- [ ] Confirmar visualmente a nova disposição do menu e a troca de abas após digitar texto sintético no campo de chave (sem salvar nem exibir chave real).
+- [x] Reabrir o app pelo atalho e confirmar a persistência da troca de tema (confirmado pelo usuário em 18/10: funcionando); as capturas de demonstração não alteram configuração real.
+- [x] Confirmar visualmente a nova disposição do menu e a troca de abas após digitar texto sintético no campo de chave (confirmado pelo usuário em 18/10: funcionando) (sem salvar nem exibir chave real).
 - [x] Agrupar “Usar o Gemini (principal)” no cartão da chave correspondente. Conferir visualmente na aba Chaves.
 - [x] Trocar a lista de temas por cartões com miniaturas e cinco amostras de cores; navegação por setas, Enter e Espaço.
 - [x] Conferir visualmente os cartões e a mudança de paleta em modo de demonstração; a captura marca corretamente o tema mostrado.

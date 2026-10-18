@@ -1,6 +1,6 @@
 # Onde paramos
 
-Atualizado em 18/10/2026, após implementar plugins (Prioridade 5) e sincronização entre computadores (Prioridade 6) — as duas últimas sugestões grandes.
+Atualizado em 18/10/2026, após todas as validações manuais aprovadas pelo usuário.
 
 ## Resumo do estado atual
 
