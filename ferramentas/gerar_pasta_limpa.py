@@ -1,11 +1,11 @@
-"""Refaz a pasta "Eye of Thundera" so com o que o programa precisa para rodar.
+"""Refaz a pasta "Eye of Thundera Instalador" so com o que o programa precisa.
 
 Ver PLANO-PASTA-LIMPA.md. E' uma COPIA: a pasta de trabalho (onde fica o
 verificar.py, os planos, o .git etc.) nao muda. Rode de novo sempre que o
 programa ganhar modulos ou arquivos novos: a lista e' DESCOBERTA aqui, nao
 escrita a mao (le os `import` a partir do app_web.py e o que o index.html carrega).
 
-Uso:  python ferramentas/gerar_pasta_limpa.py ["D:/Projetos/Eye of Thundera"]
+Uso:  python ferramentas/gerar_pasta_limpa.py ["D:/Projetos/Eye of Thundera Instalador"]
 
 Regras: so copia (por cima dos mesmos nomes); nunca apaga nada no destino; nao
 copia chave, conversas, memoria nem lembretes (ficam em %LOCALAPPDATA%/Eye of Thundera);
@@ -19,11 +19,11 @@ import sys
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
-DESTINO_PADRAO = Path(r"D:\Projetos\Eye of Thundera")
+DESTINO_PADRAO = Path(r"D:\Projetos\Eye of Thundera Instalador")
 ENTRADA = "app_web.py"
 EXTRAS = ["icone.ico", "requirements.txt", "1 - Instalar.bat", "2 - Abrir Eye of Thundera.bat"]
 
-LEIA_ME = """Eye of Thundera - assistente pessoal de pesquisa com IA
+LEIA_ME = r"""Eye of Thundera - assistente pessoal de pesquisa com IA
 =======================================================
 
 Como usar (so na primeira vez):
@@ -74,30 +74,35 @@ def main():
     if destino.resolve() == RAIZ:
         print("O destino nao pode ser a propria pasta de trabalho.")
         return 1
+    # O codigo-fonte fica sempre na subpasta "codigo", para a raiz do
+    # instalador ficar limpa: so o programa, o LEIA-ME e a pasta "codigo".
+    codigo = destino / "codigo"
+    codigo.mkdir(parents=True, exist_ok=True)
     copiados = []
     for rel in lista():
         origem = RAIZ / rel
         if not origem.is_file():
             print("FALTA na origem:", rel)
             return 1
-        alvo = destino / rel
+        alvo = codigo / rel
         alvo.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(origem, alvo)
         copiados.append(rel)
     leia = destino / "LEIA-ME.txt"
     if not leia.exists():
         leia.write_text(LEIA_ME, encoding="utf-8")
-    total = sum((destino / r).stat().st_size for r in copiados)
-    print("Copiados %d arquivos (%.0f KB) para %s" % (len(copiados), total / 1024, destino))
+    total = sum((codigo / r).stat().st_size for r in copiados)
+    print("Copiados %d arquivos (%.0f KB) para %s"
+          % (len(copiados), total / 1024, codigo))
     for r in copiados:
         print("  ", r)
     # Confere: o programa tem que importar usando SO os arquivos da pasta nova.
     r = subprocess.run(
         [sys.executable, "-B", "-c",       # -B: nao deixa __pycache__ na pasta nova
          "import app_web, pdf_leitor, lembretes, documento; print(app_web.__file__)"],
-        cwd=str(destino), capture_output=True, text=True, encoding="utf-8", errors="replace")
+        cwd=str(codigo), capture_output=True, text=True, encoding="utf-8", errors="replace")
     saida = (r.stdout or "").strip()
-    if r.returncode != 0 or str(destino).lower() not in saida.lower():
+    if r.returncode != 0 or str(codigo).lower() not in saida.lower():
         print("CONFERENCIA FALHOU:", saida, (r.stderr or "")[-500:])
         return 1
     print("Conferencia: o programa importa direto da pasta nova (%s)." % saida)

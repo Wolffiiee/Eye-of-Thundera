@@ -5,6 +5,18 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-18 - Instalador pronto (pasta "Eye of Thundera Instalador")
+
+- **Onde o Claude tinha parado:** a pasta existia com o EXE e o `codigo/`, mas era de **18/10 10:24** — antes da renomeacao de hoje. Tinha 3 problemas: (1) o `.exe` era o modo **onefile** antigo (64,6 MB, dois processos no Gerenciador de Tarefas); (2) o `codigo/` ainda trazia `pesquisa_ia.py` e nenhuma copia dos dados novos; (3) o `LEIA-ME.txt` mandava o usuario para `%LOCALAPPDATA%\PesquisaIA`.
+- **Corrigido:** o `codigo/` foi regerado pelo `ferramentas/gerar_pasta_limpa.py` (agora com `eye_of_thundera.py`, `plugins.py` e `sincronizar.py`), o EXE onefile foi trocado pelo **onedir** (11,1 MB + `_internal`, **1 processo so**) e o `LEIA-ME.txt` da raiz foi reescrito.
+- **`ferramentas/gerar_pasta_limpa.py`:** dois ajustes — o destino padrao passou a ser `Eye of Thundera Instalador` (antes apontava para a propria pasta de trabalho, o que era perigoso) e o codigo agora vai para a subpasta `codigo/`, deixando a raiz limpa. Corrigido tambem um `SyntaxWarning` de escape no `LEIA_ME`.
+- **`ferramentas/gerar_instalador.py` (novo):** monta o pacote inteiro em um comando — roda os testes, compila o EXE, copia o codigo, monta a pasta e gera o zip em `_tmp\`. Se algum teste falhar, ele NAO gera o pacote.
+- **Teste real do instalador:** o zip (65,1 MB, 1261 arquivos) foi descompactado numa pasta temporaria e o EXE foi aberto. Resultado: **abriu e ficou rodando com 1 unico processo** (pid 6880) e usou `%LOCALAPPDATA%\Eye of Thundera`, sem tocar na pasta antiga. Depois a pasta de teste foi apagada.
+- **Como usar:** `python ferramentas/gerar_instalador.py`. O zip sai em `_tmp\Eye of Thundera Instalador.zip`, pronto para mandar a outro computador.
+- **Verificacao:** 177 verificacoes, 0 falhas, 0 avisos.
+
+---
+
 ## 2026-10-18 - Varredura final: fim dos resquicios de "PesquisaIA"
 
 - **Bug achado e corrigido:** `fazer_backup.py` ainda salvava o backup do codigo em `OneDrive\Backup Pesquisa IA\` com o nome `pesquisa-ia_*.zip`. Agora usa `OneDrive\Backup Eye of Thundera\` e `eye-of-thundera_*.zip`.

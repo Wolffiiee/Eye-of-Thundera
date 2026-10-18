@@ -6,7 +6,7 @@ necessarios para ele rodar, para ele ter uma ideia de como ficaria. E' uma COPIA
 pasta de trabalho D:\Projetos\Eye of Thundera continua sendo a original e nada nela muda.
 
 ## Destino
-D:\Projetos\Eye of Thundera   (nao apagar nem sobrescrever a pasta se ela ja existir:
+D:\Projetos\Eye of Thundera Instalador   (nao apagar nem sobrescrever a pasta se ela ja existir:
 avisar o Wolf e criar com sufixo)
 
 ## Entra (so o que o programa usa para abrir e funcionar)
