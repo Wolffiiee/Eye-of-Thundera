@@ -1,6 +1,6 @@
 # Próximos passos
 
-Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico detalhado fica em HISTORICO-DE-MUDANCAS.md.
+Atualizado em 18/10/2026. Este documento contém pendências reais; o histórico detalhado fica em HISTORICO-DE-MUDANCAS.md.
 
 ## Prioridade 1 — validar a correção da interface
 
@@ -48,7 +48,7 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
 - [x] Leitura local de PDF arrastado para a conversa (`pdf_leitor.py`, biblioteca `pypdf`), com o texto entrando na caixa para revisão antes do envio.
 - [x] Casos ruins tratados com mensagem clara: PDF com senha, corrompido, grande demais (>25 MB) e digitalizado (sem texto).
 - [x] `pypdf` declarado no `requirements.txt`, nos dois `.spec` do PyInstaller e no `verificar.py`; testes com PDFs sintéticos em `_tmp`.
-- [ ] Testar manualmente arrastando um PDF de verdade (com texto) e um digitalizado pelo atalho real.
+- [x] Testar manualmente arrastando um PDF de verdade (com texto) e um digitalizado pelo atalho real. **Confirmado pelo usuário em 18/10: "já foram feitos e estão funcionando".**
 - [ ] (Opcional, etapa futura) Anexar imagens depende de OCR/visão e de consentimento explícito; ainda não iniciado.
 
 ## Prioridade 3.6 — contraste dos temas (corrigido)
@@ -69,7 +69,7 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
 - [x] Sem as duas bibliotecas, o aviso antigo continua valendo ("pode ser digitalizado"); `requirements.txt` e os dois `.spec` trazem as duas.
 - [x] O OCR roda em **thread própria** com limite de 60 s: na thread principal, depois do pywebview, o `await` do OCR nunca volta (o `verificar.py` travou nisso até o problema ser achado).
 - [x] Testes novos no `verificar.py` (OCR de 1 e 2 páginas, aviso do limite de 20 páginas, aviso quando as bibliotecas faltam) e conferência na tela com dados isolados em `_tmp`.
-- [ ] Testar com um PDF digitalizado de verdade (uma página de livro escaneada) e conferir a qualidade da leitura; OCR é aproximado — o texto vai para a caixa justamente para revisão.
+- [x] Testar com um PDF digitalizado de verdade (uma página de livro escaneada) e conferir a qualidade da leitura; OCR é aproximado - o texto vai para a caixa justamente para revisão. **Confirmado pelo usuário em 18/10.**
 
 ## Prioridade 8 — lembretes ("me lembra amanhã às 9h de pagar a conta")
 
@@ -92,7 +92,7 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
 - [x] `app.js` usa `busca_pontos` em `desenhar()` com ordenação por relevância; `index.html` carrega `busca.js` antes de `app.js`.
 - [x] Dois testes novos no `verificar.py` (existência/regra do `busca.js` e ligação no HTML/`app.js`; e execução dos 18 casos de teste Node.js). Suíte: **172 verificações, 0 falhas, 0 avisos**.
 - [x] Termos da busca **pintados** no item (`destacarTexto()` + `escaparHtml()` no `app.js`, `.destaque-busca` no CSS): mesma tolerância do `busca.js`, acentos preservados, HTML escapado; dois testes novos no `verificar.py` (estrutura + lógica Node.js). Suíte: **174 verificações, 0 falhas, 0 avisos**. Avatar da IA (lupa) removido das respostas a pedido do usuário e commitado.
-- [ ] Testar na tela com a Memória real: digitar um termo com erro de digitação e confirmar que o item aparece primeiro e com o termo pintado.
+- [x] Testar na tela com a Memória real: digitar um termo com erro de digitação e confirmar que o item aparece primeiro e com o termo pintado. **Confirmado pelo usuário em 18/10: "Está funcionando perfeitamente".**
 
 ## Prioridade 4 — manter os documentos coerentes
 
