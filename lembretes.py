@@ -343,7 +343,7 @@ def entender(texto, agora=None):
                 alvo = datetime.combine(date(data.year + 1, data.month, data.day), alvo.time())
             except ValueError:
                 alvo = None
-        elif tipo == "hoje_hora":
+        elif tipo in ("hoje", "hoje_hora"):
             alvo = alvo + timedelta(days=1)
         else:
             return {"erro": "Esse horário já passou. " + _MSG_QUANDO}
