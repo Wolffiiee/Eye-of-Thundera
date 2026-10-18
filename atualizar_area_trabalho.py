@@ -11,7 +11,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-PASTA = Path(r"D:\Projetos\PesquisaIA")
+PASTA = Path(r"D:\Projetos\Eye of Thundera")
 DESKTOP = Path.home() / "Desktop"
 LNK = DESKTOP / "Eye of Thundera.lnk"
 ICONE = PASTA / "icone.ico"

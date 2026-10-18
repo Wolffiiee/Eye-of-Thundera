@@ -5,6 +5,18 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-18 - Pasta do programa renomeada: `Eye of Thundera`
+
+- **O que mudou:** a pasta de trabalho saiu de `D:\Projetos\PesquisaIA` e passou a se chamar `D:\Projetos\Eye of Thundera`. Nenhum arquivo foi perdido; o repositório git, o ambiente virtual (`.venv`), a pasta `dist` e todo o código vieram junto.
+- **Nome da pasta de dados:** `%LOCALAPPDATA%\PesquisaIA` passou a ser `%LOCALAPPDATA%\Eye of Thundera`. Os arquivos do usuário (config, histórico, memória, lembretes, janela, dicionário) foram copiados automaticamente para a pasta nova na primeira execução. **A pasta antiga não foi apagada** — pode ser removida à vontade depois, quando o usuário confirmar que está tudo certo.
+- **Pasta de plugins:** o plugin de exemplo (`/tempo`) foi copiado para `%LOCALAPPDATA%\Eye of Thundera\plugins`.
+- **Ambiente virtual corrigido:** `pyvenv.cfg` e o `activate.bat` apontavam para o caminho antigo e foram atualizados para a pasta nova.
+- **Atalho da Área de Trabalho:** continua apontando para `D:\Projetos\Eye of Thundera\dist\Eye of Thundera\Eye of Thundera.exe` (EXE recompilado após a mudança).
+- **Documentação:** `LEIA-ME.txt`, `README.md` e demais arquivos `.md` passaram a citar `D:\Projetos\Eye of Thundera` e `%LOCALAPPDATA%\Eye of Thundera`.
+- **Verificação:** suíte com 177 verificações, 0 falhas, 0 avisos.
+
+---
+
 ## 2026-10-18 - Modo onedir: um único processo no Gerenciador de Tarefas
 
 - **Problema:** o EXE compilado pelo PyInstaller estava em modo "onefile" (um único arquivo). Ao abrir, o PyInstaller extrai os arquivos para uma pasta temporária e executa um segundo processo — por isso apareciam **dois** "Eye of Thundera.exe" no Gerenciador de Tarefas (aba Detalhes).

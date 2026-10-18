@@ -4,7 +4,7 @@ Atualizado em 16/10/2026
 O Eye of Thundera é um assistente de conversa e pesquisa com interface escura. Ele usa Python e uma interface HTML dentro de uma janela pywebview.
 
 COMO ABRIR
-Na Área de Trabalho, dê duplo clique em Eye of Thundera. O atalho abre o código-fonte em D:\Projetos\PesquisaIA. Se a janela estiver aberta mas não responder, feche-a e abra o atalho novamente; se continuar, peça para verificar o arquivo de erro antes de reinstalar qualquer coisa.
+Na Área de Trabalho, dê duplo clique em Eye of Thundera. O atalho abre o programa em D:\Projetos\Eye of Thundera. Se a janela estiver aberta mas não responder, feche-a e abra o atalho novamente; se continuar, peça para verificar o arquivo de erro antes de reinstalar qualquer coisa.
 
 PRIMEIRO USO
 1. Abra Configurações > Chaves.
@@ -44,11 +44,11 @@ ATALHOS
 - Ctrl+Shift+S: pesquisa séria.
 
 DADOS E PRIVACIDADE
-Configurações, histórico e memória ficam no perfil local do Windows, em %LOCALAPPDATA%\PesquisaIA. O programa envia a pergunta e o contexto necessário ao provedor de IA escolhido quando você pede uma resposta; não trate conversas privadas como substituto para não enviar informações sensíveis a serviços externos. Faça backup antes de alterações importantes.
+Configurações, histórico e memória ficam no perfil local do Windows, em %LOCALAPPDATA%\Eye of Thundera. O programa envia a pergunta e o contexto necessário ao provedor de IA escolhido quando você pede uma resposta; não trate conversas privadas como substituto para não enviar informações sensíveis a serviços externos. Faça backup antes de alterações importantes.
 
 SE ALGO NÃO FUNCIONAR
 1. Feche e abra novamente o atalho.
-2. Se os cliques continuarem sem resposta, não reinstale nem apague dados. Informe o que clicou e peça para consultar %LOCALAPPDATA%\PesquisaIA\erro.log.
+2. Se os cliques continuarem sem resposta, não reinstale nem apague dados. Informe o que clicou e peça para consultar %LOCALAPPDATA%\Eye of Thundera\erro.log.
 3. Não envie chaves de API junto com o log.
 
 ARQUIVOS DO PROJETO
