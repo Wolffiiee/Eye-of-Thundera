@@ -2,7 +2,7 @@
 """
 BANCO DE TESTES: a tela em HTML funciona neste computador?
 
-O Wolf aprovou refazer a tela do Pesquisa IA em HTML. Isso so vale a pena
+O Wolf aprovou refazer a tela do Eye of Thundera em HTML. Isso so vale a pena
 se o "pywebview" (que abre uma tela de navegador dentro de uma janela do
 Windows) funcionar aqui. Este arquivo e o teste que decide.
 

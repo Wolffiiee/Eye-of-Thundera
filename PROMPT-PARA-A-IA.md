@@ -4,7 +4,7 @@ Copie TUDO do bloco abaixo e cole no início da conversa com a IA (ou sempre
 que abrir uma conversa nova com ela).
 
 ```
-Você vai continuar o trabalho num programa meu chamado "Pesquisa IA"
+Você vai continuar o trabalho num programa meu chamado "Eye of Thundera"
 (Python 3.12 + tkinter). Meu apelido é Wolf; pode me chamar assim. Eu não sei
 programar, então siga um método e me explique tudo em português simples, sem
 jargão.
@@ -84,7 +84,7 @@ COMO VOCÊ DEVE TRABALHAR (detalhes no PASSO-A-PASSO.md)
 4. Rode verificar.bat. Só diga que terminou se a última linha for
    "TUDO CERTO" e não houver nenhum [FALHA].
 5. Se a mudança afeta o programa que uso pelo atalho da Área de Trabalho,
-   rode "3 - Gerar EXE.bat" e copie dist\Pesquisa IA.exe para a Área de
+   rode "3 - Gerar EXE.bat" e copie dist\Eye of Thundera.exe para a Área de
    Trabalho (guarde o antigo em _arquivo_morto\). Me avise se fez isso.
 6. Faça um commit no Git com mensagem clara em português.
 7. Atualize o HISTORICO-DE-MUDANCAS.md com o que você baixou, modificou,

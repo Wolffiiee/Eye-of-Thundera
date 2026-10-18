@@ -8,7 +8,7 @@ escrita a mao (le os `import` a partir do app_web.py e o que o index.html carreg
 Uso:  python ferramentas/gerar_pasta_limpa.py ["D:/Projetos/Eye of Thundera"]
 
 Regras: so copia (por cima dos mesmos nomes); nunca apaga nada no destino; nao
-copia chave, conversas, memoria nem lembretes (ficam em %LOCALAPPDATA%/PesquisaIA);
+copia chave, conversas, memoria nem lembretes (ficam em %LOCALAPPDATA%/Eye of Thundera);
 o LEIA-ME.txt do destino so e' criado se nao existir.
 """
 import ast
@@ -33,7 +33,7 @@ Como usar (so na primeira vez):
   4. Em Configuracoes > Chaves, cole a sua chave do Google (Gemini).
 
 Suas conversas, memoria, lembretes e chaves ficam em:
-  %LOCALAPPDATA%\\PesquisaIA   (fora desta pasta, de proposito).
+  %LOCALAPPDATA%\Eye of Thundera   (fora desta pasta, de proposito).
 """
 
 

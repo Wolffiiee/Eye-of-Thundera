@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Verificação automática do Pesquisa IA.
+Verificação automática do Eye of Thundera.
 
 Rode SEMPRE depois de qualquer alteração no programa (duplo clique em
 "verificar.bat"). Se aparecer alguma linha [FALHA], a alteração NÃO está

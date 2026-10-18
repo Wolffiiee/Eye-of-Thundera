@@ -1,4 +1,4 @@
-# Ideias para o Pesquisa IA
+# Ideias para o Eye of Thundera
 
 Ideias coletadas de outros apps de assistente (ChatGPT, Gemini, Perplexity, Notion
 AI, Replika etc.) e das tendências de 2026. Organizadas pelas que combinam mais

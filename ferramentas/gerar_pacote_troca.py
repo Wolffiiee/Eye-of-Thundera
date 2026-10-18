@@ -8,7 +8,7 @@ log = git("log", "--format=%h  %ad  %s", "--date=format:%d/%m %H:%M", "-15")
 arq = git("ls-files")
 (tr / "arvore-de-arquivos.txt").write_text(arq, encoding="utf-8")
 (tr / "ultimos-commits.txt").write_text(log, encoding="utf-8")
-texto = f"""# Pacote de troca para o ChatGPT - Eye of Thundera (antigo "Pesquisa IA")
+texto = f"""# Pacote de troca para o ChatGPT - Eye of Thundera
 
 Gerado em 16/10/2026 pelo Claude, a pedido do Wolf. LEIA ISTO PRIMEIRO.
 
@@ -23,9 +23,9 @@ quando precisa. Tela escura estilo Claude, em HTML dentro de uma janela do Windo
 aprende sobre o Wolf, microfone (voz para texto via Gemini), 5 temas de cor, conversa
 privada, pesquisa profunda, resumo do dia, galeria de imagens e fontes citadas.
 
-- Pasta do projeto: D:\\Projetos\\PesquisaIA   (NAO existe mais C:\\Projetos)
+- Pasta do projeto: D:\\Projetos\\Eye of Thundera
 - Entrada do programa: app_web.py  |  telas: web\\index.html, estilo.css, app.js
-- Motor: pesquisa_ia.py (ainda carrega codigo velho de tela Tk, que esta MORTO),
+- Motor: eye_of_thundera.py (ainda carrega codigo velho de tela Tk, que esta MORTO),
   roteador.py (chat x pesquisa), memoria.py, voz.py
 - Programa antigo (tkinter) esta APOSENTADO. Nao mexer nele.
 - Testes: verificar.py e verificar_motor.py (rodar com verificar.bat; ambos TUDO CERTO)

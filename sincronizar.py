@@ -28,9 +28,11 @@ import shutil
 import time
 from pathlib import Path
 
-# O mesmo calculo do eye_of_thundera: %LOCALAPPDATA%\\PesquisaIA. Nao importamos
-# eye_of_thundera aqui de proposito (o modulo fica sem dependencias, da mesma
-# forma que roteador.py).
+# O mesmo calculo do eye_of_thundera: %LOCALAPPDATA%\Eye of Thundera. Nao
+# importamos eye_of_thundera aqui de proposito (o modulo fica sem dependencias,
+# da mesma forma que roteador.py).
+# "PesquisaIA" abaixo e o nome ANTIGO da pasta. Fica aqui de proposito: e a
+# migration one-time que leva os dados de quem ja usava o programa.
 PASTA_DADOS_ANTIGA = Path(
     os.environ.get("LOCALAPPDATA", Path.home())) / "PesquisaIA"
 PASTA_DADOS = Path(

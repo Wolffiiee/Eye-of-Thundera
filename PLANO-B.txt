@@ -1,5 +1,5 @@
 ========================================================
-  PLANO B do Pesquisa IA  (opcional)
+  PLANO B do Eye of Thundera  (opcional)
 ========================================================
 
 O que é?
@@ -97,4 +97,4 @@ programa para de usá-las.
 - Se os dois serviços falharem, o programa avisa exatamente o que
   aconteceu com cada um, em português.
 - As chaves ficam salvas apenas no seu usuário do Windows, no arquivo:
-    %LOCALAPPDATA%\PesquisaIA\config.json
+    %LOCALAPPDATA%\Eye of Thundera\config.json

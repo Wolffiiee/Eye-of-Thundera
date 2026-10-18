@@ -5,6 +5,20 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-18 - Varredura final: fim dos resquicios de "PesquisaIA"
+
+- **Bug achado e corrigido:** `fazer_backup.py` ainda salvava o backup do codigo em `OneDrive\Backup Pesquisa IA\` com o nome `pesquisa-ia_*.zip`. Agora usa `OneDrive\Backup Eye of Thundera\` e `eye-of-thundera_*.zip`.
+- **Backup antigo MOVIDO (nada apagado):** os 2 `.zip` do codigo e os 7 `dados_*.zip` foram da pasta `OneDrive\Backup Pesquisa IA` para `OneDrive\Backup Eye of Thundera`. A pasta antiga foi removida vazia.
+- **Documentos ativos arrumados:** `IDEIAS.md`, `PLANO-B.txt`, `PROMPT-PARA-A-IA.md`, `verificar_motor.py`, `web/spike_webview.py`, `ferramentas/gerar_pasta_limpa.py` e `ferramentas/gerar_pacote_troca.py` (inclusive a referencia ao modulo, que agora e `eye_of_thundera.py`).
+- **O que ficou com o nome antigo de proposito:**
+  - `eye_of_thundera.py`, `lembretes.py`, `plugins.py` e `sincronizar.py` guardam `PASTA_*_ANTIGA = ... / "PesquisaIA"`. E a migration one-time: se o programa rodar num computador que so tem a pasta velha, ela copia os dados para a nova. e precisa ficar.
+  - `HISTORICO-DE-MUDANCAS.md` e os planos marcados como "historico" citam o nome antigo porque registram o que aconteceu. Isso e arquivo de memoria do projeto, nao esta rodando.
+- **Pasta `%LOCALAPPDATA%\PesquisaIA` mantida** como copia de seguranca dos dados. A pasta nova `%LOCALAPPDATA%\Eye of Thundera` tem tudo e mais atualizado.
+- **Pasta `D:\Projetos\PesquisaIA`:** ficou vazia; o Windows so libera o apagamento no proximo reinicio.
+- **Verificacao:** `verificar.py` com 177 verificacoes e `verificar_motor.py`, ambos TUDO CERTO. EXE recompilado e atalho atualizado.
+
+---
+
 ## 2026-10-18 - Pasta do programa renomeada: `Eye of Thundera`
 
 - **O que mudou:** a pasta de trabalho saiu de `D:\Projetos\PesquisaIA` e passou a se chamar `D:\Projetos\Eye of Thundera`. Nenhum arquivo foi perdido; o repositório git, o ambiente virtual (`.venv`), a pasta `dist` e todo o código vieram junto.
