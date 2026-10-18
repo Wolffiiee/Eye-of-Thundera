@@ -15,7 +15,7 @@ PASTA = Path(r"D:\Projetos\PesquisaIA")
 DESKTOP = Path.home() / "Desktop"
 LNK = DESKTOP / "Eye of Thundera.lnk"
 ICONE = PASTA / "icone.ico"
-EXE_DIST = PASTA / "dist" / "Eye of Thundera.exe"
+EXE_DIST = PASTA / "dist" / "Eye of Thundera" / "Eye of Thundera.exe"
 PYW_ORIGINAL = PASTA / ".venv" / "Scripts" / "pythonw.exe"
 PYW_RENOMEADO = PASTA / ".venv" / "Scripts" / "Eye of Thundera.exe"
 

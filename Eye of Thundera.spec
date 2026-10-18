@@ -24,6 +24,8 @@ datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 hiddenimports += ['lembretes']
 # Documento aberto (perguntar sobre PDF longo): modulo local.
 hiddenimports += ['documento']
+# Plugins do usuario e sincronizacao entre computadores: modulos locais.
+hiddenimports += ['plugins', 'sincronizar']
 # OCR local de PDF digitalizado (uma foto da pagina): renderiza a pagina com
 # a DLL do PDFium (pypdfium2) e le com o OCR do proprio Windows (winsdk),
 # tudo em memoria. Sem eles o programa so avisa que o PDF pode ser digitalizado.
@@ -54,9 +56,8 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='Eye of Thundera',
     debug=False,
     bootloader_ignore_signals=False,
@@ -71,5 +72,15 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['icone.ico'],
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='Eye of Thundera',
 )
 
