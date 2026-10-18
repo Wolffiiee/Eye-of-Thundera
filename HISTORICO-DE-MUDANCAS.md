@@ -5,6 +5,22 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-18 - Instalador: tudo dentro de UMA pasta
+
+- **Pedido do Wolf:** ao descompactar o zip, a pasta `codigo` e o `LEIA-ME.txt` devem ficar **dentro** da pasta "Eye of Thundera", e nao soltos ao lado dela.
+- **Antes:** o zip abria com 3 itens na_area de trabalho — a pasta "Eye of Thundera" (o programa), a pasta "codigo" e o "LEIA-ME.txt".
+- **Agora:** o zip abre com **um item so**, a pasta "Eye of Thundera", e dentro dela:
+  - `Eye of Thundera.exe` (11,1 MB) — o programa, de dois cliques
+  - `_internal\` — o que o EXE precisa para rodar (nao apagar nem mover)
+  - `codigo\` — o codigo-fonte, so para quem quiser olhar
+  - `LEIA-ME.txt` — as instrucoes
+- **`ferramentas/gerar_instalador.py`:** reescrito. Monta a pasta final inteira antes de zipar e grava cada arquivo ja com o prefixo `Eye of Thundera/`, para o zip ter uma unica raiz. O nome do ZIP tambem mudou para `Eye of Thundera.zip` (antes era `Eye of Thundera Instalador.zip`).
+- **LEIA-ME ajustado:** as instrucoes foram reescritas para a nova estrutura (antes mandava "de dois cliques na pasta e depois no .exe", o que nao batia mais) e ganhou a explicacao de que a pasta `_internal` nao pode ser apagada nem movida.
+- **Teste real:** o zip foi descompactado numa pasta vazia e o `.exe` aberto — abriu normalmente com **1 unico processo** (pid 784). As pastas de teste foram apagadas depois.
+- **Verificacao:** 177 verificacoes, 0 falhas, 0 avisos.
+
+---
+
 ## 2026-10-18 - Instalador pronto (pasta "Eye of Thundera Instalador")
 
 - **Onde o Claude tinha parado:** a pasta existia com o EXE e o `codigo/`, mas era de **18/10 10:24** — antes da renomeacao de hoje. Tinha 3 problemas: (1) o `.exe` era o modo **onefile** antigo (64,6 MB, dois processos no Gerenciador de Tarefas); (2) o `codigo/` ainda trazia `pesquisa_ia.py` e nenhuma copia dos dados novos; (3) o `LEIA-ME.txt` mandava o usuario para `%LOCALAPPDATA%\PesquisaIA`.
