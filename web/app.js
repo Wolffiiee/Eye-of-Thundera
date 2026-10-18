@@ -2218,9 +2218,9 @@ async function salvarConfig() {
 
     estado.cfg = r.cfg;
     aplicarCfg();
-    // Re-lê a configuração do backend para garantir que a tela reflita o que
-    // foi gravado. Se a re-leitura falhar (ou retornar algo inesperado),
-    // não derruba o salvamento — o estado local já tem os valores.
+    // Atualiza o estado local com os valores que acabamos de salvar. Tenta
+    // re-ler do backend, mas se falhar nao derruba o salvamento.
+    if (!estado.cfgTela) estado.cfgTela = {};
     try {
       const atual = await chamar("config_ler");
       if (atual && !atual.erro && Array.isArray(atual.servicos)) {
@@ -2229,10 +2229,7 @@ async function salvarConfig() {
     } catch (_e) {
       console.error("Não consegui re-ler a configuração:", _e);
     }
-    // Garante que os campos novos (sincronização, plugins) também fiquem
-    // atualizados mesmo se a re-leitura falhou.
-    if (!estado.cfgTela) estado.cfgTela = {};
-    if (estado.aba === "sincronizacao" && estado.rascunho.pasta_sync) {
+    if (estado.aba === "sincronizacao" && estado.rascunho.pasta_sync !== undefined) {
       estado.cfgTela.pasta_sync = estado.rascunho.pasta_sync;
     }
     if (estado.aba === "plugins") {
@@ -2245,20 +2242,15 @@ async function salvarConfig() {
       catch (_e) { estado.pluginsInfo = null; }
     }
     if (estado.aba === "sincronizacao") {
-      try { estado.syncInfo = await chamar("sincronizar_config"); }
-      catch (_e) {
-        console.error("Erro ao recarregar sincronizar_config:", _e);
-        estado.syncInfo = null;
+      // Atualiza syncInfo localmente com o valor salvo.
+      if (estado.syncInfo) {
+        estado.syncInfo.pasta = estado.rascunho.pasta_sync || estado.syncInfo.pasta;
+        estado.syncInfo.existe = false;
+        estado.syncInfo.gravavel = false;
+        estado.syncInfo.aviso = null;
       }
     }
-    try {
-      mostrarAba(estado.aba);
-    } catch (erroMostrar) {
-      console.error("Erro ao re-renderizar aba após salvar:", erroMostrar);
-      $("#config-aviso").textContent = "Salvo, mas não consegui atualizar a tela. Feche e abra Configurações.";
-      $("#config-aviso").className = "erro";
-      return;
-    }
+    mostrarAba(estado.aba);
     $("#config-aviso").textContent = "Salvo.";
     $("#config-aviso").className = "ok";
   } catch (erro) {
