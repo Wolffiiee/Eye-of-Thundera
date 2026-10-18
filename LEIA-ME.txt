@@ -23,6 +23,7 @@ TELA PRINCIPAL
 - Privada: inicia uma conversa que não deve ser salva no histórico nem usada para aprender memória.
 - Resumo do dia: pede um resumo das notícias atuais.
 - Contador de uso: no rodapé, ao lado da dica de atalhos, aparece "hoje: N perguntas". Conta só o que vai para a IA (lembretes, plugins e busca de imagens são locais e não contam). Clique na etiqueta para zerar a contagem do dia.
+- Cota acabada: quando o limite gratuito do Gemini acaba, o programa passa a responder com a chave de reserva e mostra uma faixa amarela na conversa explicando. A faixa fica na tela até você clicar (só aparece uma vez por hora). Se você não tiver chave de reserva cadastrada, o aviso diz isso.
 - Microfone: clique para começar a gravar e clique novamente para parar. O texto transcrito aparece na caixa para revisão antes do envio.
 - Soltar um arquivo de texto compatível na janela pode carregar seu conteúdo para a caixa de pergunta. Confira o conteúdo antes de enviar.
 

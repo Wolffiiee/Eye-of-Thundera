@@ -3402,6 +3402,24 @@ SUGESTOES = [
 # Estas funcoes nao dependem de nenhuma tela, por isso a tela nova
 # (app_web.py) aproveita exatamente a mesma regra em vez de reescrever.
 
+def _falha_de_cota(erro):
+    """True quando o erro e' "a cota acabou" (e nao chave, nem internet).
+
+    Fica num lugar so de proposito: `traduzir_erro` usa para escrever a
+    frase e o modulo `cota` usa para mostrar o aviso de que entrou no
+    plano de reserva. Uma lista so' de palavras: quando aparecem duas,
+    os dois usos acabam divergindo com o tempo.
+    """
+    texto = ("%s %s" % (type(erro).__name__, erro)).lower()
+    return ("quota" in texto
+            or "rate limit" in texto
+            or "rate_limit" in texto
+            or "resource_exhausted" in texto
+            or "resourceexhausted" in texto
+            # o Google devolve 429 quando a cota do plano gratis acaba
+            or "429" in texto)
+
+
 def traduzir_erro(erro):
     """Mete um erro do Google/da web em portugues de gente.
 
@@ -3421,7 +3439,7 @@ def traduzir_erro(erro):
             "AIza ou AQ., a do Groq com gsk_ e a do OpenRouter com "
             "sk-or-)."
         )
-    if "quota" in baixo or "rate limit" in baixo or "resource_exhausted" in baixo:
+    if _falha_de_cota(erro):
         return (
             "Você atingiu o limite gratuito por agora. "
             "Isso se renova sozinho — espere alguns minutos (ou volte "
@@ -3459,27 +3477,54 @@ def chave_ativa(cfg, falhou_principal):
     return (cfg.get("api_key") or "").strip()
 
 
-def tentar_com_reserva(chamar, cfg, estado):
+def tentar_com_reserva(chamar, cfg, estado, ao_falhar=None):
     """Executa `chamar(chave)`. Se o Google recusar a chave principal,
     repete com a chave reserva (uma vez so).
 
-    `estado` e um dicionario com a chave "falhou": se ficar True, o
-    programa passa a usar a reserva. E o mesmo dicionario para a
-    proxima chamada, para a troca durar a sessao toda.
+    Troca por DOIS motivos, porque os dois sao "o principal nao deu":
+      - a chave foi recusada (`falhou`): nao adianta nem tentar de novo.
+      - a cota acabou (`cota`): a chave esta boa, e' so o limite do plano
+        gratis. Antes (18/10/2026) esse caso NAO trocava e o programa
+        falhava mesmo tendo reserva configurada — o Wolf perdia o
+        programa inteiro por um limite que se resolve sozinho.
+
+    `estado` e o mesmo dicionario de sempre: recebe "falhou" e "cota", e
+    quem chama pode ler para avisar o Wolf.
+
+    `ao_falhar(erro)`, se vier, e' chamado com o erro de cada tentativa que
+    falhou. Quem quiser mostrar um aviso precisa do erro REAL: quando a 2a
+    tentativa da certo, nao sobra erro nenhum para olhar.
     """
     for tentativa in range(2):
-        chave = chave_ativa(cfg, bool(estado.get("falhou")))
+        # Na 2a tentativa o que manda e' "tentar a reserva agora", e' nao o
+        # `falhou` da sessao: quando o motivo foi COTA, `falhou` continua
+        # False (a chave esta otima) e ler ele aqui chamaria o Gemini de
+        # novo em vez da reserva - que era justamente o bug de 18/10.
+        usar_reserva = bool(estado.get("falhou")) or tentativa > 0
+        chave = chave_ativa(cfg, usar_reserva)
         try:
             return chamar(chave)
         except Exception as erro:
+            if ao_falhar is not None:
+                try:
+                    ao_falhar(erro)
+                except Exception:
+                    pass
             if tentativa:
                 raise
-            # so troca quando o erro e de chave mesmo (nao e cota, nem
-            # internet) e so se existir uma reserva
-            if (estado.get("falhou") or not chave_reserva(cfg)
-                    or not _falha_de_chave(erro)):
+            # so troca se existir uma reserva e o erro for um destes dois.
+            # Internet cai fora: repetir na mesma rede nao adianta.
+            if estado.get("falhou") or not chave_reserva(cfg):
                 raise
-            estado["falhou"] = True
+            if _falha_de_chave(erro):
+                estado["falhou"] = True
+            elif _falha_de_cota(erro):
+                # A chave esta otima. Marca a cota e usa a reserva DESTA
+                # vez; na proxima, `falhou` segue False para o Gemini
+                # continuar sendo o principal (a cota pode ter voltado).
+                estado["cota"] = True
+            else:
+                raise
     raise RuntimeError("não foi possível falar com a IA")
 
 

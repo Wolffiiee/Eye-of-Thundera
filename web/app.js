@@ -151,6 +151,29 @@ function aviso(texto, erro) {
   });
 })();
 
+/* ---- aviso de cota: a resposta saiu, mas veio do plano de reserva ----
+   Nao e' erro (a resposta chegou), por isso fica numa faixa amarelada e
+   nao some sozinha: e' a unica vez que o Wolf vai ver. Clicar fecha. */
+function avisoCota(texto) {
+  const faixa = $("#aviso-cota");
+  if (!faixa) return;
+  faixa.textContent = texto;
+  faixa.classList.remove("oculto");
+  // Sobe no fim da conversa para o Wolf ver, sem pular a resposta.
+  const rolagem = $("#rolagem");
+  if (rolagem) rolagem.scrollTo({ top: rolagem.scrollHeight, behavior: "smooth" });
+}
+// Clicar (ou apertar Enter/Espaco, para quem navega pelo teclado) fecha o aviso.
+(function () {
+  const faixa = $("#aviso-cota");
+  if (!faixa) return;
+  const fechar = () => faixa.classList.add("oculto");
+  faixa.addEventListener("click", fechar);
+  faixa.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fechar(); }
+  });
+})();
+
 /* ---------------- texto das mensagens ---------------- */
 const URL_RE = /https?:\/\/[^\s<>"')\]]+[^\s<>"')\].,;:!?]/g;
 const MARCA_LISTA = /^\s*(?:[•\-–*]|\d+[.)])\s+/;
@@ -731,6 +754,8 @@ function segurarEventos(ligado) {
 function aplicarEvento(o) {
   if (o.tipo === "etapa") {
     $("#etapa").textContent = o.texto;
+  } else if (o.tipo === "aviso_cota") {
+    avisoCota(o.texto);
   } else if (o.tipo === "resposta") {
     esperar(false);
     estado.ultimaResposta = o.texto;

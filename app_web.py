@@ -498,6 +498,10 @@ class Ponte:
         # programa esqueceria que ja trocou e voltaria a insistir na chave
         # morta a cada mensagem.
         self.chaves = {"falhou": False}
+        # O erro da ultima tentativa que falhou. Quando a reserva salva a
+        # resposta, nao sobra erro visivel para o aviso olhar: sem isto, o
+        # aviso de cota nao saberia dizer o que aconteceu (cota.py).
+        self._erro_da_tentativa = None
         # CONVERSA PRIVADA (ideia 3 da IDEIAS.md): enquanto estiver ligada,
         # a conversa NAO e' gravada e a IA nao aprende nada sobre o que
         # foi dito. serve para assunto que o Wolf nao quer deixar
@@ -1353,6 +1357,20 @@ class Ponte:
             p.registrar_erro("imagem_ampliada", erro)
             return {"erro": "Não consegui abrir essa foto."}
 
+    def _anotar_erro(self, erro):
+        """Guarda o erro de uma tentativa que falhou (usado pelo aviso de cota).
+
+        Guarda o erro que decide se vale a pena mostrar aviso. Chave e cota
+        nao podem se confundir: uma abre as Configuracoes, a outra so avisa
+        que o plano de reserva entrou. Internet nao e' nenhum dos dois.
+        """
+        try:
+            if (p._falha_de_cota(erro)
+                    and not p._falha_de_chave(erro)):
+                self._erro_da_tentativa = erro
+        except Exception:
+            self._erro_da_tentativa = None
+
     def _responder(self, texto, cfg, chave, profundo=False, texto_ia=None):
         """A thread que trabalha enquanto a janela continua viva.
 
@@ -1423,13 +1441,42 @@ class Ponte:
             # Mesma troca automatica de chave do programa antigo. O
             # dicionario `self.chaves` e' o mesmo sempre, para a troca
             # durar a sessao toda (e nao recomecar a cada pergunta).
+            # Guarda o erro da 1a tentativa: se ela falhou por cota, e'
+            # esse erro que o aviso precisa mostrar (a 2a tentativa deu
+            # certo e nao ha erro visivel para olhar).
+            self._erro_da_tentativa = None
             resposta, fontes, _buscas, _origem = p.tentar_com_reserva(
-                chamar_a_ia, cfg, self.chaves)
+                chamar_a_ia, cfg, self.chaves, ao_falhar=self._anotar_erro)
             resposta = (resposta or "").strip() or "(sem resposta)"
             if self.chaves.get("falhou"):
                 self._evento({"tipo": "etapa",
                               "texto": "A chave principal parou de valer; "
                                        "estou usando a chave reserva."})
+
+            # Aviso de cota (cota.py): a reserva entrou em silencio ate
+            # agora. Aqui vira um aviso de verdade, mas so' UM aviso por
+            # hora - se avisse a cada pergunta, o Wolf ia largar o programa.
+            # A resposta ja saiu, entao aviso nenhum pode derrubar a
+            # conversa: tudo aqui esta dentro de um try.
+            try:
+                import cota as _cota
+                if self.chaves.get("cota"):
+                    # E' desta vez, nao da sessao: limpa na hora para o
+                    # aviso nao virar aviso permanente.
+                    self.chaves["cota"] = False
+                    _texto_cota = _cota.avisar(
+                        self._erro_da_tentativa, tem_reserva=True)
+                    if _texto_cota:
+                        self._evento({"tipo": "aviso_cota",
+                                      "texto": _texto_cota})
+                else:
+                    # A cota voltou a funcionar (ou nunca caiu): perdoa o
+                    # aviso anterior, para a proxima vez precisar ele
+                    # aparecer de novo em vez de ficar calado a sessao toda.
+                    _cota.esquecer()
+            except Exception as erro_cota:
+                p.registrar_erro("cota.avisar", erro_cota)
+
             resposta = (resposta or "").strip() or "(sem resposta)"
 
             # Os sites consultados vaoguardados junto da mensagem (o programa

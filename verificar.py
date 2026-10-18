@@ -2938,6 +2938,200 @@ except Exception as _erro_cont:
     falha("contagem: os testes quebraram: %r" % (_erro_cont,))
 
 
+# --- cota: aviso e troca de provedor (cota.py) --------------------------------
+# Dois assuntos: (1) o aviso de que a cota acabou e (2) a troca de provedor
+# quando isso acontece. O segundo era um BUG de 18/10: a cota acabava e o
+# programa falhava mesmo com a chave de reserva configurada.
+try:
+    import cota as _cota
+
+    ERRO_COTA = "429 RESOURCE_EXHAUSTED: quota exceeded"
+    ERRO_CHAVE = "401 UNAUTHENTICATED: invalid api key"
+    ERRO_NET = "Connection refused: network timeout"
+
+    # --- reconhecimento: cota nao pode virar chave nem internet ---
+    if (_pi2._falha_de_cota(ERRO_COTA) is True
+            and _pi2._falha_de_cota("You exceeded your current quota") is True
+            and _pi2._falha_de_cota("RESOURCE_EXHAUSTED") is True
+            and _pi2._falha_de_cota("Rate limit reached") is True):
+        ok("cota: reconhece o erro de cota (429, quota, rate limit)")
+    else:
+        falha("cota: nao reconheceu um dos jeitos de cota")
+
+    if (_pi2._falha_de_cota(ERRO_CHAVE) is False
+            and _pi2._falha_de_cota(ERRO_NET) is False):
+        ok("cota: chave e internet NAO sao confundidos com cota")
+    else:
+        falha("cota: confundiu chave ou internet com cota")
+
+    # o texto de erro continua funcionando (usa o mesmo reconhecedor)
+    if "limite gratuito" in _pi2.traduzir_erro(Exception(ERRO_COTA)):
+        ok("cota: o texto de erro continua traduzindo o limite de graca")
+    else:
+        falha("cota: traduzir_erro perdeu o texto do limite de graca")
+
+    # --- a troca: o BUG de 18/10 ---
+    def _cenario(erro_principal, reserva, falhar_tambem_reserva=False):
+        """Roda o tentar_com_reserva e devolve (resultado, chamadas, estado)."""
+        cfg = {"api_key": "PRINCIPAL", "api_key_reserva": reserva}
+        chamadas, erros = [], []
+
+        def chamar(chave):
+            quais = "RESERVA" if (reserva and chave == reserva) else "PRINCIPAL"
+            chamadas.append(quais)
+            if len(chamadas) == 1 or falhar_tambem_reserva:
+                raise Exception(erro_principal)
+            return "resposta"
+
+        estado = {}
+        try:
+            _pi2.tentar_com_reserva(chamar, cfg, estado,
+                                    ao_falhar=erros.append)
+            return ("respondeu", chamadas, estado, erros)
+        except Exception as erro:
+            return ("ERROU:" + type(erro).__name__, chamadas, estado, erros)
+
+    r_cota = _cenario(ERRO_COTA, "GROQ123")
+    if r_cota[0] == "respondeu" and r_cota[1] == ["PRINCIPAL", "RESERVA"]:
+        ok("cota: quando a cota acaba, usa a chave de reserva (era o bug de 18/10)")
+    else:
+        falha("cota: a cota NAO caiu na reserva: %r" % (r_cota[:2],))
+
+    if not r_cota[2].get("falhou"):
+        ok("cota: a cota nao marca a chave como morta (so' o limite acabou)")
+    else:
+        falha("cota: marcou a chave como morta, mas so' a cota acabou")
+
+    if r_cota[2].get("cota") is True:
+        ok("cota: o estado avisa que a cota foi o motivo da troca")
+    else:
+        falha("cota: o estado nao marcou a cota")
+
+    r_sem = _cenario(ERRO_COTA, "")
+    if r_sem[0].startswith("ERROU") and r_sem[1] == ["PRINCIPAL"]:
+        ok("cota: sem chave de reserva, o programa ainda falha (nao ha para onde ir)")
+    else:
+        falha("cota: sem reserva o resultado foi %r" % (r_sem[:2],))
+
+    r_net = _cenario(ERRO_NET, "GROQ123")
+    if r_net[0].startswith("ERROU") and r_net[1] == ["PRINCIPAL"]:
+        ok("cota: internet nao troca de provedor (repetir na mesma rede nao adianta)")
+    else:
+        falha("cota: internet trocou de provedor: %r" % (r_net[:2],))
+
+    r_chave = _cenario(ERRO_CHAVE, "GROQ123")
+    if r_chave[0] == "respondeu" and r_chave[2].get("falhou") is True:
+        ok("cota: chave recusada continua marcando `falhou` como antes")
+    else:
+        falha("cota: o caminho da chave quebrou: %r" % (r_chave[:3],))
+
+    r_misto = _cenario("401 unauthenticated: quota permission denied", "GROQ123")
+    if r_misto[2].get("falhou") is True:
+        ok("cota: quando o erro tem os dois, trata como chave (o mais grave)")
+    else:
+        falha("cota: erro misto nao foi tratado como chave")
+
+    r_ambos = _cenario(ERRO_COTA, "GROQ123", falhar_tambem_reserva=True)
+    if r_ambos[0].startswith("ERROU"):
+        ok("cota: se nem a reserva responde, o programa falha de verdade")
+    else:
+        falha("cota: inventou resposta quando nenhum servico respondeu")
+
+    # o aviso precisa do erro REAL (a 2a tentativa deu certo, nao ha erro visivel)
+    if len(r_cota[3]) == 1 and _pi2._falha_de_cota(r_cota[3][0]):
+        ok("cota: o programa guarda o erro real para o aviso mostrar")
+    else:
+        falha("cota: o aviso nao receberia o erro de verdade (%r)" % (r_cota[3],))
+
+    # --- o aviso: uma vez, nao a cada pergunta ---
+    _cota.esquecer()
+    _primeiro = _cota.avisar(ERRO_COTA, tem_reserva=True)
+    _segundo = _cota.avisar(ERRO_COTA, tem_reserva=True)
+    _terceiro = _cota.avisar(ERRO_COTA, tem_reserva=True)
+    if (_primeiro is not None and "reserva" in _primeiro
+            and _segundo is None and _terceiro is None):
+        ok("cota: avisa UMA vez (20 perguntas = 1 aviso, nao enche o saco)")
+    else:
+        falha("cota: avisou mais de uma vez")
+
+    _cota.esquecer()
+    _cota.avisar(ERRO_COTA, tem_reserva=True)
+    import time as _tt_cota
+    if _cota.avisar(ERRO_COTA, tem_reserva=True,
+                    agora=_tt_cota.time() + 30 * 60) is None:
+        ok("cota: continua calado depois de 30 minutos")
+    else:
+        falha("cota: avisou de novo cedo demais")
+    if _cota.avisar(ERRO_COTA, tem_reserva=True,
+                    agora=_tt_cota.time() + 61 * 60) is not None:
+        ok("cota: volta a avisar depois de 1 hora")
+    else:
+        falha("cota: nunca mais avisou depois da 1a hora")
+
+    _cota.esquecer()
+    _cota.avisar(ERRO_COTA, tem_reserva=True)
+    _cota.esquecer()   # e' isto que a tela chama quando a cota volta
+    if _cota.avisar(ERRO_COTA, tem_reserva=True) is not None:
+        ok("cota: se a cota voltar, perdoa e pode avisar de novo")
+    else:
+        falha("cota: depois de perdoar, nunca mais avisou na sessao")
+
+    _cota.esquecer()
+    if (_cota.avisar(ERRO_CHAVE, tem_reserva=True) is None
+            and _cota.avisar(ERRO_NET, tem_reserva=True) is None):
+        ok("cota: erro de chave e de internet nunca viram aviso de cota")
+    else:
+        falha("cota: chave ou internet geraram aviso de cota")
+
+    _cota.esquecer()
+    _sem_reserva_txt = _cota.avisar(ERRO_COTA, tem_reserva=False)
+    _cota.esquecer()
+    _com_reserva_txt = _cota.avisar(ERRO_COTA, tem_reserva=True)
+    if (_sem_reserva_txt != _com_reserva_txt
+            and "não há chave de reserva" in _sem_reserva_txt):
+        ok("cota: o texto muda conforme tem ou nao tem chave de reserva")
+    else:
+        falha("cota: o texto do aviso nao muda com a situacao")
+
+    # --- a tela ---
+    _js_g = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    _html_g = (PASTA / "web" / "index.html").read_text(encoding="utf-8")
+    _css_g = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+    if ('id="aviso-cota"' in _html_g
+            and 'aviso_cota' in _js_g and "avisoCota" in _js_g
+            and 'o.tipo === "aviso_cota"' in _js_g
+            and "#aviso-cota" in _css_g
+            # a faixa nao some sozinha: so fecha ao clicar
+            and "oculto" in _html_g.split('id="aviso-cota"')[1][:40]):
+        ok("cota: a tela tem a faixa amarela, que so fecha ao clicar")
+    else:
+        falha("cota: falta ligar a faixa de aviso na tela (html/js/css)")
+
+    # a faixa tem que ser acessivel pelo teclado
+    if 'id="aviso-cota"' in _html_g and 'tabindex="0"' in _html_g.split(
+            'id="aviso-cota"')[1][:80]:
+        ok("cota: a faixa pode ser focada pelo teclado")
+    else:
+        falha("cota: a faixa nao tem tabindex (so o mouse fecha)")
+
+    if ("Enter" in _js_g.split("function avisoCota")[1][:600]
+            and "addEventListener(\"click\"" in _js_g.split("function avisoCota")[1][:600]):
+        ok("cota: a faixa fecha com o mouse e com Enter/Espaco")
+    else:
+        falha("cota: a faixa nao fecha pelo teclado")
+
+    # o modulo tem que entrar no instalador
+    _spec_g = all("'cota'" in (PASTA / _n).read_text(encoding="utf-8")
+                  for _n in ("Eye of Thundera.spec", "Eye of Thundera (debug).spec"))
+    if _spec_g:
+        ok("cota: o modulo entra no pacote do instalador (.spec)")
+    else:
+        falha("cota: 'cota' nao esta no .spec — o instalador ficaria sem aviso")
+
+except Exception as _erro_cota:
+    falha("cota: os testes quebraram: %r" % (_erro_cota,))
+
+
 # --- resumo -----------------------------------------------------------------
 print()
 print('VERIFICACOES: %d | FALHA: %d | AVISO: %d' % (verificacoes, len(falhas), len(avisos)))

@@ -28,6 +28,8 @@ hiddenimports += ['documento']
 hiddenimports += ['plugins', 'sincronizar']
 # Contador de uso (quantas perguntas foram para a IA hoje): modulo local.
 hiddenimports += ['contagem']
+# Aviso de cota acabada (o plano de reserva entrou em silencio).
+hiddenimports += ['cota']
 # OCR local de PDF digitalizado (uma foto da pagina): renderiza a pagina com
 # a DLL do PDFium (pypdfium2) e le com o OCR do proprio Windows (winsdk),
 # tudo em memoria. Sem eles o programa so avisa que o PDF pode ser digitalizado.

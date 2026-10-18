@@ -75,7 +75,11 @@
         </div>
         <div id="mensagens" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversa"></div>
         <div id="digitando" class="oculto" role="status" aria-live="polite" aria-label="Assistente pensando"><span class="pontos"><i></i><i></i><i></i></span><span id="etapa" aria-live="polite" aria-atomic="true"></span></div>
-      </div>
+
+        <!-- Aviso de cota (cota.py): a resposta chegou, mas pelo plano de
+             reserva. Fica visível até o Wolf clicar, porque é informação
+             importante e aparece só uma vez por hora. -->
+        <div id="aviso-cota" class="oculto" role="status" aria-live="polite" tabindex="0" title="Clique para fechar este aviso"></div>      </div>
     </section>
     <footer id="rodape">
       <div id="documento-aberto" class="oculto" role="status" aria-live="polite">

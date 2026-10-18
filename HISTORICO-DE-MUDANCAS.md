@@ -5,6 +5,21 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-18 - Aviso de cota (e o bug da reserva que estava escondido)
+
+- **BUG encontrado antes de qualquer aviso:** eu ia mostrar um aviso dizendo "a cota acabou, estou usando a reserva" e fui conferir se o programa realmente trocava. **Nao trocava.** O `tentar_com_reserva` so' trocava quando a **chave** era recusada; quando a **cota** acabava, levantava o erro — mesmo com a chave de reserva configurada. O Wolf perdia o programa inteiro por um limite que se renova sozinho.
+- **Segundo bug, escondido pelo primeiro:** corrigindo o primeiro, apareceu que na 2a tentativa o codigo olhava `estado["falhou"]`, que e' `False` no caso da cota (a chave esta otima, so' o limite que acabou). Entao chamava o **Gemini de novo** em vez da reserva. Feito de qualquer jeito, a troca nunca funcionava.
+- **Correcao:** `tentar_com_reserva` agora troca por **dois** motivos — chave recusada (`falhou`) e cota acabada (`cota`) — e na 2a tentativa usa a reserva por causa da propria tentativa, nao do estado da sessao. Internet continua **nao** trocando (repetir na mesma rede nao adianta).
+- **Detalhe que importa:** quando a cota cai na reserva, `falhou` **nao** e' ligado. A chave esta otima. Entao na pergunta seguinte o Gemini volta a ser o principal e, se a cota voltou, tudo segue normal.
+- **Novo `cota.py`:** o aviso. Faixa amarela na conversa que **nao some sozinha** (e' a unica vez que o Wolf vai ver) e fecha no clique, Enter ou Espaco. Avisa **uma vez por hora** — avisar a cada pergunta faria o Wolf largar o programa — e **perdoa** quando a cota volta, para nao ficar calado a sessao toda. Nao salva em arquivo: e' estado da sessao, proposital.
+- **Reconhecimento em um lugar so:** `_falha_de_cota` ficou no motor, junto do texto de erro (antes a palavra "quota" estava escrita dentro do `traduzir_erro`). O aviso usa a mesma funcao: duas listas de palavras divergem com o tempo, e e' assim que aviso comeca a errar.
+- **Erro real, nao palpite:** `tentar_com_reserva` ganhou `ao_falhar`, porque quando a reserva salva a resposta nao sobra erro visivel para o aviso olhar. `app_web._anotar_erro` guarda o que for cota **e nao** chave (chave tem aviso proprio, que abre as Configuracoes).
+- **Testes:** 22 verificacoes novas (217 no total, 0 falhas, 0 avisos), com 7 cenarios de troca (cota com e sem reserva, chave, internet, erro misto, os dois falhando) e as regras do aviso.
+- **Conferido na tela:** as duas variantes de texto, o clique, Enter/Espaco e os atributos de acessibilidade.
+- **Instalador:** os dois `.spec` (normal e debug) foram atualizados para incluir `contagem` e `cota`. O `.zip` do instalador **nao** foi regerado agora — fica para o fim, quando todos os updates da rodada acabarem.
+
+---
+
 ## 2026-10-18 - Contador de uso: quantas perguntas foram para a IA hoje
 
 - **O problema:** o programa nao mostrava nada de consumo. O Wolf so descobria quanto usou quando olhava a fatura do Google — ou quando a cota acabava de surpresa.
