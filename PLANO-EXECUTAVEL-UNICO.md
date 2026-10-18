@@ -17,7 +17,7 @@ Primeira vez sem chave: `Ponte.enviar` devolve "sem_chave" e a tela abre Configu
    (o mesmo de "Gerar o EXE.bat"; os dois .spec ja listam pdf_leitor, lembretes, documento,
    pypdf, pypdfium2, winsdk). NAO rodar atualizar_area_trabalho.py (nao mexer no atalho do Wolf).
 3. Conferir: abrir o .exe com Start-Process, esperar ~10 s, ver que continua aberto e que nao
-   apareceu erro.log em %LOCALAPPDATA%/PesquisaIA; fechar o processo.
+   apareceu erro.log em %LOCALAPPDATA%/Eye of Thundera; fechar o processo.
 4. Pasta limpa `D:\Projetos\Eye of Thundera`: so `Eye of Thundera.exe` e `LEIA-ME.txt`.
    A copia de codigo-fonte feita antes (PLANO-PASTA-LIMPA.md) vai para a subpasta `codigo\`
    (nao apagar: o Wolf pode querer ver). `ferramentas/gerar_pasta_limpa.py` continua valendo
@@ -29,7 +29,7 @@ Primeira vez sem chave: `Ponte.enviar` devolve "sem_chave" e a tela abre Configu
 - O Windows/SmartScreen pode avisar "app desconhecido" (o .exe nao e assinado): "Mais
   informacoes > Executar assim mesmo".
 - O .exe abre devagar na 1a vez (descompacta ~70 MB em %TEMP%\_MEI...).
-- Os dados continuam em %LOCALAPPDATA%/PesquisaIA (mesma conta = mesmos dados).
+- Os dados continuam em %LOCALAPPDATA%/Eye of Thundera (mesma conta = mesmos dados).
 
 ## Nao fazer
 Nao commitar dist/ nem build/. Nao mexer no atalho da Area de Trabalho sem o Wolf pedir.

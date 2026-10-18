@@ -4,14 +4,14 @@ Atualizado em 16/10/2026. Leia README.md e ONDE-PARAMOS.md antes de mexer no có
 
 ## Estado atual e arquitetura
 
-O programa em uso é a interface HTML/JavaScript aberta por app_web.py com pywebview. O atalho da Área de Trabalho aponta para .venv/Scripts/pythonw.exe, com app_web.py como argumento e D:/Projetos/PesquisaIA como pasta de trabalho. Não presuma que dist/Eye of Thundera.exe é o programa em uso.
+O programa em uso é a interface HTML/JavaScript aberta por app_web.py com pywebview. O atalho da Área de Trabalho aponta para .venv/Scripts/pythonw.exe, com app_web.py como argumento e D:/Projetos/Eye of Thundera como pasta de trabalho. Não presuma que dist/Eye of Thundera.exe é o programa em uso.
 
 - app_web.py: janela, ponte Python/JavaScript, integração com o motor.
 - web/index.html, web/app.js, web/estilo.css: interface.
-- pesquisa_ia.py: motor compartilhado de conversa, pesquisa, chaves e funções legadas. Embora a interface Tkinter esteja aposentada, o arquivo ainda contém código antigo e não deve ser apagado nem reescrito inteiro.
+- eye_of_thundera.py: motor compartilhado de conversa, pesquisa, chaves e funções legadas. Embora a interface Tkinter esteja aposentada, o arquivo ainda contém código antigo e não deve ser apagado nem reescrito inteiro.
 - memoria.py, roteador.py, voz.py: memória, decisão de modo e voz.
 - verificar.py: verificação automatizada.
-- Dados pessoais: %LOCALAPPDATA%\PesquisaIA, fora do repositório.
+- Dados pessoais: %LOCALAPPDATA%\Eye of Thundera, fora do repositório.
 
 ## Regras obrigatórias
 

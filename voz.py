@@ -7,7 +7,7 @@ Este arquivo cuida de duas coisas, sem depender do programa:
   1. `Gravador`  - abre o microfone, junta o áudio e entrega um WAV pronto;
   2. `transcrever` - manda esse WAV para o Gemini e devolve o texto falado.
 
-Ele foi escrito para NÃO importar o `pesquisa_ia` (assim dá para testar
+Ele foi escrito para NÃO importar o `eye_of_thundera` (assim dá para testar
 sozinho, sem abrir a janela). A biblioteca de áudio (`sounddevice`) é
 opcional: se ela não estiver instalada, o programa continua funcionando
 normalmente e só o botão de microfone avisa que faltou a biblioteca.

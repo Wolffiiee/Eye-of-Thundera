@@ -14,7 +14,7 @@ lembretes, respondido localmente, sem IA e sem chave.
 - Os **lembretes** são o modelo perfeito: `lembretes.responder(texto)` é
   chamado no `enviar()` (app_web.py) antes da IA; devolve `None` (não é com
   ele) ou a resposta (local, imediata).
-- Os dados ficam em `%LOCALAPPDATA%\PesquisaIA`; a pasta de plugins fica lá
+- Os dados ficam em `%LOCALAPPDATA%\Eye of Thundera`; a pasta de plugins fica lá
   também (`plugins\`), fora do repositório.
 - O diálogo de Configurações já tem abas com `data-aba`; a aba nova segue o
   mesmo padrão (`mostrarAba`, `abrirConfig`, `config_ler`, `config_salvar`).
@@ -42,7 +42,7 @@ lembretes, respondido localmente, sem IA e sem chave.
 
 ### 1. Módulo `plugins.py` (novo)
 
-- `PASTA_PLUGINS` — `%LOCALAPPDATA%\PesquisaIA\plugins`.
+- `PASTA_PLUGINS` — `%LOCALAPPDATA%\Eye of Thundera\plugins`.
 - `descobrir()` — lista os arquivos `.py` da pasta (ignora `__pycache__`,
   `exemplo.py` é incluído, `.txt` e outros não). Para cada um, carrega o módulo
   e lê `NOME` (ou nome do arquivo) e `DESCRICAO` (ou "Sem descrição").

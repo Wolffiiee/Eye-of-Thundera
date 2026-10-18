@@ -12,10 +12,10 @@ escolhida pelo usuário).
 
 ## O que já existe e aproveitamos
 
-- `pesquisa_ia.fazer_backup_dados()` já copia todos os arquivos de
+- `eye_of_thundera.fazer_backup_dados()` já copia todos os arquivos de
   `PASTA_CONFIG` para um zip. A sincronização é a mesma ideia, **sem zip** e
   **nos dois sentidos** (importa o que é mais novo, exporta o local).
-- `PASTA_CONFIG` = `%LOCALAPPDATA%\PesquisaIA` concentra todos os arquivos de
+- `PASTA_CONFIG` = `%LOCALAPPDATA%\Eye of Thundera` concentra todos os arquivos de
   dados (`config.json`, `historico.json`, `memoria.json`, `lembretes.json`,
   `janela.json`, `erro.log`...). É exatamente o que viaja.
 - `salvar_config` já valida e grava `config.json` com cópia atômica; o mesmo
@@ -42,7 +42,7 @@ escolhida pelo usuário).
 
 ### 1. Módulo `sincronizar.py` (novo)
 
-Funções puras, só biblioteca padrão, sem depender de `pesquisa_ia`:
+Funções puras, só biblioteca padrão, sem depender de `eye_of_thundera`:
 
 - `arquivos_de_dados()` — lista os arquivos da pasta de dados que viajan
   (todos os `.json` da `PASTA_CONFIG`, com exceção do `erro.log`, que é só

@@ -5,7 +5,7 @@
 1. **Entender o sintoma.** Registre o que a pessoa clicou, o que esperava e o que aconteceu.
 2. **Verificar o estado do projeto.** Rode git status --short e git log -5 --oneline. Preserve arquivos modificados e não rastreados.
 3. **Encontrar a causa.** Leia a função completa e procure logs, traceback e erros de sintaxe. Não corrija no chute.
-4. **Proteger os dados.** Não altere %LOCALAPPDATA%/PesquisaIA durante testes. Use cópias temporárias em _tmp.
+4. **Proteger os dados.** Não altere %LOCALAPPDATA%/Eye of Thundera durante testes. Use cópias temporárias em _tmp.
 5. **Adicionar uma verificação de regressão.** O teste deve falhar antes da correção e passar depois, sempre que possível.
 6. **Corrigir o mínimo necessário.** Evite misturar correção de bug com reformulação visual.
 7. **Executar a suíte:** .venv\Scripts\python.exe verificar.py. Confirme RESULTADO: TUDO CERTO e FALHA: 0.

@@ -21,15 +21,28 @@ Regras de ouro:
 
 import importlib.util
 import os
+import shutil
 import sys
 import time
 from pathlib import Path
 
 # A pasta de plugins fica junto dos dados (fora do repositorio), como o
-# pesquisa_ia faz com a PASTA_CONFIG.
-PASTA_DADOS = Path(
+# eye_of_thundera faz com a PASTA_CONFIG.
+PASTA_DADOS_ANTIGA = Path(
     os.environ.get("LOCALAPPDATA", Path.home())) / "PesquisaIA"
+PASTA_DADOS = Path(
+    os.environ.get("LOCALAPPDATA", Path.home())) / "Eye of Thundera"
 PASTA_PLUGINS = PASTA_DADOS / "plugins"
+# Migração one-time
+try:
+    _plugins_antigos = PASTA_DADOS_ANTIGA / "plugins"
+    if not PASTA_DADOS.exists() and _plugins_antigos.exists():
+        PASTA_PLUGINS.mkdir(parents=True, exist_ok=True)
+        for _arq in _plugins_antigos.iterdir():
+            if _arq.is_file():
+                shutil.copy2(str(_arq), str(PASTA_PLUGINS / _arq.name))
+except Exception:
+    pass
 
 
 def _nome_do_arquivo(arquivo):

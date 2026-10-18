@@ -6,7 +6,7 @@ Para as outras IAs. Escrito em 18/10/2026, ANTES do codigo.
 - Sublinhado vermelho: corretor do proprio WebView2 (`spellcheck` na caixa, ligado/desligado por
   `web_corretor`). Nao da para mexer nele por fora.
 - Botao direito numa palavra: a tela monta o proprio menu (WebView2 desliga o menu padrao) e chama
-  `Ponte.sugerir_correcao` -> `pesquisa_ia.sugerir_correcao` (pyspellchecker pt, com en de apoio).
+  `Ponte.sugerir_correcao` -> `eye_of_thundera.sugerir_correcao` (pyspellchecker pt, com en de apoio).
 - Dores: a 1a busca leva ~4 s (carrega o dicionario so na hora); nomes do Wolf e giria de chat
   ("vc", "tb", "pq") nao tem sugestao boa; nao ha como "ensinar" uma palavra; ranking so por frequencia.
 
@@ -17,7 +17,7 @@ Para as outras IAs. Escrito em 18/10/2026, ANTES do codigo.
    pq->porque, oq->o que, msm->mesmo, hj->hoje, td->tudo, blz->beleza, obg->obrigado, qdo->quando, etc.
 3. Restaurar acento primeiro: "voce"->"voce com acento", "nao"->"nao com acento" (comparar sem acento
    com palavras do dicionario) antes das sugestoes por distancia.
-4. Dicionario pessoal: arquivo `dicionario_pessoal.json` em %LOCALAPPDATA%/PesquisaIA (lista simples,
+4. Dicionario pessoal: arquivo `dicionario_pessoal.json` em %LOCALAPPDATA%/Eye of Thundera (lista simples,
    leitura robusta: arquivo estragado = vazio). Palavra nele nunca recebe sugestao de "corrigir".
    Nomes proprios da Memoria (palavras com inicial maiuscula nos fatos) entram como "conhecidas" sem
    gravar nada.
@@ -26,7 +26,7 @@ Para as outras IAs. Escrito em 18/10/2026, ANTES do codigo.
 6. Ranking melhor: mesma 1a letra e menor distancia primeiro, depois frequencia; no maximo 6.
 
 ## Arquivos
-pesquisa_ia.py (sugerir_correcao + helpers; o programa antigo usa a mesma funcao: nao pode quebrar),
+eye_of_thundera.py (sugerir_correcao + helpers; o programa antigo usa a mesma funcao: nao pode quebrar),
 app_web.py (Ponte: aquecer + dicionario_adicionar), web/app.js (item do menu), verificar.py
 (testes com arquivo em _tmp/, nunca o real).
 

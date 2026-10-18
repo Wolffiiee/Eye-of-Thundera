@@ -15,7 +15,7 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 - **O que o usuário ganha:** (1) **Plugins** — comandos locais em Python que respondem sem IA e sem chave, como os lembretes; o Wolf cria um arquivo `.py` na pasta de plugins e liga/desliga pela aba Plugins. (2) **Sincronização** — conversas, memória, configurações e chaves iguais em dois computadores por uma pasta que o Windows sincroniza (OneDrive, Drive, Dropbox); importa ao abrir e exporta ao fechar.
 - **Novo `sincronizar.py`:** última escrita vence por arquivo (sem mesclagem), cópia atômica (escreve `.tmp` e renomeia), nunca apaga nada do outro lado, erro nunca derruba o programa. `arquivos_de_dados()` lista os `.json` da pasta de dados (menos `erro.log`). `sincronizar_tudo()` importa e exporta.
-- **Novo `plugins.py`:** pasta `plugins` em `%LOCALAPPDATA%\PesquisaIA`; contrato mínimo `responder(texto)` devolve `None` (não é com ele) ou string (resposta); `NOME`/`DESCRICAO` opcionais para a interface. Plugin com erro **não derruba**: erro vai ao log e o próximo plugin é tentado. Plugin de exemplo (`/tempo`) criado na primeira vez.
+- **Novo `plugins.py`:** pasta `plugins` em `%LOCALAPPDATA%\Eye of Thundera`; contrato mínimo `responder(texto)` devolve `None` (não é com ele) ou string (resposta); `NOME`/`DESCRICAO` opcionais para a interface. Plugin com erro **não derruba**: erro vai ao log e o próximo plugin é tentado. Plugin de exemplo (`/tempo`) criado na primeira vez.
 - **Interface:** duas abas novas em Configurações — **Sincronização** (escolher pasta pelo diálogo nativo, botão Sincronizar agora, estado com carimbo) e **Plugins** (lista com interruptor ligar/desligar, descrição, aviso de erro, botão abrir a pasta). CSS: `.estado-info`, `.plugin-nome`, `.plugin-desc`, `.aviso-erro`, `.linha-campo`.
 - **Ponte (`app_web.py`):** `sincronizar_importar` no arranque do `principal()` (antes de carregar dados) e `sincronizar_exportar` no `ao_fechar`; `sincronizar_config`, `sincronizar_agora`, `sincronizar_config_salvar`, `plugins_listar`, `plugins_salvar`, `escolher_pasta`, `abrir_pasta`; plugins respondem no `enviar()` logo após os lembretes (antes da chave).
 - **`verificar.py`:** 2 testes novos (sincronização: importa/exporta/iguala/avisos/erro sem exceção; plugins: descobrir/responder/erro isolado/exemplo). Suíte: **176 verificações, 0 falhas, 0 avisos**.
@@ -72,7 +72,7 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 ## 2026-10-17 — Lembretes ligados no programa ("me lembra amanhã às 9h de ...")
 
 - **O que o usuário ganha:** escrevendo na conversa, em português normal, "me lembra amanhã às 9h de pagar a conta", o programa guarda o lembrete. Na hora marcada (com o programa aberto) aparece um cartão no canto superior direito com **Feito** e **Adiar 10 min**. Se o programa estava fechado, o cartão aparece assim que abrir. Também entende "daqui a 30 minutos", "segunda às 14h30", "dia 25", "20/10 às 7h", "hoje às 18h" e "depois de amanhã às 10 da noite"; lista com "meus lembretes" e cancela com "cancelar lembrete 2". **Nada sai para a internet, a IA não é chamada e funciona sem chave** (nenhum token gasto).
-- **O que faltava:** o módulo `lembretes.py` já existia, com plano em `PLANO-LEMBRETES.md`, guardando os lembretes em `%LOCALAPPDATA%/PesquisaIA/lembretes.json`. Mas **nenhum arquivo o chamava** — era código órfão: para o usuário, o recurso não existia.
+- **O que faltava:** o módulo `lembretes.py` já existia, com plano em `PLANO-LEMBRETES.md`, guardando os lembretes em `%LOCALAPPDATA%/Eye of Thundera/lembretes.json`. Mas **nenhum arquivo o chamava** — era código órfão: para o usuário, o recurso não existia.
 - **Ligação no Python (`app_web.py`):** em `Ponte.enviar`, logo depois do bloco do modo exemplo e **antes** da checagem de chave, a frase passa por `lembretes.responder()`. Se ela for sobre lembrete, a resposta sai como mensagem normal da conversa (numa thread, como as outras respostas) e o caminho da IA nem é tocado; se não for, `responder()` devolve `None` e tudo segue como antes. Três métodos novos na ponte: `lembretes_vencidos` (devolve o que já venceu, com o horário em português), `lembrete_concluir` e `lembrete_adiar`. No modo exemplo nada é lido nem gravado.
 - **Ligação na tela (`web/`):** contêiner `#lembretes` novo no `index.html`; em `app.js`, a tela pergunta `lembretes_vencidos` ao abrir e **de 30 em 30 segundos**, e desenha um cartão com `role="alert"` para cada lembrete vencido (cada um aparece **uma vez por sessão**, até ser marcado como Feito ou adiado). O visual usa as cores do tema.
 - **Defeito achado e corrigido antes do commit:** a primeira versão punha os cartões no **canto inferior direito** — e as capturas mostraram que eles cobriam os botões de **microfone e enviar**, que ficam na direita do compositor. Os cartões passaram para o canto **superior direito**, logo abaixo da barra de título (32 px). Também foi ajustado o fundo do cartão (`--superficie`, em vez de `--superficie-2`) porque o botão "Adiar 10 min" ficava da mesma cor do cartão e não aparecia.
@@ -164,7 +164,7 @@ O redimensionar pelas bordas nao funcionava (o WebView2 cobre a janela e engole 
 
 - **Salvamento:** o botão indica “Salvando...” e fica desativado durante a gravação para impedir cliques duplicados. Os controles da aba também ficam temporariamente desativados, evitando que mudanças feitas durante a espera sejam perdidas quando a aba é redesenhada.
 - **Recuperação:** um `finally` restaura os controles mesmo se a gravação ou a atualização da tela falhar; erros inesperados deixam uma mensagem no rodapé e são registrados no console sem incluir dados secretos.
-- **Arquivo protegido:** `pesquisa_ia.salvar_config()` grava primeiro em um temporário no mesmo diretório e só então substitui `config.json` com `os.replace`. Se a escrita ou a troca falhar, o arquivo anterior é preservado e o temporário é limpo. Teste isolado simula a falha e confirma isso sem tocar na configuração real.
+- **Arquivo protegido:** `eye_of_thundera.salvar_config()` grava primeiro em um temporário no mesmo diretório e só então substitui `config.json` com `os.replace`. Se a escrita ou a troca falhar, o arquivo anterior é preservado e o temporário é limpo. Teste isolado simula a falha e confirma isso sem tocar na configuração real.
 - **Regressão:** teste estático verifica o bloqueio e a recuperação dos controles. O teste isolado de persistência confirma preservação da chave principal quando o campo fica vazio, atualização da chave reserva, manutenção de campos existentes e rejeição de campos não permitidos; usa diretório temporário, sem tocar nas chaves reais.
 - **Verificação final:** `verificar.py`: 132 verificações, 0 falhas, 0 avisos; `node --check web/app.js`, compilação Python e `git diff --check` aprovados.
 
@@ -305,7 +305,7 @@ apagado** — se algum dia der vontade de voltar, é só copiar de lá.
 Aqui é preciso ser claro, porque é tentador "limpar" os testes do
 antigo e isso seria um erro.
 
-O `pesquisa_ia.py` é o **motor dos dois programas**. Se eu parasse de
+O `eye_of_thundera.py` é o **motor dos dois programas**. Se eu parasse de
 testar o motor junto com a tela antiga, estaria **desligando o alarme do
 programa novo também** — a memória, o corretor, a busca na web e a
 conversa que ele usa TODO dia são exatamente as mesmas funções.
@@ -386,7 +386,7 @@ Verificacao: `TUDO CERTO`, **355 testes, 0 falhas, 0 avisos** (61 s).
 ## 2026-10-16 — Galeria de imagens na tela nova (falta o último)
 
 O Wolf perguntou se dava para resumir tudo no programa novo e aposentar o
-antigo. Faz o levantamento: o **motor** (`pesquisa_ia.py`) e' dos dois, e
+antigo. Faz o levantamento: o **motor** (`eye_of_thundera.py`) e' dos dois, e
 so a **interface** tkinter e' do antigo. A unica coisa que o antigo tinha
 e a tela nova nao era a **galeria de imagens** — perguntar "imagens de
 God of War" e' a forma como o Wolf sempre procurou as coisas.
@@ -431,7 +431,7 @@ Verificacao: `TUDO CERTO`, **331 testes, 0 falhas, 0 avisos** (48 s).
 
 ## 2026-10-16 — A pasta antiga ficou marcada, mas não pôde ser renomeada
 
-O Wolf pediu para deixar a pasta `C:\Projetos\PesquisaIA` guardada "com
+O Wolf pediu para deixar a pasta `C:\Projetos\Eye of Thundera` guardada "com
 outro nome". O Windows **recusou o renomeamento** ("acesso negado"),
 mesmo por `.NET`, mesmo depois de matar todos os processos. A causa
 quase certa e' o `.venv`: ele cria arquivos com permissao especial, e o
@@ -440,7 +440,7 @@ Windows nao deixa renomear uma pasta que contem esse tipo de arquivo.
 Nao vale a pena insistir — nada ali e' necessario. A solucao que resolve
 o problema de verdade (o Wolf saber qual e' a pasta certa) e' um arquivo
 `LEIA-ISTO-PRIMEIRO-ESTA-E-A-COPIA-ANTIGA.txt` dentro da pasta velha,
-que aponta para `D:\Projetos\PesquisaIA` e diz o que pode ser apagado
+que aponta para `D:\Projetos\Eye of Thundera` e diz o que pode ser apagado
 com seguranca (`_arquivo_morto` = 1,3 GB de `.exe` velhos, `.venv` com o
 caminho velho gravado dentro, `build`/`dist`).
 
@@ -453,7 +453,7 @@ so se o sistema deixar.
 O Wolf pediu para mudar a pasta do projeto para o `D:` (que tem 353 GB
 livres, contra 76 GB no `C:`). Agora vive em:
 
-    D:\Projetos\PesquisaIA
+    D:\Projetos\Eye of Thundera
 
 ### O que foi conferido ANTES de mexer
 
@@ -472,7 +472,7 @@ livres, contra 76 GB no `C:`). Agora vive em:
    arquivo antes de seguir.
 3. **Recriado o ambiente Python**. Este foi o detalhe que quase passou
    batido: o `.venv` do Windows tem o caminho do projeto **gravado
-   dentro** (`pyvenv.cfg` diz `command = ... C:\Projetos\PesquisaIA\.venv`,
+   dentro** (`pyvenv.cfg` diz `command = ... C:\Projetos\Eye of Thundera\.venv`,
    e o launcher `Scripts\python.exe` tambem). Mover a pasta sem refazer
    o `.venv` deixaria o projeto **sem nenhum Python funcionando** — e o
    primeiro sintoma seria um erro esquisito no meio do `verificar.py`.
@@ -508,7 +508,7 @@ A tela agora monta o menu dela, com as correções da palavra sob o cursor
 e os comandos de edição (recortar, copiar, colar, selecionar tudo).
 
 - **A lógica da sugestão foi para o MOTOR**
-  (`pesquisa_ia.sugerir_correcao`) e o programa antigo passou a usar a
+  (`eye_of_thundera.sugerir_correcao`) e o programa antigo passou a usar a
   mesma função. Uma correção só, para as duas telas nunca discordarem do
   que é "palavra errada" — a mesma lição do `registrar_erro`.
 - **O cursor vai para onde foi clicado.** O Chromium (e o WebView2) *não*
@@ -614,7 +614,7 @@ sentido obrigar a digitar a mesma frase sempre.
 
 Cartao em Configuracoes > Conversa, com o botao **"Fazer cópia agora"**.
 O detalhe: o botao e o `9 - Fazer backup dos meus dados.bat` passam a
-usar a **mesma funcao** (`pesquisa_ia.fazer_backup_dados`). Dois jeitos
+usar a **mesma funcao** (`eye_of_thundera.fazer_backup_dados`). Dois jeitos
 de fazer a mesma coisa e' a receita para um deles ficar velho — foi
 exatamente o que aconteceu hoje com o `registrar_erro`, que existia
 so dentro do tkinter e a tela nova nao achava.
@@ -798,7 +798,7 @@ errada mesmo. Aqui a IA estava certa e a regra nova seria o defeito.
 ### 2. `registrar_erro` nao existia — o conserto nao consertava nada
 
 Para a tela nova deixar rastro de erro (o crash ao arrastar), foi
-chamado `pesquisa_ia.registrar_erro(...)`. **A funcao nao existia nesse
+chamado `eye_of_thundera.registrar_erro(...)`. **A funcao nao existia nesse
 escopo**: ela era uma funcao *dentro* do `main` do tkinter. O `pyflakes`
 nao acusou nada, e o `try/except` em volta teria engolido o erro em
 silencio — o log nunca apareceria.
@@ -807,7 +807,7 @@ So apareceu porque o registro foi **testado de verdade**: gravar um erro
 de mentira num arquivo de teste e conferir que o arquivo foi criado. E
 foi assim que o defeito apareceu.
 
-- **`pesquisa_ia.registrar_erro(onde, erro)` subiu para o nivel do
+- **`eye_of_thundera.registrar_erro(onde, erro)` subiu para o nivel do
   modulo**, agora compartilhada: o `main` do tkinter e a tela nova usam
   a mesma. Testado: grava mesmo, e nunca levanta erro.
 
@@ -855,7 +855,7 @@ dois monitores estao em 96 DPI (100%).
 - **A tela nova nao escrevia NADA em log.** O programa de sempre grava
   tudo no `erro.log`; a tela nova engolia qualquer erro em silencio, e um
   crash do Windows nao deixa nem rastro. Agora ela chama
-  `pesquisa_ia.registrar_erro(...)`, como o programa antigo.
+  `eye_of_thundera.registrar_erro(...)`, como o programa antigo.
 - **Falta o Wolf confirmar** se acontece sempre ou as vezes, e se
   acontece tambem no modo exemplo (`5 - Ver a tela nova.bat`), que nao
   toca em dado nenhum. Sem isso nao da para reproduzir.
@@ -902,7 +902,7 @@ as **conversas, a memoria e as chaves** — que sao as coisas que nao da
 para refazer.
 
 - **`fazer_backup_dados.py` + `9 - Fazer backup dos meus dados.bat`:**
-  copiam `%LOCALAPPDATA%\PesquisaIA` para um `.zip` em
+  copiam `%LOCALAPPDATA%\Eye of Thundera` para um `.zip` em
   `OneDrive\Backup Pesquisa IA\dados`. **So le e copia** — nao muda
   nada. Copias com mais de 15 dias sao apagadas sozinhas.
 - **Rodado:** 5 arquivos (config, historico, memoria e duas copias
@@ -981,11 +981,11 @@ programa de sempre já escurecia a barra desde 15/10, e o pedido do Wolf
   dois**. O erro era engolido pelo `except: pass` e a barra ficava
   branca, sem nenhum aviso.
 - **A correção:**
-  - `pesquisa_ia.escurecer_hwnd(hwnd)` — escurece a barra a partir do
+  - `eye_of_thundera.escurecer_hwnd(hwnd)` — escurece a barra a partir do
     **número** da janela, e não de um widget. Assim serve para o tkinter
     e para o HTML. Nunca levanta erro: no pior dos casos a barra fica
     clara e o programa continua funcionando.
-  - `pesquisa_ia.escurecer_janela_por_titulo(titulo)` — procura a janela
+  - `eye_of_thundera.escurecer_janela_por_titulo(titulo)` — procura a janela
     entre todas as do Windows pelo título e escurece. A janela pode
     demorar um pouco para o Windows criar, por isso ela repete a
     tentativa por ~10 segundos.
@@ -1034,7 +1034,7 @@ esquerda. É um item que estava na `IDEIAS.md` há semanas.
   título, um **trecho** com o texto em volta do achado e o **índice da
   mensagem**. Máximo de 30 resultados, para a barra não virar uma parede.
 - **A comparação é sem acento e sem diferenciar maiúscula**, usando o
-  mesmo `pesquisa_ia._sem_acento` que a Memória já usa. Assim digitar
+  mesmo `eye_of_thundera._sem_acento` que a Memória já usa. Assim digitar
   `japao` acha "Japão" e `CENOURA` acha "cenoura".
 - **Uma letra sozinha não busca** (`vazio: true`): uma letra acha
   conversa demais e polui a tela. O mínimo são 2 letras.
@@ -1183,12 +1183,12 @@ e a resposta volta para a tela enquanto aparece. Commit `1075253`.
   trabalha, `"resposta"` no fim, `"erro"` se deu ruim. Só dois erros
   saem de `enviar()` mesmo: pergunta em branco e `"sem_chave"` (o
   `app.js` reconhece esse e abre as Configurações sozinho).
-- **Nada foi reescrito.** Reaproveita `pesquisa_ia.perguntar` (busca na
-  web), `pesquisa_ia.conversar` (papo normal), o mesmo roteador
+- **Nada foi reescrito.** Reaproveita `eye_of_thundera.perguntar` (busca na
+  web), `eye_of_thundera.conversar` (papo normal), o mesmo roteador
   (`_decidir_modo`), a mesma troca automática de chave reserva e o
   mesmo tradutor de erro do programa antigo. Pedido de notícia continua
   pesquisando a pergunta inteira, como antes.
-- **`pesquisa_ia.py` — regras compartilhadas, sem mudança de
+- **`eye_of_thundera.py` — regras compartilhadas, sem mudança de
   comportamento:** `traduzir_erro`, `chave_reserva`, `chave_ativa` e
   `tentar_com_reserva` saíram de dentro da classe `Aplicativo` e viraram
   funções de módulo; os métodos dela passaram a chamar essas funções.
@@ -1264,7 +1264,7 @@ e a resposta volta para a tela enquanto aparece. Commit `1075253`.
   colorido da fonte Segoe UI Emoji (`embedded_color=True`); dentro de um
   `tk.Text` a figurinha fica na linha e quebra com a frase. Sem `raqm` e sem
   bandeiras no Windows, 👨‍💻 e 🇧🇷 não saem completos (ver E3).
-- **Não mexi no `pesquisa_ia.py`** (o opencode estava trabalhando nele).
+- **Não mexi no `eye_of_thundera.py`** (o opencode estava trabalhando nele).
 
 ---
 
@@ -1281,8 +1281,8 @@ e a resposta volta para a tela enquanto aparece. Commit `1075253`.
   `window.PIA.evento({...})` com `json.dumps(..., ensure_ascii=False)`
   (sem isso acento e emoji viram `\u00e7` na tela). Tipos: `etapa`
   (os três pontinhos), `resposta`, `erro` e `conversas`.
-- **Nada foi reescrito:** reaproveita `pesquisa_ia.perguntar` (com busca
-  na web), `pesquisa_ia.conversar` (papo), o mesmo `_decidir_modo` do
+- **Nada foi reescrito:** reaproveita `eye_of_thundera.perguntar` (com busca
+  na web), `eye_of_thundera.conversar` (papo), o mesmo `_decidir_modo` do
   roteador, a mesma chave reserva e o mesmo tradutor de erro.
 - **Defeito corrigido no caminho:** a chave reserva estava sendo chamada
   com um dicionário descartável (`{}`), então o programa **esquecia que
@@ -1295,7 +1295,7 @@ e a resposta volta para a tela enquanto aparece. Commit `1075253`.
 ### 2. Regra compartilhada entre as duas telas (sem duas cópias)
 
 - `traduzir_erro`, `chave_reserva`, `chave_ativa` e `tentar_com_reserva`
-  viraram **funções de nível de módulo** no `pesquisa_ia.py`. Os métodos
+  viraram **funções de nível de módulo** no `eye_of_thundera.py`. Os métodos
   antigos do `Aplicativo` agora só chamam elas. Motivo: a tela nova usa
   **a mesma** regra; duas cópias divergiriam sem ninguém perceber.
   Os 9 testes de chave reserva do programa antigo continuam passando.
@@ -1382,7 +1382,7 @@ plano. Passo 2: a lista de conversas passa a funcionar de verdade.
   primeiro), o menu "…" abre o Excluir, e o clique na conversa abre as
   duas bolhas com o título no topo e a conversa destacada.
 - **`.exe` do programa de sempre:** não precisou ser regerado (o
-  `pesquisa_ia.py` não foi tocado neste passo).
+  `eye_of_thundera.py` não foi tocado neste passo).
 
 ---
 
@@ -1426,7 +1426,7 @@ O Wolf pediu para ver a tela nova antes de decidir. Feito o passo 1.
   pyflakes agora cobre `app_web.py`, `memoria.py`, `roteador.py` e
   `voz.py` também.
 - **`.exe` do programa de sempre:** não precisou ser regerado (o da
-  Área de Trabalho, de 19:23, já é mais novo que o `pesquisa_ia.py`).
+  Área de Trabalho, de 19:23, já é mais novo que o `eye_of_thundera.py`).
 
 ### O que o Wolf viu (prints conferidos)
 - Tela inicial com 3 conversas de exemplo, bolhas arredondadas,
@@ -1591,7 +1591,7 @@ arbitrário, então o texto não preenchia a janela e sobrava vão vazio.
   passando).
 - **Testado de verdade:** o zip foi **descompactado numa pasta vazia** e
   conferido: todos os arquivos presentes, o `git log` mostrando os 30
-  commits, e `pesquisa_ia.py`, `voz.py`, `roteador.py`, `verificar.py` e
+  commits, e `eye_of_thundera.py`, `voz.py`, `roteador.py`, `verificar.py` e
   `fazer_backup.py` compilando sem erro de sintaxe. Ou seja: o backup
   restaura de verdade.
 - **Ainda dá para melhorar:** um repositório privado no GitHub daria uma
@@ -1754,7 +1754,7 @@ arbitrário, então o texto não preenchia a janela e sobrava vão vazio.
 ## 2026-10-15 — Tarefa C: interface mais limpa (estilo Claude)
 
 - **Pedido do Wolf:** executar a `PLANO-NOVAS-FUNCOES.md`, Tarefa C.
-- **Modificado:** `pesquisa_ia.py`:
+- **Modificado:** `eye_of_thundera.py`:
   - **caixa de digitar com cantos arredondados.** O tkinter não sabe
     arredondar um `tk.Text`, então foram desenhadas quatro "tampinhas"
     (uma por canto) com o Pillow, que pintam de fundo o que sobrou fora da
@@ -1834,7 +1834,7 @@ arbitrário, então o texto não preenchia a janela e sobrava vão vazio.
   mono, monta o WAV, mede o nível, limite de 120 s), `wav_tem_som()`,
   `segundos_do_wav()` e `transcrever()` (manda o WAV ao Gemini e tenta o
   próximo modelo se um falhar).
-- **Modificado:** `pesquisa_ia.py`:
+- **Modificado:** `eye_of_thundera.py`:
   - novo botão de microfone ao lado do de enviar (mesma arte, feita com
     Pillow), que fica vermelho pulsando enquanto grava; atalho `Ctrl+M`;
   - `_comecar_gravacao` / `_parar_gravacao`: avisam em português quando
@@ -1908,7 +1908,7 @@ arbitrário, então o texto não preenchia a janela e sobrava vão vazio.
   fato) e `prompt_roteador`.
 - **Adicionado:** `PLANO-NOVAS-FUNCOES.md` (plano escrito pelo Claude,
   colocado na pasta pelo Wolf).
-- **Modificado:** `pesquisa_ia.py`:
+- **Modificado:** `eye_of_thundera.py`:
   - `INSTRUCOES` agora abre com "amigo bem informado"; novo
     `INSTRUCOES_AMIGO` (tom de amigo, sem web, sem inventar fatos).
   - `instrucoes_da_ia(modo="pesquisa")`, e o `modo` passa por
@@ -1943,7 +1943,7 @@ arbitrário, então o texto não preenchia a janela e sobrava vão vazio.
 
 - **Pedido do Wolf:** fazer tudo que desse, trabalhar só com a pasta nova,
   apagar a antiga e deixar instruções para outra IA continuar.
-- **Modificado:** `pesquisa_ia.py` (`_criar_bolha`): duplo clique seleciona
+- **Modificado:** `eye_of_thundera.py` (`_criar_bolha`): duplo clique seleciona
   a palavra, triplo clique seleciona o texto todo da bolha. Ambos limpam as
   outras seleções e avisam os menus abertos (`_despachar_clique`).
 - **Modificado:** `verificar.py`: dois testes novos (duplo e triplo clique).
@@ -1970,7 +1970,7 @@ arbitrário, então o texto não preenchia a janela e sobrava vão vazio.
 
 ### Local do projeto
 - **Movido** de `C:\Users\Igor\OneDrive\Documentos\Projeto Padrão`
-  para `D:\Projetos\PesquisaIA`.
+  para `D:\Projetos\Eye of Thundera`.
   Motivos: o OneDrive sincronizava a pasta `.venv` (centenas de arquivos,
   lento e pode corromper) e o nome antigo tinha acento (`ã`), que já
   causava texto quebrado em scripts.
@@ -1991,7 +1991,7 @@ Dependências automáticas dessas bibliotecas (pydantic, requests, etc.)
 foram instaladas junto; não precisam ser listadas.
 
 ### Modificado
-- `pesquisa_ia.py`:
+- `eye_of_thundera.py`:
   - Seleção de texto: `_limpar_selecoes`, `_ao_clicar_fora`,
     `_selecao_propria`, lista `_telas_bolha`; clique novo apaga a seleção
     anterior; Ctrl+C e menu Copiar só usam a seleção da própria bolha.
@@ -2028,17 +2028,17 @@ foram instaladas junto; não precisam ser listadas.
 ### Movido para `_arquivo_morto\` (não apagado)
 - `_run41.py`, `_run_debug.py`, `_run_debug2.py` (testes soltos antigos,
   usavam o caminho antigo com acento).
-- `pesquisa_ia.backup-antes-da-selecao.py` (versão antes da correção de
+- `eye_of_thundera.backup-antes-da-selecao.py` (versão antes da correção de
   seleção), `erro-antigo-2026-10-14.log`, `Pesquisa IA.spec.antigo`,
   `Pesquisa IA.exe.antigo` e a cópia do .exe que estava na Área de Trabalho.
 
 ### Substituído fora do projeto
 - `Pesquisa IA.exe` na Área de Trabalho (em
   `C:\Users\Igor\OneDrive\Área de Trabalho`) pelo novo, gerado em
-  `D:\Projetos\PesquisaIA\dist`.
+  `D:\Projetos\Eye of Thundera\dist`.
 
 ### Não mexido
-- `%LOCALAPPDATA%\PesquisaIA\` (conversas, memória, chaves do Wolf).
+- `%LOCALAPPDATA%\Eye of Thundera\` (conversas, memória, chaves do Wolf).
 - `IDEIAS.md`, `PLANO-B.txt`, `avatar_usuario.png`, `icone.ico`.
 
 ### Testado
@@ -2054,6 +2054,6 @@ foram instaladas junto; não precisam ser listadas.
 - Verificação: `verificar.py` passou com 132 verificações, 0 falhas e 0 avisos; `node --check web/app.js`, `py_compile` e `git diff --check` também passaram. Ainda falta validação visual manual em escala alta do Windows e janela pequena.
 
 ## 15/10/2026 - Tela nova: passo 5 (Configuracoes e Memoria de verdade) - feito pelo Claude
-- app_web.py: definir_modo, config_salvar, testar_chave, memoria_adicionar/apagar/apagar_tudo/organizar agora gravam de verdade (reaproveitam salvar_config, esquecer_memoria, _mesclar_memoria, organizar_memoria, testar_chave, testar_servico do pesquisa_ia.py).
+- app_web.py: definir_modo, config_salvar, testar_chave, memoria_adicionar/apagar/apagar_tudo/organizar agora gravam de verdade (reaproveitam salvar_config, esquecer_memoria, _mesclar_memoria, organizar_memoria, testar_chave, testar_servico do eye_of_thundera.py).
 - Chave vazia nao apaga a chave salva; campos desconhecidos sao ignorados; no modo exemplo nada e gravado.
 - verificar.py: nova funcao testes_tela_nova_config (isolada em _tmp, nao toca nos arquivos do Wolf). Nenhum teste foi removido. Resultado: TUDO CERTO.

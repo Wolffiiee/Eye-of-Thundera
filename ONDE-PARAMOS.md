@@ -41,7 +41,7 @@ O menu de seleção mostra os atalhos Ctrl+X/C/V/A, aceita setas, Home/End e Esc
 
 As capturas em modo de demonstração foram conferidas em 1180 px e 900 px; os dez cartões de tema são acessíveis por rolagem vertical e não criam rolagem horizontal. A verificação automática está em **166 verificações, 0 falhas e nenhum aviso**. A configuração pessoal não foi alterada; ainda falta confirmar visualmente a persistência pelo atalho real e conferir a escala do Windows acima de 100%.
 
-O Eye of Thundera usa a interface HTML/JavaScript em web/ e a janela Python em app_web.py. O atalho real da Área de Trabalho é Eye of Thundera.lnk e aponta para .venv/Scripts/pythonw.exe com o argumento app_web.py, usando D:/Projetos/PesquisaIA como pasta de trabalho.
+O Eye of Thundera usa a interface HTML/JavaScript em web/ e a janela Python em app_web.py. O atalho real da Área de Trabalho é Eye of Thundera.lnk e aponta para .venv/Scripts/pythonw.exe com o argumento app_web.py, usando D:/Projetos/Eye of Thundera como pasta de trabalho.
 
 ### Problema encontrado e corrigido nesta rodada
 
@@ -68,7 +68,7 @@ A revisão estática confirmou que todos os nomes usados nas chamadas da interfa
 - O `.exe` distribuível foi **recompilado nesta rodada** (`dist/Eye of Thundera.exe`, 64,5 MB), porque a interface e as dependências mudaram — as cores dos temas vão empacotadas em `web/`, e o OCR trouxe `pypdfium2` (com a DLL do PDFium) e `winsdk` (196 módulos) para dentro do pacote. O atalho de uso diário continua executando `app_web.py` pelo `.venv`. O pacote foi aberto com dados isolados em `_tmp` e o tema Grafite Dourado: a janela abriu com o **botão Enviar dourado e a seta escura** (a cor nova chegou ao pacote) e **nenhum `erro.log`** foi criado. Detalhe do teste: o `.exe` é *onefile*, então quem abre a janela é um processo **filho** do bootloader — ao automatizar, mate a **árvore** (`taskkill /PID <pid> /T /F`) **com o bootloader ainda vivo**; encerrar o bootloader antes deixa o filho órfão e a janela fica aberta na tela (aconteceu nos testes desta rodada; as janelas foram fechadas).
 
 - JavaScript: sintaxe aprovada com Node.js.
-- Python: app_web.py, pesquisa_ia.py e verificar.py passaram na compilação de sintaxe.
+- Python: app_web.py, eye_of_thundera.py e verificar.py passaram na compilação de sintaxe.
 - verificar.py: VERIFICACOES: 135 | FALHA: 0 | AVISO: 0; RESULTADO: TUDO CERTO. Inclui regressão da pesquisa profunda, menu de modos, proteção contra duplo salvamento, persistência isolada das opções, preservação de chaves e campos permitidos, cinco temas, sanitização de credenciais com valores sintéticos, salvar resposta via diálogo pywebview e regras responsivas/acessíveis, sem tocar no config.json real.
 - Teste de abertura: o comando usado pelo atalho foi iniciado novamente, a janela com título Eye of Thundera ficou visível no Windows e não foi criado erro.log.
 - O usuário confirmou que a validação manual da janela real está em ordem: Nova conversa, Configurações, abas, alternância Web e tema Ocean.
@@ -94,7 +94,7 @@ A revisão estática confirmou que todos os nomes usados nas chamadas da interfa
 
 ## Dados e segurança
 
-Os dados do usuário ficam em %LOCALAPPDATA%/PesquisaIA, fora do repositório. Não ler, alterar ou apagar os dados reais durante testes. Use pastas temporárias em _tmp. Não exiba chaves de API nem as grave em código, logs ou commits.
+Os dados do usuário ficam em %LOCALAPPDATA%/Eye of Thundera, fora do repositório. Não ler, alterar ou apagar os dados reais durante testes. Use pastas temporárias em _tmp. Não exiba chaves de API nem as grave em código, logs ou commits.
 
 ## Próximos passos imediatos
 
@@ -108,7 +108,7 @@ Os dados do usuário ficam em %LOCALAPPDATA%/PesquisaIA, fora do repositório. N
 8. Se quiser confirmar a persistência no uso real, escolher uma das novas paletas pelo atalho e reabrir a aplicação; os dados de configuração real não foram alterados durante esta rodada.
 9. Conferir a interface em escala do Windows acima de 100%; nenhuma pergunta à IA é necessária.
 10. Conferir a aparência nova dos temas (rodada de cores): abrir Configurações > Personalização e olhar principalmente os temas de acento claro (Grafite Dourado, Pôr do Sol, Ocean, Rosa Chá) — o **texto do botão** Enviar e dos botões Feito/Salvar agora é escuro, e o interruptor desligado ficou um pouco mais claro. Se preferir como estava, é só pedir para voltar: a mudança está isolada em duas chaves por tema (`--btn-texto` e `--btn-hover`).
-11. Se algum clique falhar, consultar %LOCALAPPDATA%/PesquisaIA/erro.log e registrar o erro sem incluir credenciais.
+11. Se algum clique falhar, consultar %LOCALAPPDATA%/Eye of Thundera/erro.log e registrar o erro sem incluir credenciais.
 
 ## Estado do Git
 

@@ -7,7 +7,7 @@ Rode SEMPRE depois de qualquer alteração no programa (duplo clique em
 pronta: corrija e rode de novo até terminar com "TUDO CERTO".
 
 O que ele confere:
-  1. se o pesquisa_ia.py não tem erro de escrita (sintaxe);
+  1. se o eye_of_thundera.py não tem erro de escrita (sintaxe);
   2. se as bibliotecas do requirements.txt estão instaladas;
   3. análise do código (pyflakes): nomes que não existem = FALHA;
   4. regras do projeto (ex.: proibido unbind_all de clique);
@@ -38,7 +38,7 @@ except Exception:
     pass
 
 PASTA = Path(__file__).resolve().parent
-ARQUIVO = PASTA / "pesquisa_ia.py"
+ARQUIVO = PASTA / "eye_of_thundera.py"
 
 # Onde a janela de teste aparece. O segundo monitor do Wolf comeca em
 # X=1920; usar +2000+100 joga a janela para la e deixa a tela principal
@@ -67,7 +67,7 @@ def aviso(msg):
 
 def testes_memoria():
     import memoria
-    import pesquisa_ia as p
+    import eye_of_thundera as p
 
     problemas = memoria.autoteste()
     for problema in problemas:
@@ -515,7 +515,7 @@ def testes_tela_nova_ia(p):
     def ia_de_mentira(api_key, modelo, historico, pergunta, usar_contexto,
                       progresso=None, cfg=None, id_atual=None, consulta=None,
                       profundo=False):
-        """Responde na hora, como o `pesquisa_ia.conversar`/`perguntar`."""
+        """Responde na hora, como o `eye_of_thundera.conversar`/`perguntar`."""
         chamadas.append({"api_key": api_key, "pergunta": pergunta,
                          "historico": list(historico), "id_atual": id_atual,
                          "consulta": consulta})
@@ -817,13 +817,13 @@ def testes_tela_nova_ia(p):
 
 if not falhas:
     try:
-        testes_tela_nova(importlib.import_module("pesquisa_ia"))
+        testes_tela_nova(importlib.import_module("eye_of_thundera"))
     except Exception as erro:
         falha("os testes da tela nova quebraram: %r" % (erro,))
 
 if not falhas:
     try:
-        testes_tela_nova_ia(importlib.import_module("pesquisa_ia"))
+        testes_tela_nova_ia(importlib.import_module("eye_of_thundera"))
     except Exception as erro:
         falha("os testes da IA da tela nova quebraram: %r" % (erro,))
 
@@ -1117,7 +1117,7 @@ def testes_tela_nova_microfone(p):
 
 if not falhas:
     try:
-        testes_tela_nova_microfone(importlib.import_module("pesquisa_ia"))
+        testes_tela_nova_microfone(importlib.import_module("eye_of_thundera"))
     except Exception as erro:
         falha("os testes do microfone quebraram: %r" % (erro,))
 
@@ -1292,7 +1292,7 @@ def testes_tela_nova_config(p):
 
 if not falhas:
     try:
-        testes_tela_nova_config(importlib.import_module("pesquisa_ia"))
+        testes_tela_nova_config(importlib.import_module("eye_of_thundera"))
     except Exception as erro:
         falha("os testes de config da tela nova quebraram: %r" % (erro,))
 
@@ -1304,7 +1304,7 @@ if not falhas:
 try:
     sys.path.insert(0, str(PASTA))
     import roteador
-    import pesquisa_ia as _pia
+    import eye_of_thundera as _pia
 
     def confere(condicao, nome):
         if condicao:
@@ -1592,7 +1592,7 @@ except Exception as erro:
 # --- 8. cantos arredondados da caixa (a conta da curva, sem tela) ----------
 try:
     sys.path.insert(0, str(PASTA))
-    import pesquisa_ia as _p2
+    import eye_of_thundera as _p2
 
     def confere_canto(condicao, nome):
         if condicao:

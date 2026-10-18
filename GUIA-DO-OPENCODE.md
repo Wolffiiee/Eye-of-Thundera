@@ -4,7 +4,7 @@ Leia primeiro README.md e ONDE-PARAMOS.md. Este guia complementa as instruções
 
 ## Versão e atalho em uso
 
-O programa do dia a dia é Eye of Thundera: app_web.py + web/. O atalho Eye of Thundera.lnk na Área de Trabalho aponta para .venv/Scripts/pythonw.exe, passa app_web.py e usa D:/Projetos/PesquisaIA como pasta de trabalho. Portanto, alterações no código-fonte aparecem ao fechar e reabrir o atalho; não gere um EXE automaticamente.
+O programa do dia a dia é Eye of Thundera: app_web.py + web/. O atalho Eye of Thundera.lnk na Área de Trabalho aponta para .venv/Scripts/pythonw.exe, passa app_web.py e usa D:/Projetos/Eye of Thundera como pasta de trabalho. Portanto, alterações no código-fonte aparecem ao fechar e reabrir o atalho; não gere um EXE automaticamente.
 
 O EXE distribuível, quando necessário, é construído por Gerar o EXE.bat e fica em dist/Eye of Thundera.exe. Não presuma que ele seja o alvo do atalho.
 
@@ -21,7 +21,7 @@ O EXE distribuível, quando necessário, é construído por Gerar o EXE.bat e fi
 
 ## Dados pessoais
 
-Conversas, memória, configurações e chaves ficam em %LOCALAPPDATA%/PesquisaIA. Não os leia ou modifique em testes, não imprima chaves e não os inclua no Git.
+Conversas, memória, configurações e chaves ficam em %LOCALAPPDATA%/Eye of Thundera. Não os leia ou modifique em testes, não imprima chaves e não os inclua no Git.
 
 ## Troca manual de modelo no OpenCode
 

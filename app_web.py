@@ -52,7 +52,7 @@ except ImportError:
 # O mesmo modulo do programa antigo: os dados (conversas, memoria,
 # chaves) ficam nos mesmos arquivos, entao a tela nova ve o que o Wolf
 # ja tem. Importar o modulo NAO abre janela nenhuma.
-import pesquisa_ia as p
+import eye_of_thundera as p
 
 TEMAS_VALIDOS = (
     "Clássico Dark", "Purpurina", "Amethyst", "Ocean", "Forest",
@@ -616,7 +616,7 @@ class Ponte:
         (`AreDefaultContextMenusEnabled = _state['debug']`), entao o
         botão direito não abre nada. A tela monta o menu dela com esta
         lista — e a lógica da sugestão é a mesma do programa antigo, que
-        está no motor (`pesquisa_ia.sugerir_correcao`).
+        está no motor (`eye_of_thundera.sugerir_correcao`).
         """
         try:
             r = p.analisar_palavra(palavra)
@@ -719,7 +719,7 @@ class Ponte:
         """Copia as conversas, a memoria e as chaves para um .zip.
 
         O mesmo que o `9 - Fazer backup dos meus dados.bat` faz, e com
-        a mesma funcao do motor (`pesquisa_ia.fazer_backup_dados`), para
+        a mesma funcao do motor (`eye_of_thundera.fazer_backup_dados`), para
         nao existir dois jeitos de fazer a mesma coisa.
         """
         try:
@@ -1246,8 +1246,8 @@ class Ponte:
     def _responder(self, texto, cfg, chave, profundo=False, texto_ia=None):
         """A thread que trabalha enquanto a janela continua viva.
 
-        Reaproveita o caminho do programa antigo: `pesquisa_ia.perguntar`
-        (com busca na web) ou `pesquisa_ia.conversar` (papo normal),
+        Reaproveita o caminho do programa antigo: `eye_of_thundera.perguntar`
+        (com busca na web) ou `eye_of_thundera.conversar` (papo normal),
         escolhidos pelo mesmo roteador, com a mesma chave reserva e o
         mesmo tradutor de erro. Nenhum disso foi reescrito aqui.
         """

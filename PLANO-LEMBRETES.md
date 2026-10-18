@@ -23,7 +23,7 @@ internet e a IA nao e' chamada (nao gasta token, funciona ate sem chave).
 
 ## Arquivos
 - NOVO lembretes.py: `entender(texto, agora)`, `responder(texto, agora, arquivo)`,
-  armazenamento em `%LOCALAPPDATA%/PesquisaIA/lembretes.json` (lista de
+  armazenamento em `%LOCALAPPDATA%/Eye of Thundera/lembretes.json` (lista de
   {id, texto, quando (ISO), feito}), `vencidos`, `concluir`, `adiar`, `apagar`.
   Sem dependencia externa. Arquivo estragado = lista vazia (nunca derruba o app).
 - app_web.py: em `Ponte.enviar`, depois do bloco DEMO e ANTES da checagem de chave,

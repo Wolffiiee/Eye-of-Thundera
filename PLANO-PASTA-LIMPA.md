@@ -3,15 +3,15 @@
 Para as outras IAs. Escrito em 17/10/2026, ANTES de copiar qualquer coisa.
 Pedido do Wolf: uma pasta em D:\Projetos com o nome do programa, so com os documentos
 necessarios para ele rodar, para ele ter uma ideia de como ficaria. E' uma COPIA: a
-pasta de trabalho D:\Projetos\PesquisaIA continua sendo a original e nada nela muda.
+pasta de trabalho D:\Projetos\Eye of Thundera continua sendo a original e nada nela muda.
 
 ## Destino
 D:\Projetos\Eye of Thundera   (nao apagar nem sobrescrever a pasta se ela ja existir:
 avisar o Wolf e criar com sufixo)
 
 ## Entra (so o que o programa usa para abrir e funcionar)
-- app_web.py, pesquisa_ia.py, memoria.py, roteador.py, voz.py, pdf_leitor.py, lembretes.py
-  (os `import` do app_web.py e do pesquisa_ia.py; conferido por teste de import)
+- app_web.py, eye_of_thundera.py, memoria.py, roteador.py, voz.py, pdf_leitor.py, lembretes.py
+  (os `import` do app_web.py e do eye_of_thundera.py; conferido por teste de import)
 - web/index.html, web/app.js, web/estilo.css   (a tela; busca.js so entra quando o index.html passar a usar)
 - icone.ico            (icone da janela: app_web.py usa RAIZ / "icone.ico")
 - requirements.txt     (bibliotecas, versoes fixadas)
@@ -24,7 +24,7 @@ avisar o Wolf e criar com sufixo)
   testes e apoio para desenvolver, nao para rodar
 - todos os .md de plano/historico/guia, .spec, backups, imagens soltas (avatar_usuario.png
   e Gemini_*.png nao sao usadas pela tela nova), web/spike_webview.py, btns.txt, check_btns*.py
-- Dados do Wolf (chave, conversas, memoria, lembretes) ficam em %LOCALAPPDATA%/PesquisaIA
+- Dados do Wolf (chave, conversas, memoria, lembretes) ficam em %LOCALAPPDATA%/Eye of Thundera
   e NAO sao copiados: a pasta nova abre limpa ou usa os mesmos dados se rodar na mesma conta.
 
 ## Conferencia

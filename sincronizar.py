@@ -28,11 +28,22 @@ import shutil
 import time
 from pathlib import Path
 
-# O mesmo calculo do pesquisa_ia: %LOCALAPPDATA%\\PesquisaIA. Nao importamos
-# pesquisa_ia aqui de proposito (o modulo fica sem dependencias, da mesma
+# O mesmo calculo do eye_of_thundera: %LOCALAPPDATA%\\PesquisaIA. Nao importamos
+# eye_of_thundera aqui de proposito (o modulo fica sem dependencias, da mesma
 # forma que roteador.py).
-PASTA_DADOS = Path(
+PASTA_DADOS_ANTIGA = Path(
     os.environ.get("LOCALAPPDATA", Path.home())) / "PesquisaIA"
+PASTA_DADOS = Path(
+    os.environ.get("LOCALAPPDATA", Path.home())) / "Eye of Thundera"
+# Migração one-time
+try:
+    if not PASTA_DADOS.exists() and PASTA_DADOS_ANTIGA.exists():
+        PASTA_DADOS.mkdir(parents=True, exist_ok=True)
+        for _arq in PASTA_DADOS_ANTIGA.iterdir():
+            if _arq.is_file():
+                shutil.copy2(str(_arq), str(PASTA_DADOS / _arq.name))
+except Exception:
+    pass
 
 # Arquivo de diagnostico local: nao deve viajar (e grande e muda sempre).
 NAO_VIAJAM = {"erro.log"}

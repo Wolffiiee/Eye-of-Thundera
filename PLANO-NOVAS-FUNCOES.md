@@ -4,7 +4,7 @@
 
 Para a IA que programa. Escrito pelo Claude em 15/10/2026, depois de ler o
 código e de ver a tela do programa. Salve este arquivo na pasta do projeto
-(`D:\Projetos\PesquisaIA`) e siga na ordem. O Wolf não programa: explique tudo
+(`D:\Projetos\Eye of Thundera`) e siga na ordem. O Wolf não programa: explique tudo
 em português simples.
 
 ## META (decidido pelo Wolf em 15/10/2026): TUDO EM HTML NO FINAL
@@ -30,7 +30,7 @@ muito mais fácil de mudar,ixa e deixar bonito.
 - Menu do botão direito, corretor ortográfico, avisos de status.
 
 ### O que continua em Python (e é o certo)
-O `pesquisa_ia.py` **não é apagado**: ele vira o **motor**, e a tela
+O `eye_of_thundera.py` **não é apagado**: ele vira o **motor**, e a tela
 HTML passa a ser a **cara**. A tela nova já importa esse arquivo e usa
 o que ele tem de melhor (chamar a IA, pesquisar na web, trocar de
 chave, traduzir erro, aprender sobre o usuário, gravar a conversa).
@@ -49,7 +49,7 @@ Continua em Python porque é o que sabe fazer:
 ### Como a troca acontece (sem ficar sem programa)
 A tela nova nasce **ao lado** da antiga, nunca no lugar dela. O atalho
 da Área de Trabalho continua no programa de Tk até a tela nova ficar
-igual ou melhor. No fim, o `pesquisa_ia.py` deixa de ser a interface e
+igual ou melhor. No fim, o `eye_of_thundera.py` deixa de ser a interface e
 passa a ser só o motor — que já é como ele funciona hoje.
 
 ## 0. Regras que valem para tudo
@@ -58,7 +58,7 @@ passa a ser só o motor — que já é como ele funciona hoje.
   teste novo no verificar.py, `verificar.bat` com TUDO CERTO, commit,
   histórico).
 - Uma tarefa por vez (A, B, C, D), cada uma com seu commit.
-- NUNCA leia, mostre ou grave nada de `%LOCALAPPDATA%\PesquisaIA\` (conversas,
+- NUNCA leia, mostre ou grave nada de `%LOCALAPPDATA%\Eye of Thundera\` (conversas,
   memória, chaves do Wolf). Em testes e prints use dados de exemplo
   (troque `carregar_memoria`/`carregar_conversas` por listas falsas).
 - O Wolf pode estar com o programa aberto. Antes de copiar o .exe novo para a
@@ -93,7 +93,7 @@ passa a ser só o motor — que já é como ele funciona hoje.
   diferente da aba Memória, que tem 24 px). A aba Memória só lista e apaga.
 
 ## 2. TAREFA A: assistente amigo que só pesquisa quando precisa
-### A1. Novo arquivo `roteador.py` (funções puras, sem importar pesquisa_ia)
+### A1. Novo arquivo `roteador.py` (funções puras, sem importar eye_of_thundera)
 - `regra_local(texto, modo)` devolve `"pesquisa"`, `"amigo"` ou `None`:
   - `modo == "sempre"` -> pesquisa; `modo == "nunca"` -> amigo.
   - Começa com `/web`, "pesquise", "pesquisa", "busque", "procure", "dá uma
@@ -126,7 +126,7 @@ passa a ser só o motor — que já é como ele funciona hoje.
   que..." e devolve o fato; o app grava direto em `_mesclar_memoria`, sem
   gastar chamada de IA.
 
-### A2. Mudanças em `pesquisa_ia.py`
+### A2. Mudanças em `eye_of_thundera.py`
 1. Chamada do roteador com o modelo rápido (`MODELO_MEMORIA`), cliente com
    timeout de ~8 s e `response_mime_type="application/json"`. Se falhar,
    segue com a heurística (nunca trava a conversa).
@@ -283,7 +283,7 @@ erro, copiar para a Área de Trabalho (guardando o antigo em `_arquivo_morto`).
 Remover do projeto qualquer sobra de teste (pasta `_tmp`, scripts de print).
 
 ## 7. O que NÃO fazer
-- Não reescrever `pesquisa_ia.py` inteiro nem trocar tkinter por outra
+- Não reescrever `eye_of_thundera.py` inteiro nem trocar tkinter por outra
   biblioteca nesta rodada.
 - Não criar `unbind_all("<Button-1>")` nem `bind_all` de clique novos (use
   `_registrar_clique_global`).
@@ -295,7 +295,7 @@ Remover do projeto qualquer sobra de teste (pasta `_tmp`, scripts de print).
 Pedido do Wolf (15/10/2026): a IA poder usar emojis coloridos de novo, sem
 eles ficarem fora da bolha nem em cima da escrita. Hoje estão desligados de
 propósito (`_remover_emojis` e o prompt "NÃO use emojis"). Sobraram restos da
-tentativa antiga em `pesquisa_ia.py` (perto da linha 48):
+tentativa antiga em `eye_of_thundera.py` (perto da linha 48):
 `CACHE_EMOJI_COLORIDO` e `REFERENCIAS_IMG_EMOJI`; aproveite ou apague.
 
 ### E0. Por que deu errado antes (o Claude testou neste PC em 15/10)

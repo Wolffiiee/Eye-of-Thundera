@@ -2,7 +2,7 @@
 
 Roda em segundo plano, com o programa aberto ou fechado. NAO altera nada:
 so le e copia. Este arquivo e' a "porta de entrada" para quem clicar
-nele; a logica esta em `pesquisa_ia.fazer_backup_dados`, que e' a mesma
+nele; a logica esta em `eye_of_thundera.fazer_backup_dados`, que e' a mesma
 que o botao dentro do programa usa.
 """
 import io
@@ -17,7 +17,7 @@ if sys.stdout is not None:
     except Exception:
         pass
 
-import pesquisa_ia as p
+import eye_of_thundera as p
 
 LOG = Path(__file__).resolve().parent / "_arquivo_morto" / "ultimo_backup_dados.txt"
 

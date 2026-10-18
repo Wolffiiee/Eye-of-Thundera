@@ -10,7 +10,7 @@ Atualizado em 18/10/2026. Este documento contém pendências reais; o histórico
 - Conferir se Nova conversa, Configurações, Web e enviar respondem.
 - Fazer uma pergunta curta somente quando o usuário estiver pronto para testar a integração com a IA.
 - Testar Ctrl+S em uma resposta de exemplo, confirmar que o diálogo de salvar aparece na frente e que cancelar não gera erro.
-- Se falhar, ler %LOCALAPPDATA%/PesquisaIA/erro.log e registrar o traceback sem dados secretos.
+- Se falhar, ler %LOCALAPPDATA%/Eye of Thundera/erro.log e registrar o traceback sem dados secretos.
 
 ## Prioridade 2 — conferir os fluxos de configuração
 
@@ -76,7 +76,7 @@ Atualizado em 18/10/2026. Este documento contém pendências reais; o histórico
 - [x] O módulo `lembretes.py` (com plano em `PLANO-LEMBRETES.md`) estava **órfão** — nenhum arquivo o chamava, então o recurso não existia para o usuário. Agora está ligado em `Ponte.enviar`, **antes** da checagem de chave, com os métodos `lembretes_vencidos`, `lembrete_concluir` e `lembrete_adiar`.
 - [x] Frases entendidas: "amanhã às 9h", "daqui a 30 minutos", "segunda às 14h30", "dia 25", "20/10 às 7h", "hoje às 18h", "depois de amanhã às 10 da noite" e "lembrete: ..."; listar com "meus lembretes" e cancelar com "cancelar lembrete 2". Frases que só *parecem* lembrete ("como me lembrar de coisas?") continuam indo para a IA.
 - [x] Cartões na tela com `role="alert"`, perguntados ao abrir e **de 30 em 30 segundos**, com "Feito" e "Adiar 10 min"; cada lembrete aparece uma vez por sessão. Ficam no **alto à direita**, abaixo da barra de título, para não cobrir os botões de microfone e enviar (o defeito foi visto em captura de tela e corrigido antes do commit).
-- [x] Tudo local (`%LOCALAPPDATA%/PesquisaIA/lembretes.json`), sem IA e **funcionando sem chave**. O módulo entrou nos dois `.spec` do PyInstaller, para o `.exe` distribuível incluí-lo.
+- [x] Tudo local (`%LOCALAPPDATA%/Eye of Thundera/lembretes.json`), sem IA e **funcionando sem chave**. O módulo entrou nos dois `.spec` do PyInstaller, para o `.exe` distribuível incluí-lo.
 - [x] Cinco testes novos no `verificar.py` (interpretador com datas fixas, armazenamento, a ponte, o envio sem chave pelo caminho de verdade e a ligação na tela/pacote), todos com arquivos em `_tmp` — nenhum dado real é lido ou alterado.
 - [x] Testado e aprovado pelo usuário (17/10): o cartão aparece no alto à direita, "Feito" e "Adiar 10 min" funcionam, e os botões de microfone e enviar continuam visíveis.
 

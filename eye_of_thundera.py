@@ -136,7 +136,19 @@ SERVICOS_RESERVA = [
     },
 ]
 
-PASTA_CONFIG = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "PesquisaIA"
+import shutil as _shutil_migr
+
+PASTA_CONFIG_ANTIGA = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "PesquisaIA"
+PASTA_CONFIG = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "Eye of Thundera"
+# Migração one-time: copia arquivos da pasta antiga para a nova.
+try:
+    if not PASTA_CONFIG.exists() and PASTA_CONFIG_ANTIGA.exists():
+        PASTA_CONFIG.mkdir(parents=True, exist_ok=True)
+        for _arq in PASTA_CONFIG_ANTIGA.iterdir():
+            if _arq.is_file():
+                _shutil_migr.copy2(str(_arq), str(PASTA_CONFIG / _arq.name))
+except Exception:
+    pass
 ARQUIVO_CONFIG = PASTA_CONFIG / "config.json"
 # Quando o programa roda como executável, grava o log junto das configurações
 # (a pasta do .exe pode ser só leitura, como a Área de Trabalho).
@@ -3487,7 +3499,7 @@ def fazer_backup_dados(destino=None, quantos=15):
     import zipfile
 
     if destino is None:
-        destino = Path.home() / "OneDrive" / "Backup Pesquisa IA" / "dados"
+        destino = Path.home() / "OneDrive" / "Backup Eye of Thundera" / "dados"
     destino = Path(destino)
     destino.mkdir(parents=True, exist_ok=True)
     arquivos = sorted(x for x in PASTA_CONFIG.iterdir() if x.is_file())
@@ -4544,7 +4556,7 @@ class Aplicativo:
         except Exception:
             return []
         palavra = self.entrada.get(inicio, fim).strip()
-        # a decisão é do MOTOR (pesquisa_ia.sugerir_correcao), não deste
+        # a decisão é do MOTOR (eye_of_thundera.sugerir_correcao), não deste
         # método: o programa novo usa a mesma função no botão direito, e
         # duas cópias dessa lógica iam divergir com o tempo.
         sugestoes = sugerir_correcao(palavra)

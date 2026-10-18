@@ -12,13 +12,21 @@ Funções principais:
 """
 import json
 import os
+import shutil
 import re
 import unicodedata
 import uuid
 from datetime import datetime, date, time, timedelta
 from pathlib import Path
 
-ARQUIVO = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "PesquisaIA" / "lembretes.json"
+ARQUIVO_ANTIGO = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "PesquisaIA" / "lembretes.json"
+ARQUIVO = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "Eye of Thundera" / "lembretes.json"
+try:
+    if not ARQUIVO.exists() and ARQUIVO_ANTIGO.exists():
+        ARQUIVO.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(str(ARQUIVO_ANTIGO), str(ARQUIVO))
+except Exception:
+    pass
 
 _DIAS_SEMANA = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
 _NUM_SEMANA = {"segunda": 0, "terca": 1, "quarta": 2, "quinta": 3,

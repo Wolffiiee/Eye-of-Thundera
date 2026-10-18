@@ -11,7 +11,7 @@ jargão.
 
 ONDE ESTÁ O PROJETO
 A ÚNICA pasta oficial é:
-    D:\Projetos\PesquisaIA
+    D:\Projetos\Eye of Thundera
 A pasta antiga do OneDrive ("Documentos\Projeto Padrão") foi apagada em
 15/10/2026. Se aparecer uma pasta vazia com esse nome, ignore: NÃO trabalhe
 nela.
@@ -90,7 +90,7 @@ COMO VOCÊ DEVE TRABALHAR (detalhes no PASSO-A-PASSO.md)
 7. Atualize o HISTORICO-DE-MUDANCAS.md com o que você baixou, modificou,
    adicionou, removeu ou moveu (a entrada mais nova fica em cima).
 8. Nunca apague arquivos meus (mova para _arquivo_morto), nunca mexa em
-   %LOCALAPPDATA%\PesquisaIA (minhas conversas, memória e chaves) e nunca
+   %LOCALAPPDATA%\Eye of Thundera (minhas conversas, memória e chaves) e nunca
    escreva chave de API em arquivo do projeto.
 9. Se instalar ou remover uma biblioteca: fixe a versão exata em
    requirements.txt (ou requirements-dev.txt), atualize o

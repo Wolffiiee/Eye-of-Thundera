@@ -28,7 +28,7 @@ logging.getLogger("pypdf").addHandler(logging.NullHandler())
 logging.getLogger("pypdf").propagate = False
 
 # pypdf e' opcional: o programa inteiro continua funcionando sem ela
-# (so nao le PDF). Mesmo padrao do Pillow em pesquisa_ia.py.
+# (so nao le PDF). Mesmo padrao do Pillow em eye_of_thundera.py.
 try:
     import pypdf
 

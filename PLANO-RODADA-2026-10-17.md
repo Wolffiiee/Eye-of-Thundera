@@ -20,7 +20,7 @@ Preparado antes de alterar o código, conforme pedido do usuário.
 
 ## Limites de segurança e escopo
 
-- Não ler nem alterar `%LOCALAPPDATA%\PesquisaIA`, chaves, conversas, memória ou histórico pessoal.
+- Não ler nem alterar `%LOCALAPPDATA%\Eye of Thundera`, chaves, conversas, memória ou histórico pessoal.
 - Não apagar, restaurar ou incluir no commit `show.png` ou outros arquivos alheios à rodada.
 - O atalho diário abre `app_web.py`; não gerar EXE sem necessidade.
 - Se persistência de temas exigir mudanças no backend, ajustar limites, validação e testes em conjunto; caso contrário, limitar ao frontend.

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Roteador: decide se a mensagem precisa de pesquisa na web ou é só papo.
 
-Funções puras, só com a biblioteca padrão. Não importa `pesquisa_ia`
+Funções puras, só com a biblioteca padrão. Não importa `eye_of_thundera`
 (de propósito, para dar para testar sem abrir a janela e sem internet).
 
 - `regra_local(texto, modo)` responde rápido, sem IA: "pesquisa", "amigo"

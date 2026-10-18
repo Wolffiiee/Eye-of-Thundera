@@ -14,7 +14,7 @@ lê mais páginas e devolve resposta organizada em tópicos com fontes citadas.
 - Atalho Ctrl+Shift+S (opcional; pode permanecer como toggle local).
 - Indicador visual + status "Pesquisando a fundo...".
 
-### Passo 2 — Backend (pesquisa_ia.py)
+### Passo 2 — Backend (eye_of_thundera.py)
 - Adicionar `cfg["pesquisa_profunda"]` (bool, default False), que habilita
   deep quando on.
 - `_gerar_texto` ganha `profundidade=False` que:

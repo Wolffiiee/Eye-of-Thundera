@@ -7,7 +7,7 @@ Rode SEMPRE depois de qualquer alteração no programa (duplo clique em
 pronta: corrija e rode de novo até terminar com "TUDO CERTO".
 
 O que ele confere:
-  1. se o pesquisa_ia.py não tem erro de escrita (sintaxe);
+  1. se o eye_of_thundera.py não tem erro de escrita (sintaxe);
   2. se as bibliotecas do requirements.txt estão instaladas;
   3. análise do código (pyflakes): nomes que não existem = FALHA;
   4. regras do projeto (ex.: proibido unbind_all de clique);
@@ -44,7 +44,7 @@ POSICAO_TESTE = "+2000+100"
 PASTA = Path(__file__).parent
 
 # O arquivo principal do motor
-ARQUIVO = PASTA / "pesquisa_ia.py"
+ARQUIVO = PASTA / "eye_of_thundera.py"
 
 falhas = []
 avisos = []
@@ -73,8 +73,8 @@ def aviso(msg):
 
 # --- 1. sintaxe -------------------------------------------------------------
 try:
-    py_compile.compile(str(PASTA / "pesquisa_ia.py"), doraise=True)
-    ok("pesquisa_ia.py sem erro de sintaxe")
+    py_compile.compile(str(PASTA / "eye_of_thundera.py"), doraise=True)
+    ok("eye_of_thundera.py sem erro de sintaxe")
 except py_compile.PyCompileError as erro:
     falha("erro de sintaxe: %s" % erro)
 
@@ -245,7 +245,7 @@ if "escurecer_janela_por_titulo" in app_txt and \
 else:
     falha("a tela nova ainda usa ativar_barra_escura, que falha no pywebview")
 try:
-    _p = importlib.import_module("pesquisa_ia")
+    _p = importlib.import_module("eye_of_thundera")
     achou = _p.escurecer_janela_por_titulo("JANELA QUE NAO EXISTE",
                                            tentativas=1, espera=0)
     naoachou = achou is False
@@ -361,7 +361,7 @@ except Exception as erro:
 # receita para um deles ficar velho. Aqui a funcao e' testada numa pasta
 # de TESTE (os dados do Wolf nunca sao tocados).
 try:
-    import pesquisa_ia as _pi2
+    import eye_of_thundera as _pi2
     _tmp_bk = Path(PASTA) / "_tmp" / "teste-backup"
     shutil.rmtree(_tmp_bk, ignore_errors=True)
     _origem = _tmp_bk / "origem"
@@ -402,7 +402,7 @@ try:
         ok("backup dos dados: sem arquivos, avisa e não cria zip vazio")
     else:
         falha("backup dos dados: criou um zip sem nenhum arquivo")
-    if _pi2.PASTA_CONFIG == _pasta_orig and _pasta_orig.name == "PesquisaIA":
+    if _pi2.PASTA_CONFIG == _pasta_orig and _pasta_orig.name == "Eye of Thundera":
         ok("backup dos dados: a pasta de verdade do Wolf não foi trocada")
     else:
         falha("backup dos dados: a pasta de dados ficou %r" % (_pi2.PASTA_CONFIG,))
@@ -417,7 +417,7 @@ except Exception as erro:
 # perder uma palavra). O arquivo das datas sai do caminho do
 # ARQUIVO_MEMORIA, entao um teste nao escreve na pasta de verdade.
 try:
-    import pesquisa_ia as _pi3
+    import eye_of_thundera as _pi3
     _tmp_dt = Path(PASTA) / "_tmp" / "teste-datas"
     shutil.rmtree(_tmp_dt, ignore_errors=True)
     _tmp_dt.mkdir(parents=True)
@@ -600,7 +600,7 @@ except Exception as erro:
 # (a mesma funcao que o programa antigo usa) para as duas telas
 # concordarem.
 try:
-    import pesquisa_ia as _p_menu
+    import eye_of_thundera as _p_menu
     _probe = _aw.Ponte()
     if not callable(getattr(_probe, "sugerir_correcao", None)):
         falha("menu do botão direito: a ponte não tem sugerir_correcao")
@@ -633,7 +633,7 @@ try:
         falha("menu do botão direito: 'gobiln' não virou 'goblin'")
     # o programa ANTIGO usa a MESMA funcao: uma cópia só, para as duas
     # telas nunca discordarem do que é "palavra errada".
-    _antigo = Path(PASTA / "pesquisa_ia.py").read_text(encoding="utf-8")
+    _antigo = Path(PASTA / "eye_of_thundera.py").read_text(encoding="utf-8")
     if ("sugerir_correcao" in _antigo
             and _antigo.count("def sugerir_correcao") == 1):
         ok("menu do botão direito: o programa antigo usa a função do motor")
@@ -692,7 +692,7 @@ except Exception as erro:
 # isto, o antigo nao podia ser aposentado.
 try:
     import app_web as _aw2
-    import pesquisa_ia as _pg_p          # o mesmo modulo, nome curto aqui
+    import eye_of_thundera as _pg_p          # o mesmo modulo, nome curto aqui
     import io as _io2
     from PIL import Image as _Img, ImageDraw as _Drw
 
@@ -890,7 +890,7 @@ except Exception as erro:
 # o prompt de CONVERSA nao dizia qual portugues — e sem isso o modelo
 # escolhe a variante que ele acha mais neutra, que e' a de Portugal.
 try:
-    import pesquisa_ia as _pg_id
+    import eye_of_thundera as _pg_id
     for _nome, _prompt in (("conversa", _pg_id.INSTRUCOES_AMIGO),
                           ("pesquisa", _pg_id.INSTRUCOES),
                           ("aprender", _pg_id.INSTRUCOES_APRENDER)):
@@ -915,7 +915,7 @@ try:
     else:
         falha("idioma: a regra não fala do gerúndio (é o erro mais comum)")
     # a regra tem que estar DENTRO dos prompts, não só existir solta
-    if "IDIOMA_BR" in Path(PASTA / "pesquisa_ia.py").read_text(encoding="utf-8"):
+    if "IDIOMA_BR" in Path(PASTA / "eye_of_thundera.py").read_text(encoding="utf-8"):
         ok("idioma: a regra do português brasileiro é usada pelos prompts")
     else:
         falha("idioma: a regra existe mas ninguém usa")
@@ -983,7 +983,7 @@ except Exception as erro:
 # onde ele fechou da ultima vez, e se adapta a quantas telas tiver.
 try:
     import app_web as _aw3
-    import pesquisa_ia as _pg_pos2
+    import eye_of_thundera as _pg_pos2
 
     _UM = [(0, 0, 1920, 1080)]
     _DOIS = [(0, 0, 1920, 1080), (1920, 0, 3840, 1080)]
@@ -1095,7 +1095,7 @@ except Exception as erro:
 # proprios olhos. O que nao pode: repetir link, trazer link quebrado, nem
 # aceitar link perigoso (javascript:).
 try:
-    _pi = importlib.import_module("pesquisa_ia")
+    _pi = importlib.import_module("eye_of_thundera")
     _sites = _pi._sites_consultados(
         [{"title": "Globo", "href": "https://ge.globo.com/x", "body": "a"},
          {"title": "UOL", "url": "http://uol.com.br/y", "body": "b"},
@@ -1158,7 +1158,7 @@ else:
 
 
 # --- Tarefa D (pesquisa profunda) evidence ---------------------------
-_tarefad = Path(PASTA / "web" / "app.js").read_text(encoding="utf-8") + "\n" + Path(PASTA / "app_web.py").read_text(encoding="utf-8") + "\n" + Path(PASTA / "pesquisa_ia.py").read_text(encoding="utf-8")
+_tarefad = Path(PASTA / "web" / "app.js").read_text(encoding="utf-8") + "\n" + Path(PASTA / "app_web.py").read_text(encoding="utf-8") + "\n" + Path(PASTA / "eye_of_thundera.py").read_text(encoding="utf-8")
 if "btn-deep" in _tarefad and "profundo" in _tarefad:
     ok("Tarefa D: pesquisa profunda (botao + flag) presente no codigo")
 else:
@@ -1516,7 +1516,7 @@ except Exception as _erro_cfg:
 
 
 # --- logs: a função de registro sanitiza credenciais -----------------------
-_log_p = importlib.import_module("pesquisa_ia")
+_log_p = importlib.import_module("eye_of_thundera")
 _log_fonte = ARQUIVO.read_text(encoding="utf-8")
 _log_api = "s" * 24
 _log_bearer = "x" * 36
@@ -2398,7 +2398,7 @@ try:
     # janela: nenhuma conversa de verdade é gravada (privada = True).
     import app_web as _aw_lem2
     import lembretes as _lem4
-    import pesquisa_ia as _pia4
+    import eye_of_thundera as _pia4
 
     _ARQ3 = PASTA / "_tmp" / "lembretes_envio.json"
     _CFG3 = PASTA / "_tmp" / "cfg_envio_inexistente.json"
@@ -2466,7 +2466,7 @@ except Exception as _erro_lem4:
 try:
     import json as _json_o
     import app_web as _aw_o
-    import pesquisa_ia as _pe_o
+    import eye_of_thundera as _pe_o
 
     _DIC_O = PASTA / "_tmp" / "dic_teste_ortografia.json"
     _DIC_O.parent.mkdir(exist_ok=True)
@@ -2624,7 +2624,7 @@ try:
     import base64 as _b64_d
     import json as _json_d
     import app_web as _aw_doc
-    import pesquisa_ia as _pia_d
+    import eye_of_thundera as _pia_d
 
     _CFG_D = PASTA / "_tmp" / "cfg_documento.json"
     _CFG_D.parent.mkdir(exist_ok=True)
