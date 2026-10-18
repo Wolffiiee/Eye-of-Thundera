@@ -2218,15 +2218,26 @@ async function salvarConfig() {
 
     estado.cfg = r.cfg;
     aplicarCfg();
-    const atual = await chamar("config_ler");
-    if (atual.erro || !Array.isArray(atual.servicos)) {
-      const av = $("#config-aviso");
-      av.textContent = "Alterações salvas, mas não consegui atualizar a tela. Feche e abra Configurações novamente.";
-      av.className = "erro";
-      return;
+    // Re-lê a configuração do backend para garantir que a tela reflita o que
+    // foi gravado. Se a re-leitura falhar (ou retornar algo inesperado),
+    // não derruba o salvamento — o estado local já tem os valores.
+    try {
+      const atual = await chamar("config_ler");
+      if (atual && !atual.erro && Array.isArray(atual.servicos)) {
+        estado.cfgTela = atual;
+      }
+    } catch (_e) {
+      console.error("Não consegui re-ler a configuração:", _e);
     }
-
-    estado.cfgTela = atual;
+    // Garante que os campos novos (sincronização, plugins) também fiquem
+    // atualizados mesmo se a re-leitura falhou.
+    if (!estado.cfgTela) estado.cfgTela = {};
+    if (estado.aba === "sincronizacao" && estado.rascunho.pasta_sync) {
+      estado.cfgTela.pasta_sync = estado.rascunho.pasta_sync;
+    }
+    if (estado.aba === "plugins") {
+      estado.cfgTela.plugins_ativos = estado.rascunho.plugins_ativos || [];
+    }
     estado.rascunho.chaves = {};
     // Atualiza as infos pré-carregadas das abas que acabaram de salvar.
     if (estado.aba === "plugins") {
