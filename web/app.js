@@ -1610,13 +1610,14 @@ function abaChaves(corpo) {
 // Aba Sincronização (PLANO-SINCRONIZACAO.md): escolher a pasta (OneDrive etc.),
 // ver o estado e sincronizar na hora. Ao abrir/fechar o programa ele sincroniza
 // sozinho; aqui dá para forçar e mudar a pasta.
-async function abaSincronizacao(corpo) {
+function abaSincronizacao(corpo) {
   corpo.append(
     el("h3", "", "Sincronização"),
     el("p", "sub", "Mantém conversas, memória e configurações iguais em outro computador, por uma pasta que o Windows sincroniza (OneDrive, Drive, Dropbox). O programa importa ao abrir e exporta ao fechar.")
   );
-  const r = await chamar("sincronizar_config");
-  if (estado.aba !== "sincronizacao") return;
+  // Dados já vieram carregados do abrirConfig (sem await aqui — se a aba fosse
+  // redesenhada, o corpo seria limpo antes de terminar e o botão sumia).
+  const r = estado.syncInfo || {};
   if (r.erro) {
     corpo.append(el("div", "aviso-erro", r.erro));
     return;
@@ -1661,19 +1662,20 @@ async function abaSincronizacao(corpo) {
     if (res.exportados) qtd.push(res.exportados + " exportado(s)");
     aviso(qtd.length ? "Sincronizado: " + qtd.join(" e ") + "."
                        : "Sincronizado: nada novo.", false);
+    estado.syncInfo = null;  // na próxima abertura, recarrega
   });
   corpo.append(btnSync);
 }
 
 // Aba Plugins (PLANO-PLUGINS.md): lista os comandos locais do Wolf, liga e
 // desliga, e mostra onde ficam os arquivos (para criar o seu).
-async function abaPlugins(corpo) {
+function abaPlugins(corpo) {
   corpo.append(
     el("h3", "", "Plugins"),
     el("p", "sub", "Comandos locais que respondem sem IA e sem chave — como os lembretes. Para criar o seu, salve um arquivo .py na pasta abaixo.")
   );
-  const r = await chamar("plugins_listar");
-  if (estado.aba !== "plugins") return;
+  // Dados já vieram carregados do abrirConfig (sem await aqui).
+  const r = estado.pluginsInfo || { plugins: [] };
   if (r.erro) {
     corpo.append(el("div", "aviso-erro", r.erro));
     return;
@@ -1703,7 +1705,6 @@ async function abaPlugins(corpo) {
     cartao.append(ligar);
     corpo.append(cartao);
   }
-  // Salvamento (o botão Salvar do rodapé grava os ativos via interruptor).
   estado.rascunhoPlugins = r.plugins.map((pl) => pl.arquivo);
 }
 
@@ -2047,6 +2048,14 @@ async function abrirConfig(aba) {
   estado._configTrigger = document.activeElement;
   const r = await chamar("config_ler");
   if (r.erro) return;
+  // Pre-carrega os dados das abas Sincronização e Plugins AQUI, uma vez só,
+  // para as funções das abas serem síncronas (sem await dentro de mostrarAba —
+  // se a aba fosse chamada duas vezes, a segunda limpava o corpo antes da
+  // primeira terminar e o botão "Sincronizar agora" sumia).
+  try { estado.syncInfo = await chamar("sincronizar_config"); }
+  catch (_e) { estado.syncInfo = null; }
+  try { estado.pluginsInfo = await chamar("plugins_listar"); }
+  catch (_e) { estado.pluginsInfo = null; }
   estado.cfgTela = r;
   estado.rascunho = {
     modo_pesquisa: r.modo_pesquisa, usar_contexto: r.usar_contexto, aprender: r.aprender,

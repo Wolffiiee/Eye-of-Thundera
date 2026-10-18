@@ -153,7 +153,7 @@ DESCRICAO = "Responde a /tempo com a data e a hora de agora."
 def responder(texto):
     if texto.strip().lower() in ("/tempo", "que horas sao", "hora atual"):
         agora = datetime.now()
-        return "Agora sao %s de %s." % (
+        return "Agora são %s de %s." % (
             agora.strftime("%H:%M:%S"),
             agora.strftime("%d/%m/%Y"))
     return None
@@ -168,13 +168,14 @@ def garantir_pasta(pasta=None):
 
 
 def garantir_exemplo(pasta=None):
-    """Cria o plugin de exemplo na pasta (so se nao existir).
+    """Garante que o plugin de exemplo existe e está atualizado.
 
-    Se o Wolf ja apagou, nao recria. Se ja existir um /tempo de outro
-    plugin, tambem nao sobrescreve.
+    Diferente dos plugins do usuário (que nunca são tocados), o exemplo é
+    nosso: se o conteúdo mudou (ex.: correção de acento), reescreve. Plugins
+    criados pelo usuário na mesma pasta não são afetados.
     """
     pasta = garantir_pasta(pasta)
     exemplo = pasta / "exemplo.py"
-    if not exemplo.exists():
+    if not exemplo.exists() or exemplo.read_text(encoding="utf-8") != EXEMPLO:
         exemplo.write_text(EXEMPLO, encoding="utf-8")
     return exemplo
