@@ -375,6 +375,7 @@ select { background: var(--bg); color: var(--texto); border: 1px solid var(--bor
 /* editar um item da memoria: o texto vira campo, sem sair da lista */
 .fato .editavel { cursor: text; border-radius: 6px; padding: 1px 4px; margin: -1px -4px; }
 .fato .editavel:hover { background: var(--superficie-2); }
+.destaque-busca { background: var(--azul); color: var(--btn-texto); padding: 0 3px; border-radius: 4px; }
 .fato.editando input.edicao { flex: 1; min-width: 0; }
 .contador { color: var(--texto-3); font-size: 12.5px; margin: 4px 0 14px; }
 /* lista de atalhos na aba Ajuda */

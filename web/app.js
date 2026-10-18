@@ -17,6 +17,37 @@ function el(tag, cls, texto) {
   if (texto !== undefined) e.textContent = texto;
   return e;
 }
+// Escapa texto antes de entrar no innerHTML (o item guardado pode ter < ou &).
+function escaparHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+// Devolve o HTML do item com os termos que casaram com a busca envolvidos em
+// <span class="destaque-busca">, palavra por palavra. Usa as mesmas regras do
+// busca.js (prefixo e razão de Levenshtein) para destacar exatamente o que a
+// busca achou — inclusive erro de digitação e sem acento. Quando não há termo,
+// devolve o texto escapado, igual a textContent.
+function destacarTexto(textoOriginal, termoBusca) {
+  const termo = (termoBusca || "").trim();
+  if (!termo) return escaparHtml(textoOriginal);
+  const partes = termo.split(/\s+/).map(busca_normalizar).filter(Boolean);
+  if (!partes.length) return escaparHtml(textoOriginal);
+  // Quebra o texto em "palavra / espaço" preservando a posição original,
+  // para montar o HTML sem perder acentos nem maiúsculas.
+  const pedacos = textoOriginal.split(/(\s+)/);
+  return pedacos.map((p) => {
+    if (!p || /^\s+$/.test(p)) return escaparHtml(p);
+    const np = busca_normalizar(p);
+    if (!np) return escaparHtml(p);
+    const casou = partes.some((q) => {
+      if (np.startsWith(q)) return true;
+      // mesma régua do busca.js: 0.72 comum, 0.84 para palavra de 1-2 letras
+      const minimo = q.length <= 2 ? 0.84 : 0.72;
+      return busca_razao(np, q) >= minimo;
+    });
+    return casou ? '<span class="destaque-busca">' + escaparHtml(p) + "</span>" : escaparHtml(p);
+  }).join("");
+}
 
 const estado = { mensagens: [], conversas: [], atual: null, ocupado: false, gravando: false, privada: false, profundo: false, sugerindo: false, ultimaPergunta: "", ultimaResposta: "", cfg: {}, aba: "memoria", rascunho: {} };
 const ROTULO_WEB = { auto: "Web: automática", sempre: "Web: sempre", nunca: "Web: desligada" };
@@ -223,11 +254,7 @@ function criarMensagem(m) {
   const tipo = m.role === "user" ? "eu" : m.role === "erro" ? "erro" : "ia";
   const caixa = el("div", "msg " + tipo);
   const corpo = el("div", "corpo");
-  if (tipo === "ia") {
-    const av = el("span", "avatar");
-    av.append(ico("i-lupa"));
-    caixa.append(av);
-  }
+  // Sem avatar na resposta da IA: pedido do usuário (18/10/2026).
   formatar(m.text || "", corpo);
   if (tipo === "ia") {
     const acoes = el("div", "acoes");

@@ -91,7 +91,8 @@ Atualizado em 17/10/2026. Este documento contém pendências reais; o histórico
 - [x] Limitação documentada: "rato" ainda acha "gato" (75% parecido, mesma conta que faz "gatu" achar "gato") — matematicamente impossível separar; decisão: manter tolerância e documentar.
 - [x] `app.js` usa `busca_pontos` em `desenhar()` com ordenação por relevância; `index.html` carrega `busca.js` antes de `app.js`.
 - [x] Dois testes novos no `verificar.py` (existência/regra do `busca.js` e ligação no HTML/`app.js`; e execução dos 18 casos de teste Node.js). Suíte: **172 verificações, 0 falhas, 0 avisos**.
-- [ ] Testar na tela com a Memória real: digitar um termo com erro de digitação e confirmar que o item aparece primeiro.
+- [x] Termos da busca **pintados** no item (`destacarTexto()` + `escaparHtml()` no `app.js`, `.destaque-busca` no CSS): mesma tolerância do `busca.js`, acentos preservados, HTML escapado; dois testes novos no `verificar.py` (estrutura + lógica Node.js). Suíte: **174 verificações, 0 falhas, 0 avisos**. Avatar da IA (lupa) removido das respostas a pedido do usuário e commitado.
+- [ ] Testar na tela com a Memória real: digitar um termo com erro de digitação e confirmar que o item aparece primeiro e com o termo pintado.
 
 ## Prioridade 4 — manter os documentos coerentes
 

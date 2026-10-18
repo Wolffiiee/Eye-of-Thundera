@@ -2084,6 +2084,94 @@ except Exception as _erro_busca:
     falha("busca: teste de busca na Memória falhou: %r" % (_erro_busca,))
 
 
+# --- destaque dos termos buscados na Memória ---------------------------------
+# O item que casou com a busca mostra a palavra encontrada pintada; o texto
+# guardado pode ter < ou &, então o destaque escapa o HTML antes de montar.
+try:
+    _js_app2 = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    _css_dest = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+    _dest_ok = (
+        "function destacarTexto" in _js_app2
+        and "function escaparHtml" in _js_app2
+        # a Memória usa o destaque ao desenhar cada item
+        and "destacarTexto(f, termoBusca)" in _js_app2
+        # o texto escapado passa por innerHTML com segurança
+        and "escaparHtml" in _js_app2
+        # a classe existe no CSS com a cor do tema
+        and ".destaque-busca" in _css_dest
+        and "var(--azul)" in _css_dest
+    )
+    if _dest_ok:
+        ok("destaque: destacarTexto/escaparHtml no app.js e .destaque-busca no CSS")
+    else:
+        falha("destaque: funções de destaque ausentes no app.js ou classe faltando no CSS")
+
+    # roda a lógica do destaque via node: extrai as funções do app.js e do
+    # busca.js e confere o HTML gerado (destaque, escape e ordem preservada)
+    _node2 = shutil.which("node")
+    if _node2:
+        _ini = _js_app2.find("function escaparHtml")
+        _fim = _js_app2.find("function aplicarTema")
+        if _ini == -1 or _fim == -1 or _fim <= _ini:
+            falha("destaque: não consegui extrair destacarTexto do app.js para o teste")
+        else:
+            _js_dest = _js_busca + "\n" + _js_app2[_ini:_fim] + """
+let falhas = 0;
+const casos = [
+  // [texto, termo, deve conter destaque?, deve conter texto original?]
+  ["Pagar a conta de luz", "conta", true, true],
+  ["Pagar a conta de luz", "conta dluz", true, true],
+  ["Pagar a conta de luz", "CONTA", true, true],
+  ["O usuário gosta de café", "cafe", true, true],
+  ["A <receita> & o bolo", "receita", true, true],  // escape de HTML
+  ["Pagar a conta de luz", "boleto", false, true],  // nada casou: sem span
+  ["Pagar a conta de luz", "", false, true],        // sem termo: texto puro
+];
+for (const [texto, termo, querSpan, querTexto] of casos) {
+  const h = destacarTexto(texto, termo);
+  const temSpan = h.includes('<span class="destaque-busca">');
+  if (temSpan !== querSpan) {
+    falhas++;
+    console.log("FALHOU destaque: " + JSON.stringify([texto, termo]) + " -> " + h);
+  }
+  // o texto original tem de sobreviver sem perder conteúdo (só ganha tags)
+  const semTag = h.replace(/<[^>]+>/g, "");
+  const textoSemTag = texto.replace(/<[^>]+>/g, "");
+  if (querTexto && semTag !== textoSemTag && texto.indexOf("<") === -1) {
+    falhas++;
+    console.log("FALHOU texto: " + JSON.stringify([texto, termo]) + " -> " + semTag);
+  }
+  // quando há < ou & no original, o escaped tem de estar correto
+  if (texto.indexOf("<") !== -1 && !h.includes("&lt;")) {
+    falhas++;
+    console.log("FALHOU escape: " + h);
+  }
+}
+// acentos preservados no HTML, destaque só na palavra certa
+const h2 = destacarTexto("O café é bom", "cafe");
+if (!h2.includes(">café<")) {
+  falhas++;
+  console.log("FALHOU acento: " + h2);
+}
+console.log(falhas === 0 ? "OK" : "FALHAS: " + falhas);
+if (falhas) process.exitCode = 1;
+"""
+            _teste_dest = PASTA / "_tmp" / "destaque_node.js"
+            _teste_dest.write_text(_js_dest, encoding="utf-8")
+            _r_dest = subprocess.run(
+                [_node2, str(_teste_dest)],
+                capture_output=True, text=True, timeout=60,
+                cwd=str(PASTA))
+            if _r_dest.returncode == 0 and "OK" in _r_dest.stdout:
+                ok("destaque: lógica do destaque passou nos testes de node (destaque, escape e acento)")
+            else:
+                falha("destaque: lógica falhou: %s" % (_r_dest.stdout.strip()[:200],))
+    else:
+        ok("destaque: lógica do destaque (node não disponível, pulado)")
+except Exception as _erro_dest:
+    falha("destaque: teste do destaque falhou: %r" % (_erro_dest,))
+
+
 # --- lembretes (PLANO-LEMBRETES.md) -----------------------------------------
 # "me lembra amanhã às 9h de pagar a conta" — tudo local, sem IA e sem chave.
 # Nada aqui toca o arquivo de verdade: os testes usam um arquivo em _tmp.

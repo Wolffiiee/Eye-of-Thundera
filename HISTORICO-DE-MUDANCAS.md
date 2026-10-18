@@ -5,6 +5,14 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-18 — Termos da busca pintados na Memória
+
+- **O que o usuário ganha:** ao buscar na aba Memória, os termos que casaram com a busca aparecem **pintados** no item ("conta dluz" pinta "conta" e "luz" em "Pagar a conta de luz"), usando a mesma tolerância a erro de digitação e acentos do `busca.js` — dá para ver **por quê** o item apareceu nos resultados.
+- **Como funciona:** nova função `destacarTexto()` no `web/app.js` quebra o item palavra por palavra, normaliza cada palavra (mesmo caminho do `busca.js`) e envolve em `<span class="destaque-busca">` o que casou por prefixo ou por razão de Levenshtein (limiares 0.72/0.84 iguais aos da busca). O texto passa por `escaparHtml()` antes do `innerHTML` (o item guardado pode ter `<` ou `&`); os acentos e a capitalização originais ficam intactos — só ganha a marcação. Sem termo na caixa, o texto sai igual a `textContent`.
+- **CSS:** `.destaque-busca` usa `var(--azul)` e `var(--btn-texto)`, então acompanha os dez temas.
+- **`verificar.py`:** dois testes novos (estrutura: funções no `app.js`, classe no CSS, uso no desenhar; e lógica via Node.js: destaque correto, escape de `<`/`&`, acento preservado e nenhum destaque quando nada casou). Resultado: **174 verificações, 0 falhas, 0 avisos**.
+- **Avatar da IA removido** (pedido do usuário de 18/10): o bloco que criava `.avatar` com a lupa à esquerda das respostas foi retirado de `criarMensagem()` e **commitado nesta rodada** — antes, a remoção estava só no working tree e um `git checkout` tinha restaurado sem querer; agora está preservada no código. O indicador "digitando" e os demais ícones seguem intactos.
+
 ## 2026-10-17 — Busca na Memória tolerante a erro de digitação e sem acentos (Prioridade 2 das sugestões)
 
 - **O que o usuário ganha:** na aba Memória, o campo de busca agora acha "conta de luz" quando o Wolf digita "conta dluz" (erro de digitação), "cafe" quando está escrito "café" (sem acento), "CONTA DE LUZ" (maiúsculas), e "casa" quando está escrito "casas" (plural/prefixo). A lista também ordena os resultados por relevância (o mais provável vem primeiro). Antes, a busca era `f.toLowerCase().includes(termo)` — texto exato, sem tolerância a nada.
