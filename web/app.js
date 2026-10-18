@@ -1643,7 +1643,7 @@ function abaSincronizacao(corpo) {
   const partes = [];
   partes.push(r.existe ? "Pasta encontrada." : "Pasta não encontrada ainda.");
   partes.push(r.gravavel ? "Dá para gravar nela." : "Não consigo gravar nela.");
-  if (r.carimbo) partes.append("Dados locais sincronizados em " + r.carimbo + ".");
+  if (r.carimbo) partes.push("Dados locais sincronizados em " + r.carimbo + ".");
   if (r.aviso) partes.push("Atenção: " + r.aviso);
   estadoSync.textContent = partes.join(" ");
   corpo.append(estadoSync);
