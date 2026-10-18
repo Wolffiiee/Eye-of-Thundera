@@ -1,10 +1,12 @@
 # Onde paramos
 
-Atualizado em 18/10/2026, após todas as validações manuais aprovadas pelo usuário.
+Atualizado em 18/10/2026, após todas as validações manuais aprovadas pelo usuário e o fix do Gerenciador de Tarefas (modo onedir).
 
 ## Resumo do estado atual
 
-A rodada mais recente implementou as duas últimas sugestões grandes: **plugins** (comandos locais em Python que respondem sem IA, como os lembretes — pasta própria, aba Plugins com ligar/desligar, plugin de exemplo `/tempo`) e **sincronização** (dados iguais em dois computadores por pasta sincronizada do Windows — importa ao abrir, exporta ao fechar, última escrita vence, cópia atômica, erro não derruba). Módulos novos `plugins.py` e `sincronizar.py`, duas abas novas em Configurações, integração na ponte e 2 testes novos no `verificar.py`: **176 verificações, 0 falhas, 0 avisos**. Com isso, **todas as sugestões originais estão implementadas**.
+A rodada mais recente corrigiu o **Gerenciador de Tarefas**: o EXE do PyInstaller estava em modo "onefile" (extrai e executa um segundo processo), por isso apareciam **dois** "Eye of Thundera.exe". Mudou para modo "onedir" (pasta com o executável e as dependências) — agora existe apenas **um processo**, com ícone correto. Suíte: 177 verificações, 0 falhas, 0 avisos. Confirmado pelo usuário: um único processo no Gerenciador de Tarefas.
+
+A rodada anterior (plugins + sincronização) implementou as duas últimas sugestões grandes: **plugins** (comandos locais em Python que respondem sem IA, como os lembretes — pasta própria, aba Plugins com ligar/desligar, plugin de exemplo `/tempo`) e **sincronização** (dados iguais em dois computadores por pasta sincronizada do Windows — importa ao abrir, exporta ao fechar, última escrita vence, cópia atômica, erro não derruba). Módulos novos `plugins.py` e `sincronizar.py`, duas abas novas em Configurações, integração na ponte e 2 testes novos no `verificar.py`: **176 verificações, 0 falhas, 0 avisos**. Com isso, **todas as sugestões originais estão implementadas**.
 
 A rodada anterior testou e aprovou o modo documento longo: um PDF de 12 capítulos (gerado para o teste, apagado depois) abriu como "documento", as 4 perguntas citaram a página exata, o "índice do documento" listou os 12 capítulos e o "resumir documento" cobriu os 10 trechos.
 

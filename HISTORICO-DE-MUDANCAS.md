@@ -5,6 +5,12 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-18 - Modo onedir: um único processo no Gerenciador de Tarefas
+
+- **Problema:** o EXE compilado pelo PyInstaller estava em modo "onefile" (um único arquivo). Ao abrir, o PyInstaller extrai os arquivos para uma pasta temporária e executa um segundo processo — por isso apareciam **dois** "Eye of Thundera.exe" no Gerenciador de Tarefas (aba Detalhes).
+- **Solução:** mudou para modo "onedir" (pasta com o executável e as dependências). Agora existe apenas **um processo** ao abrir o programa. O atalho aponta para `dist/Eye of Thundera/Eye of Thundera.exe`.
+- **Verificação:** suíte com 177 verificações, 0 falhas, 0 avisos. Confirmado pelo usuário: um único processo no Gerenciador de Tarefas, com ícone correto.
+
 ## 2026-10-18 - Plugins e Sincronização entre computadores (Prioridades 5 e 6)
 
 - **O que o usuário ganha:** (1) **Plugins** — comandos locais em Python que respondem sem IA e sem chave, como os lembretes; o Wolf cria um arquivo `.py` na pasta de plugins e liga/desliga pela aba Plugins. (2) **Sincronização** — conversas, memória, configurações e chaves iguais em dois computadores por uma pasta que o Windows sincroniza (OneDrive, Drive, Dropbox); importa ao abrir e exporta ao fechar.
