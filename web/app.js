@@ -2036,6 +2036,68 @@ function abaAjuda(corpo) {
   }
   atalhos.append(lista);
   corpo.append(atalhos);
+  corpo.append(cartaoErros());
+}
+
+// Cartão "Se algo der errado": mostra os últimos erros do log dentro do
+// próprio programa, para o Wolf não precisar vir aqui perguntar o que houve.
+// O arquivo é o mesmo erro.log que o motor já gravava, agora legível.
+function cartaoErros() {
+  const cartao = el("div", "cartao erros");
+  const topo = el("div", "erros-topo");
+  topo.append(
+    el("h4", "", "Se algo der errado"),
+    el("p", "sub", "Os últimos problemas registrados pelo programa. Se aparecer algo aqui depois de um erro, é por causa disso.")
+  );
+  const barra = el("div", "erros-botoes");
+  const btAtualizar = el("button", "btn", "Atualizar");
+  const btLimpar = el("button", "btn", "Apagar histórico");
+  btLimpar.title = "Apaga todos os erros registrados";
+  barra.append(btAtualizar, btLimpar);
+  const lista = el("div", "erros-lista");
+  cartao.append(topo, barra, lista);
+
+  btAtualizar.addEventListener("click", () => mostrarErros(lista));
+  btLimpar.addEventListener("click", async () => {
+    if (!confirm("Apagar todos os erros registrados?\n\nIsso não desfaz nada do programa, só limpa o histórico de problemas.")) return;
+    try {
+      const r = await chamar("erros_apagar");
+      if (r && r.ok) {
+        lista.replaceChildren(el("p", "sub", "Histórico apagado."));
+      }
+    } catch (_e) { /* o aviso já apareceu no chamar() */ }
+  });
+
+  // Carrega assim que a aba abre (sem esperar o usuário apertar nada).
+  mostrarErros(lista);
+  return cartao;
+}
+
+async function mostrarErros(lista) {
+  lista.replaceChildren(el("p", "sub", "Procurando erros..."));
+  let r;
+  try {
+    r = await chamar("erros_recentes", 8);
+  } catch (_e) {
+    return; // o chamar() já avisou
+  }
+  lista.replaceChildren();
+  if (!r || r.vazio) {
+    lista.append(el("p", "sub", "Nada deu errado desde a última limpeza. Bom sinal."));
+    return;
+  }
+  for (const item of r.itens || []) {
+    const linha = el("div", "erro-item");
+    const quando = el("div", "erro-quando");
+    quando.append(el("span", "", item.quando || "sem data"), el("span", "erro-onde", item.onde || ""));
+    const texto = el("pre", "erro-texto", item.texto || "");
+    linha.append(quando, texto);
+    if (item.longo) linha.append(el("p", "sub", "(erro cortado, estava maior)"));
+    lista.append(linha);
+  }
+  if (r.caminho) {
+    lista.append(el("p", "sub", "Arquivo: " + r.caminho));
+  }
 }
 
 function mostrarAba(aba) {

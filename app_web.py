@@ -939,6 +939,75 @@ class Ponte:
             p.registrar_erro("abrir_pasta", erro)
         return {}
 
+    # --- log de erros visto de dentro do programa (aba Ajuda) ---
+    #
+    # O `erro.log` sempre existiu, mas morava dentro do computador: se
+    # algo dava errado, o Wolf nao tinha como ver nada sem pedir ajuda.
+    # Aqui a tela le o arquivo e mostra os ultimos erros em português.
+
+    def erros_recentes(self, quantidade=8):
+        """Devolve os ultimos erros do log, do mais novo para o mais antigo.
+
+        Devolve {"itens": [...], "caminho": str, "vazio": bool}. Nunca
+        levanta: um log quebrado ou gigante apenas aparece como vazio.
+        """
+        vazio = {"itens": [], "caminho": "", "vazio": True}
+        try:
+            caminho = Path(p.ARQUIVO_ERRO)
+        except Exception as erro:
+            p.registrar_erro("erros_recentes", erro)
+            return vazio
+        if not caminho.is_file():
+            return vazio
+        try:
+            texto = caminho.read_text(encoding="utf-8", errors="replace")
+        except Exception as erro:
+            p.registrar_erro("erros_recentes", erro)
+            return vazio
+
+        # O log e' gravado em blocos "===== quando | onde =====" seguidos do
+        # texto do erro. Vamos separar por bloco, do mais novo para o mais
+        # antigo, e mostrar so os ultimos `quantidade`.
+        blocos = []
+        atual = {"quando": "", "onde": "", "texto": []}
+        for linha in texto.splitlines():
+            if linha.startswith("===== ") and linha.rstrip().endswith(" ====="):
+                if atual["texto"]:
+                    blocos.append(atual)
+                miolo = linha.strip().strip("=").strip()
+                quando, _, onde = miolo.partition(" | ")
+                atual = {"quando": quando.strip(),
+                         "onde": onde.strip(), "texto": []}
+            elif atual["texto"] or atual["quando"]:
+                if linha.strip():
+                    atual["texto"].append(linha.rstrip())
+        if atual["texto"]:
+            blocos.append(atual)
+
+        escolhidos = list(reversed(blocos))[:max(1, int(quantidade or 8))]
+        itens = []
+        for bloco in escolhidos:
+            corpo = "\n".join(bloco["texto"]).strip()
+            itens.append({
+                "quando": bloco["quando"],
+                "onde": bloco["onde"] or "sem origem",
+                # Corta no maximo: erro gigante nao pode travar a tela.
+                "texto": corpo[:600],
+                "longo": len(corpo) > 600,
+            })
+        return {"itens": itens, "caminho": str(caminho), "vazio": not itens}
+
+    def erros_apagar(self):
+        """Apaga o log de erros (a tela pede confirmacao antes)."""
+        try:
+            caminho = Path(p.ARQUIVO_ERRO)
+            if caminho.is_file():
+                caminho.unlink()
+        except Exception as erro:
+            p.registrar_erro("erros_apagar", erro)
+            return {"ok": False}
+        return {"ok": True}
+
     # --- leitura de PDF (arrastar para a conversa) ---
     #
     # O arquivo NAO chega por caminho: a tela le os bytes e manda em

@@ -5,6 +5,18 @@ baixado/instalado, modificado, adicionado, removido ou movido.
 
 ---
 
+## 2026-10-18 - Log de erros visivel dentro do programa (aba Ajuda)
+
+- **O problema:** o programa gravava os erros num arquivo `erro.log`, mas esse arquivo morava dentro do computador. Se algo dava errado, o Wolf nao tinha como ver nada e tinha de vir perguntar o que aconteceu.
+- **A solucao:** a aba **Ajuda** ganhou um cartao "Se algo der errado", que mostra os ultimos 8 erros (data, de onde veio e o texto do problema) e o caminho do arquivo. Ha dois botoes: **Atualizar** e **Apagar historico** (que pede confirmacao, porque o log e' o unico diagnostico que existe).
+- **`app_web.py`:** duas funcoes novas na ponte. `erros_recentes(quantidade)` le o log, separa os blocos `===== quando | onde =====`, devolve do mais novo para o mais antigo e corta o texto em 600 caracteres (um traceback enorme nao pode travar a janela). `erros_apagar()` limpa o arquivo. As duas nunca levantam excecao: log quebrado, ausente ou gigante apenas aparece como "vazio".
+- **`web/app.js`:** funcoes `cartaoErros()` e `mostrarErros()` — montam o cartao e o chamam assim que a aba abre. `web/estilo.css`: estilo do cartao, com o texto do erro num bloco proprio que rola sozinho quando e' longo.
+- **Bug encontrado no caminho:** o log cresce do mais antigo para o mais novo (o `registrar_erro` anexa no fim), entao a tela tem que mostrar o ULTIMO primeiro. O primeiro teste acusou a inversao e a ordem foi fixada — agora ha um teste so para isso.
+- **Testes:** 8 verificacoes novas no `verificar.py` (184 no total, 0 falhas, 0 avisos). Elas usam um log sintetico em `_tmp`: **o log de verdade do usuario nunca e' tocado**.
+- **Conferido na tela:** o cartao renderizou com titulo, explicacao, os dois botoes e os 3 erros na ordem certa.
+
+---
+
 ## 2026-10-18 - Instalador: tudo dentro de UMA pasta
 
 - **Pedido do Wolf:** ao descompactar o zip, a pasta `codigo` e o `LEIA-ME.txt` devem ficar **dentro** da pasta "Eye of Thundera", e nao soltos ao lado dela.

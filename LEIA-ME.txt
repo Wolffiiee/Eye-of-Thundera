@@ -30,7 +30,7 @@ CONFIGURAÇÕES
 - Conversa: preferências de contexto, pesquisa, corretor e voz.
 - Chaves: configure os provedores e serviços de reserva. Os campos de chave devem permanecer protegidos.
 - **Personalização**: escolha entre 5 temas pré-definidos para a interface (Clássico Dark, Purpurina, Amethyst, Ocean, Forest). As escolhas são salvas no config.json e aplicadas imediatamente.
-- Ajuda: informações de uso e atalhos.
+- Ajuda: informações de uso, atalhos e o cartão "Se algo der errado", que mostra os últimos problemas registrados pelo programa (é o mesmo log que ficava escondido dentro do computador).
 
 ATALHOS
 - Enter: envia a pergunta.

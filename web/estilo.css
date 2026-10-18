@@ -393,6 +393,23 @@ kbd { font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--te
 .ajuda p { color: var(--texto-2); max-width: 66ch; margin: 0 0 12px; font-size: 14px; }
 .ajuda kbd { background: var(--superficie-2); border: 1px solid var(--borda); border-radius: 6px; padding: 1px 7px; font: 12.5px var(--fonte); }
 
+/* Log de erros dentro da aba Ajuda: o Wolf vê o que deu errado sem sair do
+   programa. O texto do erro fica num bloco com rolagem própria, porque
+   um traceback pode ser bem maior que o cartão. */
+.erros .sub { color: var(--texto-2); font-size: 13px; line-height: 1.55; margin: 0 0 10px; max-width: 64ch; }
+.erros-botoes { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.erros-lista { display: flex; flex-direction: column; gap: 9px; }
+.erro-item { border: 1px solid var(--borda); border-left: 3px solid var(--texto-3);
+  border-radius: var(--raio); background: var(--superficie-2); padding: 9px 11px; }
+.erro-quando { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+  font-size: 12px; color: var(--texto-2); margin-bottom: 6px; }
+.erro-onde { font-family: ui-monospace, Consolas, monospace; font-size: 11.5px;
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: 5px; padding: 0 6px; }
+.erro-texto { margin: 0; font-family: ui-monospace, Consolas, monospace; font-size: 12px;
+  line-height: 1.5; color: var(--texto-2); white-space: pre-wrap; word-break: break-word;
+  max-height: 190px; overflow-y: auto; }
+.erros-lista > .sub { margin: 0; }
+
 /* O aviso fica no TOPO, abaixo do cabecalho. Antes ele ficava a 96 px do
    fundo, que era exatamente em cima da caixa de digitar: como a caixa
    cresce quando se escreve muito, o aviso cobria o que estava escrito. */

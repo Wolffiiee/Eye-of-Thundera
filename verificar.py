@@ -2709,6 +2709,100 @@ except Exception as _erro_doc4:
     falha("documento: teste da tela/pacote falhou: %r" % (_erro_doc4,))
 
 
+# --- log de erros dentro do programa (aba Ajuda) --------------------------------
+# O `erro.log` sempre existiu, mas o Wolf nao tinha como ver. Agora a aba
+# Ajuda mostra os ultimos erros. Estes testes usam um log sintetico em _tmp:
+# o log de verdade do usuario NUNCO e' tocado.
+try:
+    _log_falso = PASTA / "_tmp" / "verificar-erro.log"
+    _log_falso.parent.mkdir(parents=True, exist_ok=True)
+    _log_real_guardado = _pi2.ARQUIVO_ERRO
+    # Formato identico ao que o `registrar_erro` grava: blocos "===== quando
+    # | onde =====" followed do texto. O arquivo cresce do mais antigo para
+    # o mais novo, entao a tela tem que mostrar o ULTIMO primeiro.
+    _log_falso.write_text(
+        "===== 17/10/2026 09:00:00 | primeiro =====\n"
+        "erro um\n\n"
+        "===== 18/10/2026 10:00:00 | segundo =====\n"
+        "erro dois\n\n"
+        "===== 18/10/2026 11:00:00 | terceiro =====\n"
+        "erro tres\n",
+        encoding="utf-8")
+    _pi2.ARQUIVO_ERRO = _log_falso
+
+    _p_erros = _aw.Ponte()
+    _r = _p_erros.erros_recentes()
+    if (_r["vazio"] is False and len(_r["itens"]) == 3
+            and _r["itens"][0]["onde"] == "terceiro"
+            and _r["itens"][0]["texto"] == "erro tres"):
+        ok("log de erros: mostra os ultimos, do mais novo para o mais antigo")
+    else:
+        falha("log de erros: leu %r" % (_r,))
+
+    _r2 = _p_erros.erros_recentes(2)
+    if len(_r2["itens"]) == 2:
+        ok("log de erros: respeita o limite pedido (2 de 3)")
+    else:
+        falha("log de erros: pediu 2 e veio %d" % len(_r2["itens"]))
+
+    # Log inexistente nao pode quebrar a tela: tem que avisar que esta vazio.
+    _pi2.ARQUIVO_ERRO = _log_falso.parent / "verificar-nao-existe.log"
+    _r3 = _p_erros.erros_recentes()
+    if _r3["vazio"] is True and _r3["itens"] == []:
+        ok("log de erros: arquivo ausente aparece como 'nenhum erro', sem quebrar")
+    else:
+        falha("log de erros: arquivo ausente deu %r" % (_r3,))
+
+    # Log gigante nao pode travar a janela.
+    _gigante = _log_falso.parent / "verificar-gigante.log"
+    _gigante.write_text("===== 18/10/2026 10:00:00 | repetido =====\nlinha\n" * 4000,
+                        encoding="utf-8")
+    _pi2.ARQUIVO_ERRO = _gigante
+    _r4 = _p_erros.erros_recentes(3)
+    if len(_r4["itens"]) == 3:
+        ok("log de erros: log gigante e' lido e limitado sem travar")
+    else:
+        falha("log de erros: log gigante devolveu %d itens" % len(_r4["itens"]))
+    try:
+        _gigante.unlink()
+    except Exception:
+        pass
+
+    # Apagar limpa de verdade (com o log de teste, nunca o do usuario).
+    _pi2.ARQUIVO_ERRO = _log_falso
+    _a = _p_erros.erros_apagar()
+    if _a["ok"] is True and not _log_falso.exists():
+        ok("log de erros: o botao Apagar limpa o arquivo de verdade")
+    else:
+        falha("log de erros: apagar deu %r" % (_a,))
+
+    # A tela precisa ter o cartao, os dois botoes e as classes do CSS.
+    _js_e = (PASTA / "web" / "app.js").read_text(encoding="utf-8")
+    _css_e = (PASTA / "web" / "estilo.css").read_text(encoding="utf-8")
+    if ("cartaoErros" in _js_e and "erros_recentes" in _js_e and "erros_apagar" in _js_e
+            and "erro-item" in _js_e and "confirm(" in _js_e
+            and "corpo.append(cartaoErros())" in _js_e
+            and ".erros-botoes" in _css_e and ".erro-texto" in _css_e
+            and ".erro-item" in _css_e):
+        ok("log de erros: aba Ajuda tem o cartao, os botoes e o estilo")
+    else:
+        falha("log de erros: falta o cartao na tela ou o estilo no CSS")
+
+    # Apagar tem que pedir confirmacao (o log e' o unico diagnostico que tem).
+    if "confirmar" in _js_e or "confirm(" in _js_e:
+        ok("log de erros: apagar pede confirmacao antes")
+    else:
+        falha("log de erros: apagar NAO pede confirmacao")
+
+    _pi2.ARQUIVO_ERRO = _log_real_guardado
+    try:
+        _log_falso.unlink()
+    except Exception:
+        pass
+except Exception as _erro_log:
+    falha("log de erros: os testes quebraram: %r" % (_erro_log,))
+
+
 # --- resumo -----------------------------------------------------------------
 print()
 print('VERIFICACOES: %d | FALHA: %d | AVISO: %d' % (verificacoes, len(falhas), len(avisos)))
